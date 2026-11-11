@@ -120,6 +120,15 @@ class CandidateProfileForm(forms.Form):
             career_area,
         )
 
+        # Keep an existing legacy/cross-faculty choice editable on a name-only save.
+        stored_specialisation = self.initial.get("specialisation", "")
+        choices = self.fields["specialisation"].choices
+        if stored_specialisation and stored_specialisation not in {value for value, _ in choices}:
+            self.fields["specialisation"].choices = [
+                *choices,
+                (stored_specialisation, dict(SPECIALISATION_CHOICES).get(stored_specialisation, stored_specialisation)),
+            ]
+
     def clean_experience_entries(self):
         raw_entries = self.cleaned_data.get("experience_entries") or []
         if not isinstance(raw_entries, list):

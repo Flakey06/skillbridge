@@ -6,7 +6,7 @@ button,
 input,
 select,
 textarea {
-    font-family: Arial, Helvetica, sans-serif !important;
+    font-family: var(--font-ui) !important;
 }
 
 :root,
@@ -490,7 +490,8 @@ textarea:focus {
     background:var(--paper);
     box-shadow:0 4px 14px #1726410d;
 }
-.experience-cv-preview>[data-experience-preview] {
+.experience-cv-preview>[data-experience-preview],
+.experience-cv-preview>[data-certification-preview] {
     margin-top:8px;
     color:var(--ink);
     font-size:13px;
@@ -1289,7 +1290,11 @@ button.primary {
     top: 1px;
     right: 0;
     width: 9px;
+    min-width: 9px;
+    max-width: 9px;
     height: 9px;
+    min-height: 9px;
+    aspect-ratio: 1;
     padding: 0;
     border: 2px solid var(--paper);
     border-radius: 50%;

@@ -31,8 +31,10 @@
 {% endif %}
 
 <section class="content-columns profile-layout">
-    <form class="profile-form" method="post" enctype="multipart/form-data">
+    <form class="profile-form" method="post" enctype="multipart/form-data"{% if form.errors %} data-restore-scroll="{{ request.POST.profile_scroll_y }}" data-restore-sections="{{ request.POST.profile_open_sections }}"{% endif %}>
         {% csrf_token %}
+        <input type="hidden" name="profile_scroll_y" value="0">
+        <input type="hidden" name="profile_open_sections" value="[]">
         {% if form.non_field_errors %}
             <div class="auth-error">{{ form.non_field_errors }}</div>
         {% endif %}
@@ -153,6 +155,24 @@
 {{ selected_interests|json_script:"selected-interests" }}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    const profileForm = document.querySelector(".profile-form");
+    const entrySections = () => [...profileForm.querySelectorAll("details[data-experience-entry], details[data-certification-entry]")];
+    profileForm.addEventListener("submit", () => {
+        profileForm.elements.profile_scroll_y.value = String(window.scrollY);
+        profileForm.elements.profile_open_sections.value = JSON.stringify(entrySections().map((section) => section.open));
+    });
+    if (profileForm.dataset.restoreScroll) {
+        window.addEventListener("load", async () => {
+            if (document.fonts) await document.fonts.ready;
+            try {
+                const opened = JSON.parse(profileForm.dataset.restoreSections || "[]");
+                entrySections().forEach((section, index) => { section.open = Boolean(opened[index]); });
+            } catch { /* Keep the default sections if no valid state was submitted. */ }
+            const y = Number(profileForm.dataset.restoreScroll);
+            if (Number.isFinite(y) && y >= 0) requestAnimationFrame(() => window.scrollTo({top: y, behavior: "instant"}));
+        }, {once: true});
+    }
+
     const careerMap = JSON.parse(document.querySelector("#career-choice-map").textContent);
     const selectedInterests = new Set(JSON.parse(document.querySelector("#selected-interests").textContent));
     const careerField = document.querySelector("#id_career");
@@ -181,14 +201,21 @@ document.addEventListener("DOMContentLoaded", () => {
         return wrapper;
     };
 
+    let initialCareerRefresh = true;
     const refreshCareerChoices = () => {
         const options = careerMap[careerField.value] || {label: "Selected faculty", interests: []};
 
         const selectedSpecialisation = specialisationField.value;
+        const selectedSpecialisationLabel = specialisationField.selectedOptions[0]?.textContent;
         specialisationField.replaceChildren(new Option("Choose an option", ""));
         options.specialisations.forEach(([value, label]) => {
             specialisationField.add(new Option(label, value, false, value === selectedSpecialisation));
         });
+
+        if (initialCareerRefresh && selectedSpecialisation && !options.specialisations.some(([value]) => value === selectedSpecialisation)) {
+            specialisationField.add(new Option(selectedSpecialisationLabel || selectedSpecialisation, selectedSpecialisation, true, true));
+        }
+        initialCareerRefresh = false;
 
         primaryInterestLabel.textContent = options.label;
         primaryInterestOptions.replaceChildren(...options.interests.map(renderInterestOption));
@@ -235,9 +262,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const formatMonth = (value) => {
         if (!value) return "";
-        const [year, month] = value.split("-");
+        // An incomplete month (for example "2026") must not stop Add/Remove.
+        const match = /^(\d{4,})-(0[1-9]|1[0-2])$/.exec(value);
+        if (!match) return value;
+        const [, year, month] = match;
+        const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+        if (Number.isNaN(date.getTime())) return value;
         return new Intl.DateTimeFormat("en", {month: "short", year: "numeric", timeZone: "UTC"})
-            .format(new Date(Date.UTC(Number(year), Number(month) - 1, 1)));
+            .format(date);
     };
 
     const buildSummary = (items) => items.map((entry) => {
@@ -247,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (heading) lines.push(heading);
         if (dates) lines.push(dates);
         if (entry.skills) lines.push(`Skills: ${entry.skills}`);
-        entry.achievements.split(/\r?\n/).map((line) => line.trim().replace(/^(?:•|-|\*)\s*/, "")).filter(Boolean)
+        String(entry.achievements || "").split(/\r?\n/).map((line) => line.trim().replace(/^(?:•|-|\*)\s*/, "")).filter(Boolean)
             .forEach((line) => lines.push(`• ${line}`));
         return lines.join("\n");
     }).filter(Boolean).join("\n\n");
@@ -268,10 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
         preview.textContent = summary || "Your formatted work experience will appear here as you complete the fields.";
     };
 
-    const render = () => {
+    const render = (openIndex = 0) => {
         list.innerHTML = entries.map((entry, index) => `
-            <section class="experience-entry" data-experience-entry>
-                <div class="row between"><h4>Experience ${index + 1}</h4><button class="button small" type="button" data-remove-experience="${index}">Remove</button></div>
+            <details class="experience-entry" data-experience-entry ${index === openIndex ? "open" : ""}>
+                <summary class="experience-entry-summary"><span>Experience ${index + 1}${entry.position || entry.company ? " — " + escapeHtml([entry.position, entry.company].filter(Boolean).join(" at ")) : ""}</span><button class="button small" type="button" data-remove-experience="${index}">Remove</button></summary>
                 <div class="form-grid experience-entry-grid">
                     <label class="field">Position / role<input data-key="position" value="${escapeHtml(entry.position)}" placeholder="e.g. Software Engineering Intern"></label>
                     <label class="field">Company / placement<input data-key="company" value="${escapeHtml(entry.company)}" placeholder="e.g. ABC Technologies"></label>
@@ -281,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <label class="field span2">Skills learned<input data-key="skills" value="${escapeHtml(entry.skills)}" placeholder="e.g. Django, teamwork, stakeholder communication"></label>
                     <label class="field span2">Achievements and responsibilities<textarea rows="4" data-key="achievements" placeholder="One achievement or responsibility per line">${escapeHtml(entry.achievements)}</textarea></label>
                 </div>
-            </section>
+            </details>
         `).join("");
         syncEntries();
     };
@@ -289,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     builder.querySelector("[data-add-experience]").addEventListener("click", () => {
         syncEntries();
         entries.push({position: "", company: "", start_date: "", end_date: "", current: false, skills: "", achievements: ""});
-        render();
+        render(entries.length - 1);
         list.lastElementChild?.scrollIntoView({behavior: "smooth", block: "center"});
     });
     list.addEventListener("click", (event) => {
@@ -297,7 +329,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!button) return;
         syncEntries();
         entries.splice(Number(button.dataset.removeExperience), 1);
-        if (!entries.length) entries.push({position: "", company: "", start_date: "", end_date: "", current: false, skills: "", achievements: ""});
         render();
     });
     list.addEventListener("change", (event) => {
@@ -355,10 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
         certificationPreview.textContent = summary || "Your formatted certifications will appear here as you complete the fields.";
     };
 
-    const renderCertifications = () => {
+    const renderCertifications = (openIndex = 0) => {
         certificationList.innerHTML = certifications.map((entry, index) => `
-            <section class="experience-entry" data-certification-entry>
-                <div class="row between"><h4>Certification ${index + 1}</h4><button class="button small" type="button" data-remove-certification="${index}">Remove</button></div>
+            <details class="experience-entry" data-certification-entry ${index === openIndex ? "open" : ""}>
+                <summary class="experience-entry-summary"><span>Certification ${index + 1}${entry.name ? " — " + escapeHtml(entry.name) : ""}</span><button class="button small" type="button" data-remove-certification="${index}">Remove</button></summary>
                 <div class="form-grid experience-entry-grid">
                     <label class="field">Certification name<input data-key="name" value="${escapeHtml(entry.name)}" placeholder="e.g. AWS Cloud Practitioner"></label>
                     <label class="field">Issuing organisation<input data-key="issuer" value="${escapeHtml(entry.issuer)}" placeholder="e.g. Amazon Web Services"></label>
@@ -368,7 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <label class="field">Credential ID<input data-key="credential_id" value="${escapeHtml(entry.credential_id)}" placeholder="Optional"></label>
                     <label class="field span2">Skills covered<input data-key="certification_skills" value="${escapeHtml(entry.skills)}" placeholder="e.g. cloud computing, IAM, networking"></label>
                 </div>
-            </section>
+            </details>
         `).join("");
         syncCertifications();
     };
@@ -376,7 +407,7 @@ document.addEventListener("DOMContentLoaded", () => {
     certificationBuilder.querySelector("[data-add-certification]").addEventListener("click", () => {
         syncCertifications();
         certifications.push({name: "", issuer: "", issue_date: "", expiry_date: "", no_expiry: false, credential_id: "", skills: ""});
-        renderCertifications();
+        renderCertifications(certifications.length - 1);
         certificationList.lastElementChild?.scrollIntoView({behavior: "smooth", block: "center"});
     });
     certificationList.addEventListener("click", (event) => {
@@ -384,7 +415,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!button) return;
         syncCertifications();
         certifications.splice(Number(button.dataset.removeCertification), 1);
-        if (!certifications.length) certifications.push({name: "", issuer: "", issue_date: "", expiry_date: "", no_expiry: false, credential_id: "", skills: ""});
         renderCertifications();
     });
     certificationList.addEventListener("change", (event) => {

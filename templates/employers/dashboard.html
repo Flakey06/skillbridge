@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-head">
     <div>
-        <h1>Good morning, {{ request.user.username }}.</h1>
+        <h1>Good morning, <span class="preserve-case">{{ request.user.profile.display_name }}</span>.</h1>
         <p class="sub">Review candidates and keep your hiring moving.</p>
     </div>
     <a class="primary button" href="{% url 'recruiter_create_listing' %}">Create job listing →</a>

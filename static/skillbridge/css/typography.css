@@ -1,0 +1,76 @@
+@font-face {
+    font-family: "Bricolage Grotesque";
+    src: url("../fonts/bricolage-grotesque/BricolageGrotesque-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Bricolage Grotesque";
+    src: url("../fonts/bricolage-grotesque/BricolageGrotesque-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Bricolage Grotesque";
+    src: url("../fonts/bricolage-grotesque/BricolageGrotesque-SemiBold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Bricolage Grotesque";
+    src: url("../fonts/bricolage-grotesque/BricolageGrotesque-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Bricolage Grotesque";
+    src: url("../fonts/bricolage-grotesque/BricolageGrotesque-ExtraBold.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root { --font-ui: "Bricolage Grotesque", Arial, Helvetica, sans-serif; }
+body { line-height: 1.5; font-synthesis: style; }
+h1, h2, h3, h4, strong, b { font-weight: 700; }
+h1, h2 { line-height: 1.2; letter-spacing: -.015em; }
+h3, h4 { line-height: 1.35; }
+.required-label, button, .button, .nav-label, .compatibility-box-label { font-weight: 600; }
+.auth-story h1 { font-weight: 700; letter-spacing: -.025em; }
+.resume-draft, .resume-review-preview { line-height: 1.75; }
+.compatibility-box strong, .dashboard-stats .stat-number { font-weight: 700; font-variant-numeric: lining-nums tabular-nums; letter-spacing: 0; }
+
+.dashboard-stats .stat-number, .dashboard-stats .profile-gauge text { font-family: var(--font-ui) !important; font-weight: 700; }
+
+.dashboard-stats .profile-gauge text { font-size: 14px; font-weight: 600; letter-spacing: .6px; font-kerning: normal; font-variant-numeric: lining-nums proportional-nums; }
+
+/* Consistent display casing for UI titles; stored content stays unchanged. */
+h1, h2, h3, h4, h5, h6,
+label, legend, button, .button, .nav-label, .workspace-label,
+.stat-label, .compatibility-box-label, .job-applied-tag,
+.text-link, .job-back-link, .crumb,
+.career-course-heading strong, .career-milestone-heading strong,
+.career-track-card strong, .course-provider {
+    text-transform: capitalize;
+}
+.eyebrow { text-transform: capitalize !important; }
+/* Instructions, validation, and entered values retain their original casing. */
+input, textarea, select, option, input::placeholder, textarea::placeholder,
+label small, label .muted, label p,
+.auth-error, .auth-error *, .errorlist, .errorlist *, .signup-field-errors,
+.resume-draft, .resume-review-preview {
+    text-transform: none;
+}
+
+.preserve-case { text-transform: none; }
+
+.career-readiness-title { display: block; text-transform: capitalize; }
+.career-starting-level { display: block; margin-top: 4px; text-transform: capitalize; }

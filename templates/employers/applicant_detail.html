@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-head">
     <div>
-        <h1>{{ application.candidate.username }}</h1>
+        <h1 class="preserve-case">{{ application.candidate.username }}</h1>
         <p class="sub">{{ application.job.title }} · {{ application.job.company.name }}</p>
     </div>
     <a class="button" href="{% url 'recruiter_applicants' %}">Back to applicants</a>
