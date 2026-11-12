@@ -21,8 +21,10 @@ from .learning import (
     verification_status,
 )
 from .dashboard import dashboard_context
+from .withdrawals import withdraw_application
 
 __all__ = [
+    "withdraw_application",
     'CERTIFICATE_FILE_EXTENSIONS',
     'MAX_CERTIFICATE_FILE_SIZE',
     'jobs',

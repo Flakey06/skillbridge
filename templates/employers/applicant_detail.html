@@ -11,23 +11,37 @@
     <a class="button" href="{% url 'recruiter_applicants' %}">Back to applicants</a>
 </div>
 
-<div class="content-columns">
+<div class="content-columns applicant-detail-layout">
     <section class="stack">
         <div class="card">
-            <div class="section-heading"><h2>Application</h2><span class="pill progress-green">{{ application.get_status_display }}</span></div>
+            <div class="section-heading"><h2>Application</h2><span class="pill application-status application-status-{{ application.status }}">{{ application.get_status_display }}</span></div>
             {% if has_pro %}
-                {% if has_pro %}
-                    <p class="sub">Overall suitability: {% if overall_score is not None %}<span class="match-badge match-badge-with-help {% if overall_score <= 40 %}match-badge-low{% elif overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">{{ overall_score }}%<span class="match-help" role="tooltip">Combines Skill Match (70%) with the historical ML suitability signal (30%).</span></span>{% else %}Not calculated{% endif %}{% if application.match_assessment %} · {{ application.match_assessment }}{% endif %}</p>
-                    <div class="skill-match-explanation">
-                        <p><strong>Matched skills:</strong> {{ application.matched_skills|join:", "|default:"None yet" }}</p>
-                        <p><strong>Missing skills:</strong> {{ application.missing_skills|join:", "|default:"None" }}</p>
-                        <p><strong>Readiness:</strong> {{ application.match_assessment|default:"Not calculated" }}{% if application.match_assessment == "Early-stage fit" %} — the candidate is still building the evidence or skills needed for this role.{% endif %}</p>
+                <section class="applicant-score-detail" id="skill-compatibility" tabindex="-1" aria-labelledby="skill-compatibility-heading">
+                    <div class="applicant-score-detail-header">
+                        <div class="applicant-score-detail-copy">
+                            <h2 id="skill-compatibility-heading">Skill Compatibility</h2>
+                            <p class="sub">Saved skill and evidence assessment from this application.</p>
+                        </div>
+                        {% include "components/compatibility_score.html" with label="Skill Compatibility" score=application.match_score hide_label=True %}
                     </div>
-                    {% if application.match_breakdown %}<div class="score-breakdown">{% for label, component in application.match_breakdown.items %}<div class="score-breakdown-item"><span>{% if label == "required_skills" %}Required Skills{% elif label == "preferred_skills" %}Preferred Skills{% elif label == "career_alignment" %}Career Alignment{% elif label == "experience_level" %}Experience Level{% elif label == "profile_evidence" %}Profile Evidence{% else %}{{ label|title }}{% endif %}</span><strong>{{ component.earned }}/{{ component.max }} points</strong></div>{% endfor %}</div>{% endif %}
-                    {% if ml_prediction %}<p class="muted">Based on Skill Match (70%) and historical ML suitability signal (30%). This is guidance, not an automatic hiring decision.</p>{% endif %}
-                {% else %}
-                    <p class="sub">Applicant suitability scores and breakdowns are available with <a href="{% url 'plans' %}">SkillBridge Pro</a>.</p>
-                {% endif %}
+                    <h3>Missing Skills</h3>
+                    {% if application.match_score is None %}<p>No saved assessment is available.</p>{% else %}<ul class="skill-summary-list">{% for skill in application.missing_skills %}<li>{{ skill }}</li>{% empty %}<li>No missing skills recorded.</li>{% endfor %}</ul>{% endif %}
+                    <h3>Matched Skills</h3>
+                    <ul class="skill-summary-list">{% for skill in application.matched_skills %}<li>{{ skill }}</li>{% empty %}<li>None recorded.</li>{% endfor %}</ul>
+                    <p><strong>Readiness:</strong> {{ application.match_assessment|default:"Not calculated" }}</p>
+                    {% if application.match_breakdown %}<div class="score-breakdown">{% for label, component in application.match_breakdown.items %}{% if component.max %}<div class="score-breakdown-item"><span>{{ label|title }}</span><strong>{{ component.earned }}/{{ component.max }} points</strong></div>{% endif %}{% endfor %}</div>{% endif %}
+                </section>
+                <section class="applicant-score-detail" id="predicted-job-fit" tabindex="-1" aria-labelledby="predicted-job-fit-heading">
+                    <div class="applicant-score-detail-header">
+                        <div class="applicant-score-detail-copy">
+                            <h2 id="predicted-job-fit-heading">Predicted Job Fit</h2>
+                            <p>{{ ml_prediction.label|default:"Prediction unavailable." }}</p>
+                        </div>
+                        {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=ml_prediction.score hide_label=True %}
+                    </div>
+                    {% if ml_prediction %}<p class="sub">{{ ml_prediction.note }}</p>{% endif %}
+                    <p>The model does not provide individual reasons or missing-skill explanations for this prediction.</p>
+                </section>
             {% else %}
                 <p class="sub">Applicant ranking and readiness breakdown are SkillBridge Pro features.</p>
                 <a class="button small" href="{% url 'plans' %}">View Pro →</a>
@@ -50,14 +64,16 @@
         </div>
     </section>
 
-    <aside class="card">
-        <h2>Update progress</h2>
-        <form method="post" class="stack">
+    <section class="card applicant-progress-card" id="update-progress" aria-labelledby="applicant-progress-heading">
+        <h2 id="applicant-progress-heading">Update Progress</h2>
+        {% if application.status == 'withdrawn' %}<p class="sub">Withdrawn by the candidate. No further status updates are available.</p>{% else %}
+        <form method="post" action="{% url 'recruiter_applicant_detail' application.id %}#update-progress" class="applicant-progress-controls">
             {% csrf_token %}
-            <label class="field">Status{{ status_form.status }}</label>
-            <button class="primary" type="submit">Save status</button>
+            <label class="field" for="{{ status_form.status.id_for_label }}">Status{{ status_form.status }}{{ status_form.status.errors }}</label>
+            <button class="primary" type="submit">Save</button>
+            {% if application.status == 'shortlisted' %}<a class="button applicant-schedule-interview" href="{% url 'recruiter_calendar' %}?application={{ application.id }}">Schedule Interview</a>{% endif %}
         </form>
-        <a class="button small" href="{% url 'recruiter_calendar' %}">Schedule interview</a>
-    </aside>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

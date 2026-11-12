@@ -12,7 +12,7 @@ from .common import _context
 
 @candidate_required
 def calendar(request):
-    interviews = Interview.objects.filter(application__candidate=request.user).select_related("application__job__company")
+    interviews = Interview.objects.filter(application__candidate=request.user).exclude(application__status="withdrawn").select_related("application__job__company")
     download, calendar_changed = calendar_download_or_reminder(request, interviews)
     if download is not None:
         return download

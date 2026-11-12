@@ -894,3 +894,51 @@ input:focus,textarea:focus,select:focus {
 
 .dashboard-career-progress .career-progress-button { display: block; margin-top: 16px; padding: 12px 16px; border: 1px solid #223f76; border-radius: 8px; background: #223f76; color: #fff; text-align: center; text-decoration: none; line-height: 1.5; }
 .dashboard-career-progress .career-progress-button:hover { background: #172f5b; border-color: #172f5b; color: #fff; }
+
+.listing-applicant-count { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; color: #223e76; text-decoration: none; padding: 6px 10px; border-radius: 8px; }
+.listing-applicant-count strong { font-size: 20px; }
+.listing-applicant-count small { font-size: 12px; text-decoration: underline; }
+.listing-applicant-count:hover { background: #edf2fc; }
+.listing-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.listing-actions .listing-action { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 18px; border: 1px solid #223e76; border-radius: 8px; font-weight: 600; text-decoration: none; box-sizing: border-box; }
+.listing-actions .listing-action-edit { background: #223e76; color: #fff; }
+.listing-actions .listing-action-edit:hover { background: #172f5b; }
+.listing-actions .listing-action-delete { background: #fff; color: #223e76; }
+.listing-actions .listing-action-delete:hover { background: #edf2fc; }
+
+.recruiter-listings-table { width: 100%; }
+.recruiter-listings-table th:last-child,
+.recruiter-listings-table td:last-child { text-align: right; width: 1%; white-space: nowrap; }
+.recruiter-listings-table .listing-actions { justify-content: flex-end; flex-wrap: nowrap; }
+
+.recruiter-listings-table th:last-child { text-align: center; }
+.recruiter-listings-table .listing-applicants-heading small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.filterbar.recruiter-applicant-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr)) 44px;
+    align-items: end;
+    gap: 16px;
+}
+.filterbar.recruiter-applicant-filters-free { grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr)) 44px; }
+.recruiter-applicant-filters > .field { display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
+.recruiter-applicant-filters input, .recruiter-applicant-filters select { width: 100%; min-width: 0; height: 44px; box-sizing: border-box; }
+.recruiter-applicant-filters .applicant-filter-submit { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-height: 44px; padding: 10px; }
+@media (max-width: 900px) { .filterbar.recruiter-applicant-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 550px) { .filterbar.recruiter-applicant-filters { grid-template-columns: minmax(0, 1fr); } }
+
+
+.pill.application-status { border: 1px solid transparent; }
+.pill.application-status-rejected { background: #fef0f0; color: #a52323; border-color: #efb4b4; }
+.pill.application-status-withdrawn { background: #f0f1f3; color: #555d69; border-color: #d4d8de; }
+.pill.application-status-offer { background: #eaf8ef; color: #1e703e; border-color: #acd8bc; }
+.pill.application-status-shortlisted { background: #fff8d9; color: #735900; border-color: #e8cf70; }
+.pill.application-status-submitted { background: #fff; color: #34435b; border-color: #cfd8e6; }
+.pill.application-status-interview { background: #eaf0ff; color: #223e76; border-color: #c8d6f1; }
+
+.dashboard-applicant-table { margin-top: 18px; }

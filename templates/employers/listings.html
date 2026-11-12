@@ -14,30 +14,24 @@
 
 
 <div class="card table-wrap">
-    <table>
-        <thead><tr><th>Company</th><th>Title</th><th>Applicants</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+    <table class="recruiter-listings-table">
+        <thead><tr><th>Title</th><th class="listing-applicants-heading">Applicants<small>Tap To View</small></th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
             {% for job in jobs %}
                 <tr>
-                    <td>
-                        {% if job.company.logo_url %}
-                            <span class="company-logo company-logo-image"><img src="{{ job.company.logo_url }}" alt="{{ job.company.name }} logo" width="40" height="40"></span>
-                        {% else %}
-                            <span class="company-logo">{{ job.company.name|first|default:"N" }}</span>
-                        {% endif %}
-                        {{ job.company.name }}
-                    </td>
                     <td><a class="job-listing-link" href="{% url 'recruiter_job_detail' job.id %}">{{ job.title }}</a></td>
-                    <td>{{ job.applications.count }}</td>
+                    <td><a class="listing-applicant-count" href="{% url 'recruiter_applicants' %}?job={{ job.id }}" aria-label="View {{ job.applicant_count }} applicants for {{ job.title }}"><strong>{{ job.applicant_count }}</strong></a></td>
                     <td>{{ job.get_employment_type_display }}</td>
                     <td><span class="pill {% if job.status == 'open' %}progress-green{% endif %}">{{ job.get_status_display }}</span></td>
                     <td>
-                        <a class="button small" href="{% url 'recruiter_edit_listing' job.id %}">Edit</a>
-                        <a class="button small" href="{% url 'recruiter_delete_listing' job.id %}">Delete</a>
+                        <div class="listing-actions">
+                            <a class="listing-action listing-action-edit" href="{% url 'recruiter_edit_listing' job.id %}">Edit</a>
+                            <a class="listing-action listing-action-delete" href="{% url 'recruiter_delete_listing' job.id %}">Delete</a>
+                        </div>
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">No job listings yet.</td></tr>
+                <tr><td colspan="5">No job listings yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
