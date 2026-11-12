@@ -46,7 +46,7 @@ def cancel_pro(request):
         None,
     )
     if not payment:
-        if profile.pro_trial_started_at and profile.plan_expires_at:
+        if (profile.pro_trial_started_at or profile.trial_started_at) and profile.plan_expires_at:
             profile.plan = "free"
             profile.plan_expires_at = None
             profile.save(update_fields=["plan", "plan_expires_at"])

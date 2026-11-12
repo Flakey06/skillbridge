@@ -2,6 +2,7 @@ import re
 
 from accounts.models import UserProfile
 from candidates.resume_parser import KNOWN_SKILLS, extract_resume_text
+from candidates.services import merge_completed_certifications
 from matching.services import get_or_update_match
 from candidates.career_paths import CAREER_FIT_PROFILES, CAREER_PATHS, _candidate_source, _skill_matches
 
@@ -14,7 +15,7 @@ def _clean_lines(value):
     return [
         re.sub(r"^[•\-*\s]+", "", line).strip()
         for line in str(value or "").splitlines()
-        if line.strip()
+        if line.strip() and not _is_placeholder(line)
     ]
 
 
@@ -24,10 +25,22 @@ def _dedupe(values):
     for value in values:
         value = str(value or "").strip()
         key = _normalise(value)
-        if value and key not in seen:
+        if value and not _is_placeholder(value) and key not in seen:
             result.append(value)
             seen.add(key)
     return result
+
+
+def _is_placeholder(value):
+    return _normalise(value) in {
+        "",
+        "na",
+        "n/a",
+        "none",
+        "unsure",
+        "not sure",
+        "not provided",
+    }
 
 
 def _contains(text, term):
@@ -103,8 +116,62 @@ def _job_description_points(job, job_skills):
     return _dedupe(relevant or chunks)[:5]
 
 
+def _contextualize_line(line, job):
+    """Reframe generic statements around the job without adding achievements."""
+    text = str(line or "").strip()
+    if not text:
+        return ""
+    job_text = _normalise(
+        " ".join((job.title, job.description, job.required_skills, job.preferred_skills))
+    )
+    is_data_role = any(
+        _contains(job_text, term)
+        for term in ("data analyst", "data analysis", "data visualisation", "data visualization", "analytics")
+    )
+    is_design_role = any(
+        _contains(job_text, term)
+        for term in ("ui/ux", "user experience", "user interface", "product design")
+    )
+    is_people_role = any(
+        _contains(job_text, term)
+        for term in ("human resources", "hr ", "recruitment", "talent acquisition")
+    )
+    is_business_role = any(
+        _contains(job_text, term)
+        for term in ("business analyst", "business analysis", "stakeholder", "requirements analysis")
+    )
+    generic_coding = re.match(
+        r"^(?:i\s+)?(?:like|love|enjoy|prefer)\s+(?:to\s+)?(?:code|coding|programming|program)\.?$",
+        text,
+        flags=re.I,
+    )
+    if generic_coding and is_data_role:
+        return "I enjoy using code to analyse and visualise data."
+    if generic_coding and is_design_role:
+        return "I enjoy using code to build intuitive, user-centred digital experiences."
+    if generic_coding and is_business_role:
+        return "I enjoy using code and structured problem-solving to support data-informed decisions."
+    if generic_coding and is_people_role:
+        return "I enjoy using technology and structured processes to support people-focused work."
+    if generic_coding:
+        return "I enjoy applying programming to solve practical problems."
+
+    generic_interest = re.match(
+        r"^(?:i\s+)?(?:like|love|enjoy|am interested in)\s+(.+)$",
+        text.rstrip("."),
+        flags=re.I,
+    )
+    if generic_interest and is_data_role and any(
+        word in generic_interest.group(1).casefold() for word in ("technology", "computer science", "software")
+    ):
+        return "I am interested in applying technology to analyse and visualise data."
+    return text
+
+
 def _section(title, content):
     content = str(content or "").strip()
+    if _is_placeholder(content):
+        return ""
     return f"{title}\n{content}" if content else ""
 
 
@@ -116,7 +183,10 @@ def build_tailored_resume(candidate, job):
     resume. Writing feedback and missing skills are reviewed separately in the editor.
     """
     profile = UserProfile.objects.filter(user=candidate).first()
-    data = (profile.profile_data if profile else {}) or {}
+    data = merge_completed_certifications(
+        candidate,
+        profile.profile_data if profile else {},
+    )
     resume_text = _uploaded_resume_text(profile)
     job_skills = _job_skills(job)
     candidate_source = " ".join(
@@ -143,23 +213,40 @@ def build_tailored_resume(candidate, job):
         data.get("phone"),
         data.get("linkedin"),
     ])
-    summary_parts = [
-        f"Candidate targeting the {job.title} role at {job.company.name}.",
-    ]
+    focus_summary = {
+        "business": "support business decisions and stakeholder needs",
+        "technical": "solve technical problems and build practical solutions",
+        "role-relevant": f"contribute to the {job.title} role",
+    }[focus]
+    summary_parts = [f"Interested in using my background to {focus_summary}."]
     if data.get("career") or data.get("specialisation"):
         summary_parts.append(
-            "Background: " + ", ".join(
+            "Background in " + ", ".join(
                 value for value in (data.get("career"), data.get("specialisation")) if value
             ) + "."
         )
     if verified_job_skills:
         summary_parts.append(
-            "Relevant evidence currently includes " + ", ".join(verified_job_skills) + "."
+            "Relevant strengths include " + ", ".join(verified_job_skills) + "."
+        )
+    if prioritised_evidence:
+        summary_parts.append(
+            "Relevant evidence from my background includes "
+            + " ".join(
+                _contextualize_line(line, job) for line in prioritised_evidence[:2]
+            )
+            + "."
         )
 
     all_skills = _dedupe(verified_job_skills + candidate_skills)
-    experience_lines = _dedupe(_clean_lines(data.get("experience")) + prioritised_evidence)
-    project_lines = _dedupe(_clean_lines(data.get("portfolio")) + focus_evidence)
+    experience_lines = _dedupe(
+        [_contextualize_line(line, job) for line in _clean_lines(data.get("experience"))]
+        + [_contextualize_line(line, job) for line in prioritised_evidence]
+    )
+    project_lines = _dedupe(
+        [_contextualize_line(line, job) for line in _clean_lines(data.get("portfolio"))]
+        + [_contextualize_line(line, job) for line in focus_evidence]
+    )
 
     sections = [
         name,

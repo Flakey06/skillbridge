@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}Create a job listing · SkillBridge{% endblock %}
 
 {% block content %}
@@ -10,8 +9,6 @@
         {% if not editing %}<a class="button" href="{% url 'recruiter_import_listings' %}">Import listings from CSV / Excel</a>{% endif %}
     </div>
 </div>
-
-{% if messages %}{% for message in messages %}<div class="card profile-message">{{ message }}</div>{% endfor %}{% endif %}
 
 <section class="card account-card create-listing-card" style="width: 100%; max-width: none;">
     <h2>{% if editing %}Edit job listing{% else %}Create a job listing{% endif %}</h2>
@@ -49,6 +46,36 @@
                 </label>
                 {% endif %}
             {% endfor %}
+            {% if has_pro %}<div class="reference-action span2"><button type="submit" name="action" value="suggest_reference">Find Reference Matches</button></div>{% endif %}
+            {% if has_pro and suggestions %}
+            <div class="reference-suggestions span2" aria-live="polite">
+                <div class="reference-suggestions-heading">
+                    <div>
+                        <h3>Reference matches</h3>
+                        <p class="sub">Review similar catalogue jobs and use their skills as suggestions. Each choice reloads the form and replaces only the selected skill field.</p>
+                    </div>
+                </div>
+                {% for suggestion in suggestions %}
+                <article class="reference-suggestion">
+                    <div>
+                        <strong>{{ suggestion.title }}</strong>
+                        <span class="reference-meta">{{ suggestion.score }}% title similarity · {{ suggestion.confidence }} confidence</span>
+                    </div>
+                    <p class="reference-skills">{{ suggestion.skills|join:", " }}</p>
+                    <div class="row wrap">
+                        <button class="small" type="submit" name="action" value="use_reference_required:{{ forloop.counter0 }}">Use skills as required</button>
+                        <button class="small" type="submit" name="action" value="use_reference_preferred:{{ forloop.counter0 }}">Use skills as preferred</button>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            {% if not has_pro %}
+            <div class="card span2">
+                <p class="sub">Pro includes title-based skill suggestions for faster listing creation. <a href="{% url 'plans' %}">View Pro plans →</a></p>
+            </div>
+            {% endif %}
+            {% endif %}
             <div class="static-page-actions span2">
                 <button class="primary" type="submit">{% if editing %}Save changes{% else %}Publish listing{% endif %}</button>
                 {% if editing %}<a class="button" href="{% url 'recruiter_listings' %}">Cancel</a>{% endif %}

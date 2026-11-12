@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} · SkillBridge{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ job.title }}</h1>
+        <p class="sub">{{ job.company.name }} · {{ job.get_employment_type_display }} · {{ job.get_experience_level_display }}</p>
+    </div>
+    <a class="primary button" href="{% url 'recruiter_edit_listing' job.id %}">Edit listing</a>
+</div>
+
+<section class="card listing-detail-card">
+    <div class="section-heading">
+        <h2>Job details</h2>
+        <span class="pill {% if job.status == 'open' %}progress-green{% endif %}">{{ job.get_status_display }}</span>
+    </div>
+    <p class="listing-description">{{ job.description }}</p>
+    <div class="listing-detail-grid">
+        <div><b>Industry</b><span>{{ job.get_industry_display|default:"Not specified" }}</span></div>
+        <div><b>Location</b><span>{{ job.location|default:"Not specified" }}</span></div>
+        <div><b>Compensation</b><span>{{ job.salary_display|default:"Not specified" }}</span></div>
+        <div><b>Applicants</b><span>{{ job.applications.count }}</span></div>
+    </div>
+    <div class="listing-skills">
+        <h3>Required skills</h3>
+        <p>{{ job.required_skills|default:"None specified" }}</p>
+        <h3>Preferred skills</h3>
+        <p>{{ job.preferred_skills|default:"None specified" }}</p>
+    </div>
+</section>
+{% endblock %}

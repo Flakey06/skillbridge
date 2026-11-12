@@ -23,6 +23,7 @@ def plans(request):
             "role": profile.role,
             "profile": profile,
             "has_pro": profile.is_pro,
+            "trial_available": not (profile.pro_trial_started_at or profile.trial_started_at) and not profile.is_pro,
             "payments": Payment.objects.filter(user=request.user)[:5],
             "stripe_enabled": settings.STRIPE_SECRET_KEY.startswith("sk_test_"),
             "pro_plan_price": f"{settings.PRO_PLAN_CURRENCY.upper()} {settings.PRO_PLAN_AMOUNT_CENTS / 100:.2f}",
@@ -41,7 +42,12 @@ def start_pro_trial(request):
         else:
             granted = UserProfile.objects.filter(
                 pk=profile.pk, pro_trial_started_at__isnull=True,
-            ).update(plan="pro", plan_expires_at=now + timedelta(days=7), pro_trial_started_at=now)
+            ).update(
+                plan="pro",
+                plan_expires_at=now + timedelta(days=7),
+                pro_trial_started_at=now,
+                trial_started_at=now,
+            )
             if granted:
                 notify(request.user, "Pro trial started", "Your seven-day Pro trial is active. It ends automatically; no payment details are needed.", "account")
                 messages.success(request, "Your seven-day Pro trial is now active.")

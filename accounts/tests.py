@@ -3,13 +3,17 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
 from .forms import SignupForm
 from .models import Payment, Referral, UserProfile
 from .payment_services import set_stripe_entitlement
+from .models import Notification
 
 
 class AccountOnboardingTests(TestCase):
@@ -306,7 +310,7 @@ class AccountOnboardingTests(TestCase):
             {"resume": SimpleUploadedFile("updated-resume.pdf", b"%PDF-1.4\nupdated", content_type="application/pdf")},
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, reverse("candidate_profile"))
         resume_name = UserProfile.objects.get(user=user).resume.name
         self.assertIn("updated-resume", resume_name)
         self.assertTrue(resume_name.endswith(".pdf"))
@@ -341,6 +345,23 @@ class AccountOnboardingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "candidates/dashboard.html")
+
+    def test_inbox_renders_notification_timestamp(self):
+        user = self._create_user("inbox_user")
+        UserProfile.objects.create(user=user, role="candidate")
+        Notification.objects.create(
+            recipient=user,
+            title="Application update",
+            body="Your application was received.",
+            created_at=timezone.now(),
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("inbox"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Application update")
+        self.assertContains(response, "Your application was received.")
 
     def test_free_user_can_view_pro_checkout_option(self):
         user = self._create_user("free_plan")
@@ -435,6 +456,25 @@ class AccountOnboardingTests(TestCase):
 
         extend_trial.assert_not_called()
         self.assertFalse(Referral.objects.filter(referrer=referrer).exists())
+    def test_trial_pro_can_be_cancelled_without_stripe_subscription(self):
+        user = self._create_user("trial_plan")
+        started_at = timezone.now()
+        UserProfile.objects.create(
+            user=user,
+            role="candidate",
+            plan="pro",
+            trial_started_at=started_at,
+            plan_expires_at=started_at + timedelta(days=7),
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("cancel_pro"))
+
+        self.assertRedirects(response, reverse("plans"))
+        profile = UserProfile.objects.get(user=user)
+        self.assertEqual(profile.plan, "free")
+        self.assertIsNone(profile.plan_expires_at)
+        self.assertIsNotNone(profile.trial_started_at)
 
     def test_signup_can_skip_onboarding_and_reach_dashboard(self):
         response = self.client.post(

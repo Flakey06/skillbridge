@@ -11,7 +11,7 @@
     <div class="row wrap"><a class="button" href="{% url 'recruiter_import_listings' %}">Import CSV / Excel</a><a class="primary button" href="{% url 'recruiter_create_listing' %}">Create listing →</a></div>
 </div>
 
-{% if messages %}{% for message in messages %}<div class="card profile-message">{{ message }}</div>{% endfor %}{% endif %}
+
 
 <div class="card table-wrap">
     <table>
@@ -27,7 +27,7 @@
                         {% endif %}
                         {{ job.company.name }}
                     </td>
-                    <td>{{ job.title }}</td>
+                    <td><a class="job-listing-link" href="{% url 'recruiter_job_detail' job.id %}">{{ job.title }}</a></td>
                     <td>{{ job.applications.count }}</td>
                     <td>{{ job.get_employment_type_display }}</td>
                     <td><span class="pill {% if job.status == 'open' %}progress-green{% endif %}">{{ job.get_status_display }}</span></td>

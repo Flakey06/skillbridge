@@ -27,7 +27,7 @@
                     <td><a href="{% url 'job_detail' application.job.id %}">{{ application.job.title }}</a></td>
                     <td>{{ application.job.company.name }}</td>
                     <td>{{ application.created_at|date:"d M Y" }}</td>
-                    <td>{% if has_pro and application.match_score is not None %}{{ application.match_score }}%{% elif not has_pro %}<a href="{% url 'plans' %}">Pro feature</a>{% else %}—{% endif %}</td>
+                    <td>{% if has_pro and application.overall_score is not None %}<span class="match-badge {% if application.overall_score <= 40 %}match-badge-low{% elif application.overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">Overall suitability: {{ application.overall_score }}%</span>{% elif not has_pro %}<a href="{% url 'plans' %}">Pro feature</a>{% else %}—{% endif %}</td>
                     <td><span class="pill {% if application.status == 'interview' or application.status == 'offer' %}progress-green{% endif %}">{{ application.get_status_display }}</span></td>
                 </tr>
             {% empty %}

@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
 import os
 from pathlib import Path
 
@@ -28,13 +27,25 @@ except ImportError:
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_kyxt@_z@@*esr*r(-+7#3@4_#r@j=cb3t8c$gk30r73u9%=%y'
+SECRET_KEY = os.getenv(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-local-development-only',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv(
+    'DJANGO_DEBUG',
+    'False' if os.getenv('VERCEL') else 'True',
+).lower() == 'true'
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
-
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        'DJANGO_ALLOWED_HOSTS',
+        'localhost,127.0.0.1,testserver,skillbridge-six-delta.vercel.app',
+    ).split(',')
+    if host.strip()
+]
 
 # Application definition
 
@@ -64,6 +75,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.vercel.app',
+    'https://skillbridge-six-delta.vercel.app',
+]
+
 ROOT_URLCONF = 'skillbridgeproj.urls'
 
 TEMPLATES = [
@@ -91,7 +107,7 @@ WSGI_APPLICATION = 'skillbridgeproj.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': '/tmp/db.sqlite3' if os.getenv('VERCEL') else BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -120,7 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Singapore'
 
 USE_I18N = True
 
@@ -132,6 +148,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 # Console output is the local default; SMTP settings can be supplied in .env.
@@ -155,6 +172,9 @@ STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_PRICE_ID = os.getenv('STRIPE_PRICE_ID', '')
 PRO_PLAN_AMOUNT_CENTS = int(os.getenv('PRO_PLAN_AMOUNT_CENTS', '900'))
 PRO_PLAN_CURRENCY = os.getenv('PRO_PLAN_CURRENCY', 'sgd')
+JOB_REFERENCE_CSV = Path(os.getenv('JOB_REFERENCE_CSV') or BASE_DIR / 'data' / 'all_job_post.csv')
+ML_SCREENING_CSV = Path(os.getenv('ML_SCREENING_CSV') or BASE_DIR / 'data' / 'AI_Resume_Screening.csv')
+ML_MODEL_PATH = Path(os.getenv('ML_MODEL_PATH') or BASE_DIR / 'data' / 'ml_models' / 'suitability_model.joblib')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

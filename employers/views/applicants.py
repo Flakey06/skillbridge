@@ -1,5 +1,7 @@
 """Applicant review and application status updates."""
 
+from matching.ml_model import predict_suitability
+from matching.services import calculate_overall_suitability
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
@@ -14,6 +16,8 @@ from .common import _context
 
 @recruiter_required
 def applicants(request):
+    profile = getattr(request.user, "profile", None)
+    has_pro = profile.is_pro if profile else False
     jobs = Job.objects.filter(created_by=request.user)
     applications = JobApplication.objects.filter(job__in=jobs).select_related("candidate", "job")
     job_id = request.GET.get("job")
@@ -53,11 +57,22 @@ def applicants(request):
             return redirect("recruiter_applicants")
     else:
         status_form = ApplicationStatusForm()
-    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, sort=sort))
+    for application in applications:
+        application.status_form = ApplicationStatusForm(instance=application)
+    if has_pro:
+        for application in applications:
+            application.ml_prediction = predict_suitability(application.candidate, application.job)
+            application.overall_score = calculate_overall_suitability(
+                application.match_score,
+                application.ml_prediction["score"],
+            )
+    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, sort=sort, has_pro=has_pro))
 
 
 @recruiter_required
 def applicant_detail(request, application_id):
+    profile = getattr(request.user, "profile", None)
+    has_pro = profile.is_pro if profile else False
     application = get_object_or_404(
         JobApplication.objects.select_related("candidate", "job__company"),
         pk=application_id,
@@ -65,6 +80,11 @@ def applicant_detail(request, application_id):
     )
     candidate_profile = getattr(application.candidate, "candidate_profile", None)
     profile = getattr(application.candidate, "profile", None)
+    ml_prediction = predict_suitability(application.candidate, application.job) if has_pro else None
+    overall_score = calculate_overall_suitability(
+        application.match_score,
+        ml_prediction["score"] if ml_prediction else None,
+    )
     status_form = ApplicationStatusForm(request.POST or None, instance=application)
     if request.method == "POST" and status_form.is_valid():
         status_form.save()
@@ -85,5 +105,8 @@ def applicant_detail(request, application_id):
             candidate_profile=candidate_profile,
             profile=profile,
             status_form=status_form,
+            has_pro=has_pro,
+            ml_prediction=ml_prediction,
+            overall_score=overall_score,
         ),
     )

@@ -74,6 +74,18 @@ h3 {
 .plan-card-pro {
     gap:10px
 }
+.plan-actions {
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+}
+.plan-actions form {
+    margin:0;
+}
+.plan-actions .button {
+    white-space:nowrap;
+}
 .plan-section {
     border-top:1px solid var(--line);
     padding-top:12px

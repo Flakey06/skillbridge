@@ -1,5 +1,7 @@
 """Recruiter dashboard."""
 
+from matching.ml_model import predict_suitability
+from matching.services import calculate_overall_suitability
 from django.shortcuts import render
 from django.utils import timezone
 from accounts.decorators import recruiter_required
@@ -13,6 +15,16 @@ def dashboard(request):
     jobs = Job.objects.filter(created_by=request.user)
     applications = JobApplication.objects.filter(job__in=jobs)
     interviews = Interview.objects.filter(application__in=applications)
+    has_pro = getattr(request.user, "profile", None)
+    has_pro = has_pro.is_pro if has_pro else False
+    recent_applications = applications.select_related("candidate", "job")[:5]
+    if has_pro:
+        for application in recent_applications:
+            ml_prediction = predict_suitability(application.candidate, application.job)
+            application.overall_score = calculate_overall_suitability(
+                application.match_score,
+                ml_prediction["score"],
+            )
     now = timezone.now()
     return render(
         request,
@@ -23,7 +35,8 @@ def dashboard(request):
             applicant_count=applications.count(),
             shortlisted_count=applications.filter(status="shortlisted").count(),
             interview_count=interviews.filter(scheduled_start__gte=now).count(),
-            recent_applications=applications.select_related("candidate", "job")[:5],
+            recent_applications=recent_applications,
+            has_pro=has_pro,
             upcoming_interviews=interviews.filter(scheduled_start__gte=now).select_related("application__job")[:5],
             pending_reschedules=interviews.filter(reschedule_status="pending").select_related("application__candidate", "application__job"),
         ),

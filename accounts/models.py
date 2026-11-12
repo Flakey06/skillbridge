@@ -18,6 +18,7 @@ class UserProfile(models.Model):
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='free')
     plan_expires_at = models.DateTimeField(blank=True, null=True)
     pro_trial_started_at = models.DateTimeField(blank=True, null=True)
+    trial_started_at = models.DateTimeField(blank=True, null=True)
     profile_data = models.JSONField(default=dict, blank=True)
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)

@@ -13,6 +13,21 @@ from .models import JobMatch
 from .ml import predict_ai_compatibility
 
 
+SKILL_MATCH_WEIGHT = 0.70
+ML_SUITABILITY_WEIGHT = 0.30
+
+
+def calculate_overall_suitability(skill_match_score, ml_suitability_score):
+    """Blend direct job alignment with the historical ML signal."""
+    if skill_match_score is None or ml_suitability_score is None:
+        return None
+    blended_score = (
+        (float(skill_match_score) * SKILL_MATCH_WEIGHT)
+        + (float(ml_suitability_score) * ML_SUITABILITY_WEIGHT)
+    )
+    return int(blended_score + 0.5)
+
+
 def _normalise(value):
     return re.sub(r"\s+", " ", value.strip().casefold())
 
@@ -143,6 +158,79 @@ def _evidence_points(candidate, data):
     return round(5 * sum(bool(item) for item in evidence) / len(evidence))
 
 
+def _weighted_skill_match(candidate, data, job, resume_text):
+    skill_weights = job.skill_weights or {}
+    if not skill_weights:
+        return None
+    evidence_weights = job.evidence_weights or {
+        "Projects": 40,
+        "Internship": 50,
+        "Self-proclaimed skills": 10,
+    }
+    profile_skills = _profile_skills(candidate)
+    evidence_text = {
+        "projects": _normalise(" ".join((data.get("portfolio", ""), resume_text))),
+        "internship": _normalise(" ".join((data.get("experience", ""), resume_text))),
+        "self-proclaimed skills": _normalise(data.get("skills", "")),
+    }
+    aliases = {
+        "project": "projects",
+        "projects": "projects",
+        "internship": "internship",
+        "internships": "internship",
+        "work experience": "internship",
+        "experience": "internship",
+        "self-proclaimed skills": "self-proclaimed skills",
+        "self proclaimed skills": "self-proclaimed skills",
+        "profile skills": "self-proclaimed skills",
+    }
+    normalised_evidence_weights = {
+        aliases.get(_normalise(source), _normalise(source)): float(weight)
+        for source, weight in evidence_weights.items()
+    }
+    total_evidence_weight = sum(normalised_evidence_weights.values()) or 100
+    details = []
+    weighted_score = 0
+    matched = []
+    missing = []
+    for skill, raw_weight in skill_weights.items():
+        skill_weight = float(raw_weight)
+        skill_key = _normalise(skill)
+        source_scores = {}
+        for source, source_weight in normalised_evidence_weights.items():
+            text = evidence_text.get(source, "")
+            present = (
+                skill_key in profile_skills
+                if source == "self-proclaimed skills"
+                else _contains_skill(text, skill)
+            )
+            source_scores[source] = {
+                "matched": present,
+                "weight": source_weight,
+            }
+        evidence_score = sum(
+            item["weight"] for item in source_scores.values() if item["matched"]
+        ) / total_evidence_weight
+        weighted_score += skill_weight * evidence_score
+        if evidence_score:
+            matched.append(skill)
+        else:
+            missing.append(skill)
+        details.append({
+            "skill": skill,
+            "skill_weight": skill_weight,
+            "evidence_score": round(evidence_score * 100),
+            "sources": source_scores,
+        })
+    return {
+        "score": round(weighted_score),
+        "matched": matched,
+        "missing": missing,
+        "details": details,
+        "evidence_weights": normalised_evidence_weights,
+    }
+
+
 def _assessment(score):
     if score >= 80:
         return "Strong fit"
@@ -189,10 +277,11 @@ def calculate_match(candidate, job):
     candidate_skills = _profile_skills(candidate)
     resume_text = _resume_text(candidate)
     required_skills, preferred_skills = _job_skill_sets(job)
+    weighted_skill_match = _weighted_skill_match(candidate, data, job, resume_text)
 
     # Do not imply a candidate is compatible when the recruiter has not
     # provided enough job information to compare against anything.
-    if not required_skills and not preferred_skills:
+    if not weighted_skill_match and not required_skills and not preferred_skills:
         breakdown = {
             "required_skills": {"earned": 0, "max": 0},
             "preferred_skills": {"earned": 0, "max": 0},

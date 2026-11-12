@@ -1,5 +1,7 @@
 """Job discovery, saved jobs, and application tracking."""
 
+from matching.services import calculate_overall_suitability
+from matching.ml_model import predict_suitability
 import re
 
 from django.db.models import Q
@@ -9,7 +11,7 @@ from applications.models import JobApplication, SavedJob
 from jobs.forms import JobFilterForm
 from jobs.models import Job
 from matching.services import get_or_update_match
-from .common import _context
+from .common import _context, _current_profile
 
 
 @candidate_required
@@ -54,11 +56,19 @@ def jobs(request):
 
     saved_ids = set(SavedJob.objects.filter(candidate=request.user).values_list("job_id", flat=True))
     applied_ids = set(JobApplication.objects.filter(candidate=request.user).values_list("job_id", flat=True))
+    has_pro = _current_profile(request).is_pro
     job_cards = []
     for job in job_queryset:
+        match = get_or_update_match(request.user, job) if has_pro else None
+        ml_prediction = predict_suitability(request.user, job) if has_pro else None
         job_cards.append({
             "job": job,
-            "match": get_or_update_match(request.user, job),
+            "match": match,
+            "ml_prediction": ml_prediction,
+            "overall_score": calculate_overall_suitability(
+                match.score if match else None,
+                ml_prediction["score"] if ml_prediction else None,
+            ),
             "is_saved": job.id in saved_ids,
             "has_applied": job.id in applied_ids,
         })
@@ -71,6 +81,13 @@ def jobs(request):
 @candidate_required
 def applications(request):
     application_list = JobApplication.objects.filter(candidate=request.user).select_related("job__company")
+    has_pro = _current_profile(request).is_pro
+    for application in application_list:
+        ml_prediction = predict_suitability(request.user, application.job) if has_pro else None
+        application.overall_score = calculate_overall_suitability(
+            application.match_score,
+            ml_prediction["score"] if ml_prediction else None,
+        )
     return render(request, "candidates/applications.html", _context(request, applications=application_list))
 
 
@@ -84,4 +101,20 @@ def saved_jobs(request):
         return redirect("candidate_saved_jobs")
     saved = SavedJob.objects.filter(candidate=request.user).select_related("job__company")
     applied_ids = set(JobApplication.objects.filter(candidate=request.user).values_list("job_id", flat=True))
-    return render(request, "candidates/jobs.html", _context(request, form=JobFilterForm(), job_cards=[{"job": item.job, "match": get_or_update_match(request.user, item.job), "is_saved": True, "has_applied": item.job_id in applied_ids} for item in saved], saved_page=True))
+    has_pro = _current_profile(request).is_pro
+    job_cards = []
+    for item in saved:
+        match = get_or_update_match(request.user, item.job) if has_pro else None
+        ml_prediction = predict_suitability(request.user, item.job) if has_pro else None
+        job_cards.append({
+            "job": item.job,
+            "match": match,
+            "ml_prediction": ml_prediction,
+            "overall_score": calculate_overall_suitability(
+                match.score if match else None,
+                ml_prediction["score"] if ml_prediction else None,
+            ),
+            "is_saved": True,
+            "has_applied": item.job_id in applied_ids,
+        })
+    return render(request, "candidates/jobs.html", _context(request, form=JobFilterForm(), job_cards=job_cards, saved_page=True))

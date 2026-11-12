@@ -62,7 +62,7 @@ input[type=checkbox],input[type=radio] {
     background:var(--bg)
 }
 .onboard-header {
-    padding:22px 5vw;
+    padding:22px var(--page-gutter);
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -77,7 +77,7 @@ input[type=checkbox],input[type=radio] {
 main.onboard-layout {
     max-width:1270px;
     margin:auto;
-    padding:38px 30px;
+    padding:38px var(--page-gutter);
     display:grid;
     grid-template-columns:280px minmax(0,1fr);
     gap:48px

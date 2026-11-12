@@ -1,0 +1,88 @@
+.reference-suggestions {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--soft);
+}
+.reference-suggestions-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+}
+.reference-suggestions-heading .sub {
+    margin-top: 4px;
+    font-size: 12px;
+}
+.reference-suggestion {
+    display: grid;
+    gap: 8px;
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+}
+.reference-action {
+    display:flex;
+    align-items:end;
+    padding-bottom:1px
+}
+.job-listing-link {
+    font-weight:600;
+    color:var(--ink);
+    text-decoration:none
+}
+.job-listing-link:hover {
+    color:var(--green);
+    text-decoration:underline
+}
+.listing-detail-card {
+    width:100%;
+    max-width:none
+}
+.listing-description {
+    max-width:900px;
+    line-height:1.7;
+    white-space:pre-wrap
+}
+.listing-detail-grid {
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:16px;
+    margin:25px 0;
+    padding:18px 0;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line)
+}
+.listing-detail-grid div {
+    display:grid;
+    gap:6px
+}
+.listing-detail-grid span,
+.listing-skills p {
+    color:var(--muted)
+}
+.listing-skills {
+    display:grid;
+    gap:9px;
+    max-width:900px
+}
+.reference-meta {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+}
+.reference-skills {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.create-listing-card .static-page-actions {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+}

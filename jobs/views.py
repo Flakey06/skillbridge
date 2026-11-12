@@ -8,7 +8,8 @@ from accounts.decorators import candidate_required
 from accounts.notification_helpers import notify
 from applications.forms import ApplicationForm
 from applications.models import JobApplication, SavedJob
-from matching.services import get_or_update_match
+from matching.services import calculate_overall_suitability, get_or_update_match
+from matching.ml_model import predict_suitability
 from resumes.models import TailoredResume
 from resumes.services import build_tailored_cover_letter, build_tailored_resume
 
@@ -39,8 +40,19 @@ def save_job(request, job_id):
 def detail(request, job_id):
     job = get_object_or_404(Job.objects.select_related("company"), pk=job_id)
     application = JobApplication.objects.filter(candidate=request.user, job=job).first()
+    tailored_draft = TailoredResume.objects.filter(
+        candidate=request.user,
+        job=job,
+    ).first()
     is_saved = SavedJob.objects.filter(candidate=request.user, job=job).exists()
-    match = get_or_update_match(request.user, job)
+    profile = getattr(request.user, "profile", None)
+    has_pro = profile.is_pro if profile else False
+    match = get_or_update_match(request.user, job) if has_pro else None
+    ml_prediction = predict_suitability(request.user, job) if has_pro else None
+    overall_score = calculate_overall_suitability(
+        match.score if match else None,
+        ml_prediction["score"] if ml_prediction else None,
+    )
     form = ApplicationForm(
         request.POST or None,
         initial={"cover_note": build_tailored_cover_letter(request.user, job)},
@@ -79,6 +91,24 @@ def detail(request, job_id):
                     "Please complete your name, career area, and specialisation before applying.",
                 )
             elif form.is_valid():
+                if not tailored_draft:
+                    tailored_draft = TailoredResume.objects.create(
+                        candidate=request.user,
+                        job=job,
+                        title=f"Resume for {job.title}",
+                        content=build_tailored_resume(request.user, job),
+                    )
+                    messages.info(
+                        request,
+                        "Please review your tailored resume before submitting your application.",
+                    )
+                    return redirect("resume_detail", resume_id=tailored_draft.id)
+                if not tailored_draft.approved_at:
+                    messages.warning(
+                        request,
+                        "Please review and approve your tailored resume before submitting.",
+                    )
+                    return redirect("resume_detail", resume_id=tailored_draft.id)
                 application = form.save(commit=False)
                 application.candidate = request.user
                 application.job = job
@@ -117,11 +147,14 @@ def detail(request, job_id):
         "jobs/detail.html",
         {
             "role": "candidate",
-            "has_pro": getattr(getattr(request.user, "profile", None), "is_pro", False),
+            "has_pro": has_pro,
             "job": job,
             "application": application,
+            "tailored_draft": tailored_draft,
             "is_saved": is_saved,
             "match": match,
+            "ml_prediction": ml_prediction,
+            "overall_score": overall_score,
             "form": form,
             "profile_missing_fields": profile_missing_fields,
             "main_resume": main_resume,

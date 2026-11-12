@@ -55,7 +55,7 @@ class AccountSecurityTests(TestCase):
         token = default_token_generator.make_token(self.user)
         with override_settings(PASSWORD_RESET_TIMEOUT=0):
             from django.utils import timezone
-            with patch.object(default_token_generator, '_now', return_value=timezone.now().replace(tzinfo=None) + timedelta(seconds=5)):
+            with patch.object(default_token_generator, '_now', return_value=default_token_generator._now() + timedelta(seconds=5)):
                 response = self.client.get(reverse('password_reset_confirm', args=[uid, token]), follow=True)
                 self.assertFalse(response.context['validlink'])
 

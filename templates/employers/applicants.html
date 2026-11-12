@@ -32,13 +32,13 @@
                 <tr>
                     <td><a href="{% url 'recruiter_applicant_detail' application.id %}">{{ application.candidate.username }}</a></td>
                     <td>{{ application.job.title }}</td>
-                    <td>{% if has_pro and application.match_score is not None %}{{ application.match_score }}%{% elif not has_pro %}<a href="{% url 'plans' %}">Pro ranking</a>{% else %}—{% endif %}</td>
+                    <td>{% if has_pro and application.overall_score is not None %}{{ application.overall_score }}%<br><small>Overall suitability</small>{% elif not has_pro %}<a href="{% url 'plans' %}">Pro ranking</a>{% else %}—{% endif %}</td>
                     <td><span class="pill {% if application.status == 'shortlisted' or application.status == 'interview' %}progress-green{% endif %}">{{ application.get_status_display }}</span></td>
                     <td>
                         <form method="post" class="row">
                             {% csrf_token %}
                             <input type="hidden" name="application_id" value="{{ application.id }}">
-                            {{ status_form.status }}
+                            {{ application.status_form.status }}
                             <button type="submit">Save</button>
                         </form>
                         {% if application.status == "submitted" %}

@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from django.urls import reverse
 
 from accounts.models import UserProfile
@@ -11,7 +12,7 @@ from jobs.models import Job
 from resumes.services import build_tailored_cover_letter, build_tailored_resume
 
 from .forms import CandidateProfileForm
-from .models import CandidateMilestone, Certification
+from .models import CandidateMilestone, CandidateProfile, Certification
 from .career_paths import career_progress
 
 
@@ -114,6 +115,47 @@ class ResumeAutofillTests(TestCase):
 
 
 class CareerProgressTests(TestCase):
+    def test_completed_certificate_is_visible_in_profile_resume_and_tailored_resume(self):
+        user = User.objects.create_user(username="certificate-sync", password="testpass123")
+        UserProfile.objects.create(
+            user=user,
+            role="candidate",
+            profile_data={"name": "Certificate Candidate"},
+        )
+        certification = Certification.objects.create(
+            title="Google Data Analytics",
+            provider="Google",
+            career_area="technology",
+        )
+        CandidateMilestone.objects.create(
+            candidate=user,
+            certification=certification,
+            status="completed",
+            certificate_id="GDA-123",
+            completed_at=timezone.now(),
+        )
+        recruiter = User.objects.create_user(username="certificate-recruiter", password="testpass123")
+        company = Company.objects.create(name="Certificate Company")
+        job = Job.objects.create(
+            company=company,
+            created_by=recruiter,
+            title="Data Analyst",
+            description="Analyse business data.",
+            employment_type="full_time",
+        )
+        self.client.force_login(user)
+
+        profile_response = self.client.get(reverse("candidate_profile"))
+        resume_response = self.client.get(reverse("candidate_resume"))
+        tailored_resume = build_tailored_resume(user, job)
+
+        self.assertContains(profile_response, "Google Data Analytics (Certificate ID: GDA-123)")
+        self.assertContains(resume_response, "Google Data Analytics (Certificate ID: GDA-123)")
+        self.assertIn("Google Data Analytics (Certificate ID: GDA-123)", tailored_resume)
+        self.assertEqual(
+            CandidateProfile.objects.get(user=user).certifications,
+            "Google Data Analytics (Certificate ID: GDA-123)",
+        )
     def test_linkedin_profile_accepts_url_without_scheme(self):
         form = CandidateProfileForm(data={"linkedin": "linkedin.com/in/jamie"})
 
@@ -130,13 +172,53 @@ class CareerProgressTests(TestCase):
             {"phone_country_code": "+65", "phone": "81234567"},
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, reverse("candidate_profile"))
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.profile_data["phone_country_code"], "+65")
         self.assertEqual(profile.profile_data["phone"], "+65 81234567")
 
         response = self.client.get("/profile/")
         self.assertContains(response, 'value="81234567"')
+
+    def test_saved_profile_data_is_used_by_resume_page(self):
+        user = User.objects.create_user(username="profile-resume-sync", password="testpass123")
+        UserProfile.objects.create(user=user, role="candidate")
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("candidate_profile"),
+            {
+                "name": "Jamie Updated",
+                "career": "business",
+                "specialisation": "business-analysis",
+                "career_stage": "beginner",
+                "career_interests": ["business-analysis"],
+                "education": "undergraduate",
+                "institution": "nus",
+                "experience": "Analysed customer data for a market research project.",
+                "certifications": "Google Data Analytics",
+                "skills": "Excel, SQL",
+                "portfolio": "https://example.com/project",
+                "awards": "Dean's list",
+                "linkedin": "linkedin.com/in/jamie-updated",
+                "visa": "citizen",
+                "phone_country_code": "+65",
+                "phone": "81234567",
+                "email": "jamie@example.com",
+            },
+        )
+
+        self.assertRedirects(response, reverse("candidate_profile"))
+        profile = UserProfile.objects.get(user=user)
+        self.assertEqual(profile.profile_data["name"], "Jamie Updated")
+        self.assertEqual(profile.profile_data["skills"], "Excel, SQL")
+        resume_response = self.client.get(reverse("candidate_resume"))
+        self.assertContains(resume_response, "Jamie Updated")
+        self.assertContains(resume_response, "Google Data Analytics")
+        self.assertContains(resume_response, "Excel, SQL")
+        self.assertContains(resume_response, "Business")
+        self.assertContains(resume_response, "Business analysis")
+        self.assertContains(resume_response, "National University of Singapore (NUS)")
 
     def test_saved_career_directions_are_used_by_skill_development(self):
         user = User.objects.create_user(username="direction-save", password="Password123!")
@@ -156,7 +238,7 @@ class CareerProgressTests(TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, reverse("candidate_profile"))
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.profile_data["career_interests"], ["software-engineering", "fintech"])
 
@@ -495,8 +577,37 @@ class CareerProgressTests(TestCase):
         self.assertIn("marketing dashboard", letter)
 
         tailored_resume = build_tailored_resume(user, job)
-        self.assertIn("Evidence foregrounded for this role: business", tailored_resume)
         self.assertIn("marketing dashboard", tailored_resume)
+        self.assertNotIn("EMPLOYER DETAILS USED", tailored_resume)
+        self.assertNotIn("JOB DESCRIPTION PRIORITIES", tailored_resume)
+        self.assertNotIn("TAILORING NOTES", tailored_resume)
+
+    def test_tailored_resume_contextualises_generic_coding_statement(self):
+        user = User.objects.create_user(username="data-candidate", password="test-pass")
+        UserProfile.objects.create(
+            user=user,
+            role="candidate",
+            profile_data={
+                "name": "Data Candidate",
+                "career": "computer science",
+                "experience": "I like to code",
+            },
+        )
+        recruiter = User.objects.create_user(username="data-recruiter", password="test-pass")
+        company = Company.objects.create(name="Data Company")
+        job = Job.objects.create(
+            company=company,
+            created_by=recruiter,
+            title="Data Analyst",
+            description="Analyse and visualise data for business decisions.",
+            employment_type="full_time",
+            required_skills="SQL, Excel",
+        )
+
+        tailored_resume = build_tailored_resume(user, job)
+
+        self.assertIn("I enjoy using code to analyse and visualise data.", tailored_resume)
+        self.assertNotIn("I like to code", tailored_resume)
 
     def test_dashboard_links_selected_directions_to_progress_page(self):
         user = User.objects.create_user(username="dashboard-progress", password="Password123!")

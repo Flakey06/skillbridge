@@ -8,7 +8,8 @@
     --line:#e2e7df;
     --soft:#edf3e8;
     --orange:#b56b35;
-    --shadow:0 8px 28px #213b3208
+    --shadow:0 8px 28px #213b3208;
+    --page-gutter:clamp(16px,3vw,38px)
 }
 * {
     box-sizing:border-box
@@ -320,7 +321,7 @@ progress::-moz-progress-bar {
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:0 38px;
+    padding:0 var(--page-gutter);
     background:#ffffffb5
 }
 .crumb {
@@ -369,7 +370,7 @@ progress::-moz-progress-bar {
 main {
     max-width:1500px;
     margin:auto;
-    padding:32px 38px 40px
+    padding:32px var(--page-gutter) 40px
 }
 .page-head {
     display:flex;
@@ -537,6 +538,16 @@ main {
 }
 .section-heading h2 {
     font-size:18px
+}
+.section-icon {
+    width:20px;
+    height:20px;
+    stroke:currentColor;
+    stroke-width:1.6;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    color:var(--muted)
 }
 .text-link {
     border:0;
@@ -883,21 +894,33 @@ td p {
 }
 .toast {
     position:fixed;
-    bottom:24px;
-    left:50%;
-    transform:translateX(-50%) translateY(100px);
+    top:24px;
+    right:24px;
     background:#234d39;
     color:#fff;
     padding:14px 24px;
     border-radius:10px;
     box-shadow:0 6px 25px #123c3425;
-    transition:.25s;
-    z-index:200;
-    max-width:90%;
+    max-width:min(420px,calc(100vw - 48px));
     font-size:13px
 }
-.toast.show {
-    transform:translateX(-50%) translateY(0)
+.toast-container {
+    position:fixed;
+    top:24px;
+    right:24px;
+    z-index:200;
+    display:grid;
+    gap:10px;
+    max-width:min(420px,calc(100vw - 48px));
+}
+.toast-container .toast {
+    position:static;
+    max-width:none;
+    animation:toast-fade 5s ease forwards;
+}
+@keyframes toast-fade {
+    0%,88% { opacity:1; }
+    100% { opacity:0; }
 }
 .mobile-logo {
     display:none
@@ -928,6 +951,98 @@ td p {
 .account-card {
     max-width:700px
 }
+.company-card {
+    width:100%;
+    max-width:none
+}
+.match-badge {
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:72px;
+    min-height:32px;
+    padding:6px 9px;
+    border-radius:7px;
+    font-size:11px;
+    font-weight:700;
+    white-space:nowrap
+}
+.match-badge-with-help {
+    cursor:help
+}
+.match-help {
+    position:absolute;
+    z-index:5;
+    left:0;
+    top:calc(100% + 8px);
+    width:260px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--ink);
+    color:white;
+    font-size:11px;
+    font-weight:400;
+    line-height:1.5;
+    white-space:normal;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .15s ease
+}
+.match-badge-with-help:hover .match-help,
+.match-badge-with-help:focus-within .match-help {
+    opacity:1;
+    visibility:visible
+}
+.skill-match-explanation {
+    display:grid;
+    gap:8px;
+    margin:15px 0;
+    color:var(--muted);
+    line-height:1.5
+}
+.skill-match-explanation strong {
+    color:var(--ink)
+}
+.score-breakdown {
+    display:grid;
+    gap:8px;
+    margin-top:12px;
+    max-width:620px
+}
+.score-breakdown-item {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--soft);
+    color:var(--ink);
+    font-size:12px
+}
+.score-breakdown-item span {
+    text-transform:capitalize
+}
+.score-breakdown-item strong {
+    color:var(--green);
+    white-space:nowrap
+}
+.match-badge-low {
+    background:#fbe5e3;
+    color:#a33c36
+}
+.match-badge-medium {
+    background:#fff0d9;
+    color:#a96a16
+}
+.match-badge-high {
+    background:#e2f1e4;
+    color:#32734a
+}
 .status-select {
     width:auto;
     padding:7px;
@@ -949,7 +1064,7 @@ a {
 }
 @media(min-width:1500px) {
     main {
-        padding:42px 50px
+        padding:42px var(--page-gutter)
     }
     .content-columns {
         grid-template-columns:minmax(0,1fr)
@@ -970,10 +1085,10 @@ a {
         margin-left:195px
     }
     main {
-        padding:25px
+        padding:25px var(--page-gutter)
     }
     .topbar {
-        padding:0 25px
+        padding:0 var(--page-gutter)
     }
     .content-columns {
         grid-template-columns:minmax(0,1fr)
@@ -1070,10 +1185,10 @@ a {
     }
     .topbar {
         height:61px;
-        padding:0 16px
+        padding:0 var(--page-gutter)
     }
     main {
-        padding:24px 16px
+        padding:24px var(--page-gutter)
     }
     .topbar .person {
         display:none

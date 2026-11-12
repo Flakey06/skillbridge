@@ -23,7 +23,7 @@
         <div class="card">
             <div class="section-heading"><div><h2>Recent applicants</h2><p class="section-description">Candidates who need your attention.</p></div><a class="text-link" href="{% url 'recruiter_applicants' %}">View all →</a></div>
             {% for application in recent_applications %}
-                <div class="notification-item"><div class="row between"><b>{{ application.candidate.username }}</b><span class="pill">{{ application.get_status_display }}</span></div><p>{{ application.job.title }} · {% if has_pro and application.match_score is not None %}{{ application.match_score }}% match{% elif not has_pro %}<a href="{% url 'plans' %}">Pro ranking</a>{% else %}Match pending{% endif %}</p></div>
+                <div class="notification-item"><div class="row between"><b>{{ application.candidate.username }}</b><span class="pill">{{ application.get_status_display }}</span></div><p>{{ application.job.title }} · {% if has_pro and application.overall_score is not None %}<span class="match-badge {% if application.overall_score <= 40 %}match-badge-low{% elif application.overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">Overall suitability: {{ application.overall_score }}%</span>{% elif not has_pro %}<a href="{% url 'plans' %}">Pro ranking</a>{% else %}Match pending{% endif %}</p></div>
             {% empty %}
                 <p class="sub">No applications yet.</p>
             {% endfor %}
@@ -31,7 +31,7 @@
     </section>
 
     <aside class="aside dashboard-aside">
-        <div class="card"><div class="section-heading"><h2>Upcoming interviews</h2><span>□</span></div>{% for interview in upcoming_interviews %}<h3>{{ interview.application.job.title }}</h3><p class="section-description">{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>{% empty %}<p class="section-description">No upcoming interviews.</p>{% endfor %}<a class="button small" href="{% url 'recruiter_calendar' %}">Open calendar</a></div>
+        <div class="card"><div class="section-heading"><h2>Upcoming Interviews</h2><svg class="section-icon" viewBox="0 0 24 24" aria-label="Calendar" role="img"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h2M14 13h2M8 17h2"/></svg></div>{% for interview in upcoming_interviews %}<h3>{{ interview.application.job.title }}</h3><p class="section-description">{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>{% empty %}<p class="section-description">No upcoming interviews.</p>{% endfor %}<a class="button small" href="{% url 'recruiter_calendar' %}">Open Calendar</a></div>
         {% if pending_reschedules %}
         <div class="card">
             <h2>Reschedule requests</h2>

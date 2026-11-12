@@ -1,5 +1,6 @@
 """Learning pathways and certificate verification submissions."""
 
+from ..services import sync_candidate_profile
 from pathlib import Path
 import re
 from django.contrib import messages
@@ -237,6 +238,26 @@ def learning(request):
         if evidence_file:
             update_fields.append("evidence_file")
         milestone.save(update_fields=update_fields)
+        if next_status == "completed":
+            data = dict(profile.profile_data or {})
+            certification_label = certification.title
+            if milestone.certificate_id:
+                certification_label = f"{certification.title} (Certificate ID: {milestone.certificate_id})"
+            certification_lines = [
+                line.strip()
+                for line in str(data.get("certifications", "") or "").splitlines()
+                if line.strip()
+            ]
+            certification_lines = [
+                line for line in certification_lines
+                if line != certification.title
+                and not line.startswith(f"{certification.title} (Certificate ID:")
+            ]
+            certification_lines.append(certification_label)
+            data["certifications"] = "\n".join(certification_lines)
+            profile.profile_data = data
+            profile.save(update_fields=["profile_data"])
+            sync_candidate_profile(request.user, data)
         redirect_url = reverse("candidate_learning")
         if job_id:
             redirect_url = f"{redirect_url}?job={job_id}"

@@ -1,4 +1,4 @@
-from .models import CandidateProfile
+from .models import CandidateMilestone, CandidateProfile
 from .resume_parser import autofill_profile_data, extract_resume_text
 
 
@@ -68,6 +68,58 @@ def sync_candidate_profile(user, data):
     candidate_profile.profile_complete_percent = round(completed / len(tracked_fields) * 100)
     candidate_profile.save()
     return candidate_profile
+
+
+def merge_completed_certifications(user, data):
+    """Include verified milestone certificates in every profile representation."""
+    merged = dict(data or {})
+    lines = [
+        line.strip()
+        for line in str(merged.get("certifications", "") or "").splitlines()
+        if line.strip()
+    ]
+    seen = {line.casefold() for line in lines}
+    certificates = list(merged.get("completed_career_certificates", []) or [])
+    certificate_titles = {
+        str(item.get("title", "")).strip().casefold()
+        for item in certificates
+        if isinstance(item, dict)
+    }
+    for milestone in CandidateMilestone.objects.filter(
+        candidate=user,
+        status="completed",
+    ).select_related("certification"):
+        title = milestone.certification.title.strip()
+        if not title:
+            continue
+        label = title
+        if milestone.certificate_id:
+            label = f"{title} (Certificate ID: {milestone.certificate_id})"
+        if label.casefold() not in seen:
+            lines.append(label)
+            seen.add(label.casefold())
+        if title.casefold() not in certificate_titles:
+            certificates.append(
+                {
+                    "title": title,
+                    "provider": milestone.certification.provider,
+                    "certificate_id": milestone.certificate_id,
+                }
+            )
+            certificate_titles.add(title.casefold())
+    merged["certifications"] = "\n".join(lines)
+    merged["completed_career_certificates"] = certificates
+    from accounts.models import UserProfile
+
+    user_profile = UserProfile.objects.filter(user=user).first()
+    if user_profile and user_profile.profile_data != merged:
+        user_profile.profile_data = merged
+        user_profile.save(update_fields=["profile_data"])
+    candidate_profile, _ = CandidateProfile.objects.get_or_create(user=user)
+    if candidate_profile.certifications != merged["certifications"]:
+        candidate_profile.certifications = merged["certifications"]
+        candidate_profile.save(update_fields=["certifications", "updated_at"])
+    return merged
 
 
 def autofill_from_resume(resume_file, existing_data):

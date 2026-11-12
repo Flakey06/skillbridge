@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils import timezone
 
 # Create your tests here.
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from django.urls import reverse
 from accounts.models import UserProfile
 from employers.models import Company, RecruiterProfile
 from jobs.models import Job
+from resumes.models import TailoredResume
 
 from .forms import InterviewForm
 from .models import Interview, JobApplication, SavedJob
@@ -23,6 +25,7 @@ class ApplicationWorkflowTests(TestCase):
         UserProfile.objects.create(
             user=self.candidate,
             role="candidate",
+            plan="pro",
             profile_data={
                 "name": "Test Candidate",
                 "career": "technology",
@@ -54,6 +57,23 @@ class ApplicationWorkflowTests(TestCase):
             {"action": "apply", "cover_note": "I am interested."},
         )
 
+        self.assertRedirects(response, reverse("resume_detail", args=[1]))
+        self.assertFalse(JobApplication.objects.filter(candidate=self.candidate, job=self.job).exists())
+        self.assertContains(self.client.get(reverse("resume_detail", args=[1])), "Only an approved draft")
+
+    def test_candidate_can_apply_with_approved_tailored_resume(self):
+        tailored_resume = TailoredResume.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            content="Approved tailored resume",
+            approved_at=timezone.now(),
+        )
+        self.client.force_login(self.candidate)
+        response = self.client.post(
+            reverse("job_detail", args=[self.job.pk]),
+            {"action": "apply", "cover_note": "I am interested."},
+        )
+
         self.assertRedirects(response, reverse("candidate_applications"))
         application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
         # Two of three skills earn 47 points, plus 3 for declared skills.
@@ -61,6 +81,27 @@ class ApplicationWorkflowTests(TestCase):
         self.assertEqual(application.missing_skills, ["JavaScript"])
         self.assertEqual(application.match_breakdown["skill_match"]["earned"], 47)
         self.assertEqual(application.match_breakdown["evidence_match"]["earned"], 3)
+        self.assertEqual(application.match_breakdown["required_skills"], {"earned": 40, "max": 60})
+        self.assertEqual(application.tailored_resume, tailored_resume.content)
+
+    def test_candidate_application_submits_saved_tailored_resume(self):
+        TailoredResume.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            title="Backend application draft",
+            content="My edited tailored resume",
+            approved_at=timezone.now(),
+        )
+        self.client.force_login(self.candidate)
+
+        response = self.client.post(
+            reverse("job_detail", args=[self.job.pk]),
+            {"action": "apply", "cover_note": "I am interested."},
+        )
+
+        self.assertRedirects(response, reverse("candidate_applications"))
+        application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
+        self.assertEqual(application.tailored_resume, "My edited tailored resume")
 
     def test_recruiter_can_update_status_and_schedule_interview(self):
         JobApplication.objects.create(candidate=self.candidate, job=self.job)

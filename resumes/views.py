@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db import transaction
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.decorators import candidate_required
@@ -21,7 +22,8 @@ def detail(request, resume_id):
             messages.error(request, "Your resume cannot be empty.")
         else:
             tailored_resume.content = without_legacy_notes(content)
-            tailored_resume.save(update_fields=["content", "updated_at"])
+            tailored_resume.approved_at = timezone.now() if request.POST.get("action") == "approve" else None
+            tailored_resume.save(update_fields=["content", "approved_at", "updated_at"])
             messages.success(request, "Your resume changes were saved.")
             return redirect("resume_detail", resume_id=tailored_resume.id)
     return render(

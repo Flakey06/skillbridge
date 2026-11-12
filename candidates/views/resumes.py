@@ -1,5 +1,7 @@
 """Resume review and career-interest tailoring."""
 
+from accounts.choices import CAREER_CHOICES, CAREER_INTEREST_CHOICES, CAREER_STAGE_CHOICES, EDUCATION_CHOICES, INSTITUTION_CHOICES, SPECIALISATION_CHOICES
+from ..services import merge_completed_certifications
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from accounts.notification_helpers import notify
@@ -14,13 +16,53 @@ from ..career_paths import (
 from ..resume_parser import extract_resume_text, review_resume
 from resumes.models import TailoredResume
 from resumes.services import build_interest_tailored_resume
-from .common import _current_profile, _selected_career_interests, _context
+from .common import _current_profile, _selected_career_interests, _career_interest_labels, _context
 
 
 @candidate_required
 def resume(request):
-    profile = getattr(request.user, "profile", None)
-    data = (profile.profile_data if profile else {}) or {}
+    profile = _current_profile(request)
+    data = merge_completed_certifications(
+        request.user,
+        profile.profile_data if profile else {},
+    )
+    resume_data = dict(data)
+    resume_data["email"] = request.user.email
+    resume_data["career_label"] = dict(CAREER_INTEREST_CHOICES).get(
+        data.get("career"),
+        dict(CAREER_CHOICES).get(data.get("career"), data.get("career", "")),
+    )
+    resume_data["specialisation_label"] = dict(SPECIALISATION_CHOICES).get(
+        data.get("specialisation"),
+        data.get("specialisation", ""),
+    )
+    resume_data["education_label"] = dict(EDUCATION_CHOICES).get(
+        data.get("education"),
+        data.get("education", ""),
+    )
+    resume_data["institution_label"] = dict(INSTITUTION_CHOICES).get(
+        data.get("institution"),
+        data.get("institution", ""),
+    )
+    resume_data["career_stage_label"] = dict(CAREER_STAGE_CHOICES).get(
+        data.get("career_stage"),
+        data.get("career_stage", ""),
+    )
+    resume_data["career_interest_labels"] = _career_interest_labels(
+        _selected_career_interests(data)
+    )
+    certificate_entries = list(resume_data.get("completed_career_certificates", []))
+    existing_certifications = str(resume_data.get("certifications", "") or "").strip()
+    certification_lines = [line.strip() for line in existing_certifications.splitlines() if line.strip()]
+    for certificate in certificate_entries:
+        title = certificate.get("title", "").strip()
+        certificate_id = certificate.get("certificate_id", "").strip()
+        if not title:
+            continue
+        line = f"{title} (Certificate ID: {certificate_id})" if certificate_id else title
+        if line not in certification_lines:
+            certification_lines.append(line)
+    resume_data["certifications"] = "\n".join(certification_lines)
     feedback = None
     fit_matrix = resume_fit_matrix(request.user, _selected_career_interests(data))
     tailored_drafts = {
@@ -37,7 +79,7 @@ def resume(request):
     return render(request, "candidates/resume.html", _context(
         request,
         profile=profile,
-        profile_data=data,
+        profile_data=resume_data,
         feedback=feedback,
         fit_matrix=fit_matrix,
         main_resume=main_resume,

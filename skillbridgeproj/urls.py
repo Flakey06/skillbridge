@@ -41,6 +41,7 @@ urlpatterns = [
     path('plans/', views.plans, name='plans'),
     path('plans/trial/', views.start_pro_trial, name='start_pro_trial'),
     path('plans/checkout/confirm/', views.pro_checkout_confirm, name='pro_checkout_confirm'),
+    path('plans/trial/start/', views.start_pro_trial, name='start_pro_trial'),
     path('plans/checkout/', views.start_pro_checkout, name='start_pro_checkout'),
     path('plans/cancel/confirm/', views.cancel_pro_confirm, name='cancel_pro_confirm'),
     path('plans/cancel/', views.cancel_pro, name='cancel_pro'),

@@ -1580,6 +1580,7 @@ button.primary {
     }
     .career-milestone > summary.career-milestone-summary .career-milestone-progress {
         grid-column: 3;
+        grid-row: 1 / span 2;
     }
     .career-milestone > summary.career-milestone-summary .career-milestone-toggle {
         grid-column: 4;

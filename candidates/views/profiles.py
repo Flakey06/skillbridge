@@ -1,5 +1,6 @@
 """Candidate profile editing and resume autofill."""
 
+from ..services import merge_completed_certifications
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from accounts.models import UserProfile
@@ -21,7 +22,7 @@ from .common import _context, _completion_percent
 
 
 def _profile_initial(request, profile):
-    data = profile.profile_data or {}
+    data = merge_completed_certifications(request.user, profile.profile_data)
     stored_phone = str(data.get("phone", "") or "").strip()
     phone_country_code = data.get("phone_country_code", "") or "+65"
     phone_number = stored_phone
@@ -59,6 +60,10 @@ def _profile_initial(request, profile):
 @candidate_required
 def profile(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user, defaults={"role": "candidate"})
+    merged_profile_data = merge_completed_certifications(request.user, profile.profile_data)
+    if merged_profile_data != profile.profile_data:
+        profile.profile_data = merged_profile_data
+        profile.save(update_fields=["profile_data"])
     initial = _profile_initial(request, profile)
     form = CandidateProfileForm(request.POST or None, request.FILES or None, initial=initial)
     if request.method == "POST" and form.is_valid():

@@ -15,8 +15,17 @@
         <main>{% block content %}{% endblock %}</main>
     </div>
     {% endblock %}
+    {% if messages %}
+    <div class="toast-container" aria-live="polite" aria-atomic="true">
+        {% for message in messages %}
+            <div class="toast toast-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% block extra_scripts %}{% endblock %}
     <script src="{% static 'skillbridge/js/navigation.js' %}"></script>
     <script src="{% static 'skillbridge/js/skill-preview.js' %}?v=skill-overflow-2"></script>
     <script src="{% static 'skillbridge/js/saved-jobs.js' %}?v=form-action-fix-2"></script>
+    <script src="{% static 'skillbridge/js/toasts.js' %}"></script>
 </body>
 </html>

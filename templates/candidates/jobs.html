@@ -31,7 +31,7 @@
 <section class="card job-results-panel" aria-label="Available jobs">
 <div class="job-list"{% if saved_page %} data-saved-job-list{% endif %}>
     {% for card in job_cards %}
-        {% include "components/job_card.html" with job=card.job match=card.match is_saved=card.is_saved has_applied=card.has_applied has_pro=has_pro %}
+        {% include "components/job_card.html" with job=card.job match=card.match ml_prediction=card.ml_prediction overall_score=card.overall_score is_saved=card.is_saved has_applied=card.has_applied has_pro=has_pro %}
     {% empty %}
         <div class="card">
             <h2>No jobs found</h2>
