@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page %}
+<main class="password-recovery-page">
+    <section class="card password-recovery-card">
+        <a class="brand-logo-shell brand-logo-form" href="{% url 'login' %}"><img class="brand-logo-image" src="{% static 'skillbridge/images/skillbridge-logo.png' %}" alt="SkillBridge"></a>
+        {% block recovery_content %}{% endblock %}
+    </section>
+</main>
+{% endblock %}

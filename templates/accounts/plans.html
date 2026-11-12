@@ -70,19 +70,7 @@
             <a class="button button-danger" href="{% url 'cancel_pro_confirm' %}">{% if profile.pro_trial_started_at and profile.plan_expires_at %}End trial{% else %}Cancel Pro{% endif %}</a>
             {% if not profile.plan_expires_at %}<p class="sub">You can cancel before the next renewal. We will ask you to confirm first.</p>{% endif %}
         {% else %}
-<<<<<<< HEAD
-            {% if not profile.pro_trial_started_at %}
-                <form method="post" action="{% url 'start_pro_trial' %}">
-                    {% csrf_token %}
-                    <button class="primary button" type="submit">Start 7-day free trial</button>
-                </form>
-                <p class="sub">Try all Pro features once, with no payment details. Access ends automatically after seven days.</p>
-            {% else %}
-                <p class="sub">Your seven-day free trial has been used.</p>
-            {% endif %}
-=======
             <div class="plan-actions">
->>>>>>> origin/model
             {% if stripe_enabled %}
                 <a class="primary button" href="{% url 'pro_checkout_confirm' %}">Continue to Pro checkout →</a>
                 {% if trial_available %}

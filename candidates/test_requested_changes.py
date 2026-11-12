@@ -11,6 +11,8 @@ from applications.models import JobApplication, SavedJob
 from employers.models import Company
 from jobs.models import Job
 from resumes.models import TailoredResume
+from candidates.views import _completion_percent
+from candidates.forms import CandidateProfileForm
 
 
 @patch("matching.services.predict_ai_compatibility", side_effect=lambda resume, job, score: (score, {"mode": "skill_fallback"}))
@@ -42,6 +44,49 @@ class RequestedWorkflowTests(TestCase):
         self.assertEqual(response.context["job_cards"][0]["job"], self.high)
         response = self.client.get(url, {"sort": "match", "q": "Java"})
         self.assertEqual([card["job"] for card in response.context["job_cards"]], [self.low])
+
+    def test_name_edit_keeps_completion_and_updates_dashboard_display_name(self, predictor):
+        self.profile.profile_data = {"name": "jj", "career": "business", "specialisation": "fintech", "skills": "Python"}
+        self.profile.save()
+        before = _completion_percent(self.profile)
+        initial = CandidateProfileForm(initial=self.profile.profile_data)
+        self.assertIn("fintech", dict(initial.fields["specialisation"].choices))
+        response = self.client.post(reverse("candidate_profile"), {
+            "name": "james", "career": "business", "specialisation": "fintech", "skills": "Python",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.display_name, "james")
+        self.assertEqual(self.profile.initials, "JA")
+        self.assertEqual(_completion_percent(self.profile), before)
+        self.assertContains(self.client.get(reverse("home")), '<span class="preserve-case">james</span>')
+
+    def test_removing_all_experience_and_certifications_persists(self, predictor):
+        self.profile.profile_data = {
+            "experience": "Previous experience", "experience_entries": [{"position": "Intern"}],
+            "certifications": "Previous certificate", "certification_entries": [{"name": "Course"}],
+        }
+        self.profile.save()
+        response = self.client.post(reverse("candidate_profile"), {
+            "experience": "", "experience_entries": "[]",
+            "certifications": "", "certification_entries": "[]",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.profile_data["experience_entries"], [])
+        self.assertEqual(self.profile.profile_data["certification_entries"], [])
+        self.assertEqual(self.profile.profile_data["experience"], "")
+        self.assertEqual(self.profile.profile_data["certifications"], "")
+
+    def test_validation_error_returns_scroll_and_expanded_section_state(self, predictor):
+        response = self.client.post(reverse("candidate_profile"), {
+            "linkedin": "https://example.com/not-linkedin",
+            "profile_scroll_y": "1250", "profile_open_sections": "[false,true]",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors)
+        self.assertContains(response, 'data-restore-scroll="1250"')
+        self.assertContains(response, 'data-restore-sections="[false,true]"')
 
     def test_applied_status_is_shared_across_cards_and_detail(self, predictor):
         JobApplication.objects.create(candidate=self.candidate, job=self.high)

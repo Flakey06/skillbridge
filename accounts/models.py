@@ -31,9 +31,13 @@ class UserProfile(models.Model):
         )
 
     @property
-    def initials(self):
+    def display_name(self):
         name = str((self.profile_data or {}).get("name", "")).strip()
-        display_name = name or self.user.get_full_name().strip() or self.user.username
+        return name or self.user.get_full_name().strip() or self.user.username
+
+    @property
+    def initials(self):
+        display_name = self.display_name
         parts = display_name.split()
         if len(parts) > 1:
             return f"{parts[0][0]}{parts[-1][0]}".upper()

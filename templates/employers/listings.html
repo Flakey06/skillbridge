@@ -19,7 +19,6 @@
         <tbody>
             {% for job in jobs %}
                 <tr>
-<<<<<<< HEAD
                     <td>
                         {% if job.company.logo_url %}
                             <span class="company-logo company-logo-image"><img src="{{ job.company.logo_url }}" alt="{{ job.company.name }} logo" width="40" height="40"></span>
@@ -28,10 +27,7 @@
                         {% endif %}
                         {{ job.company.name }}
                     </td>
-                    <td>{{ job.title }}</td>
-=======
                     <td><a class="job-listing-link" href="{% url 'recruiter_job_detail' job.id %}">{{ job.title }}</a></td>
->>>>>>> origin/model
                     <td>{{ job.applications.count }}</td>
                     <td>{{ job.get_employment_type_display }}</td>
                     <td><span class="pill {% if job.status == 'open' %}progress-green{% endif %}">{{ job.get_status_display }}</span></td>

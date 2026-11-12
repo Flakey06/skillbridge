@@ -151,8 +151,16 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@skillbridge.local'
+# Console output is the local default; SMTP settings can be supplied in .env.
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').lower() == 'true'
+EMAIL_TIMEOUT = 15
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@skillbridge.local')
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
@@ -164,9 +172,9 @@ STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_PRICE_ID = os.getenv('STRIPE_PRICE_ID', '')
 PRO_PLAN_AMOUNT_CENTS = int(os.getenv('PRO_PLAN_AMOUNT_CENTS', '900'))
 PRO_PLAN_CURRENCY = os.getenv('PRO_PLAN_CURRENCY', 'sgd')
-JOB_REFERENCE_CSV = Path(os.getenv('JOB_REFERENCE_CSV', BASE_DIR / 'data' / 'all_job_post.csv'))
-ML_SCREENING_CSV = Path(os.getenv('ML_SCREENING_CSV', BASE_DIR / 'data' / 'AI_Resume_Screening.csv'))
-ML_MODEL_PATH = Path(os.getenv('ML_MODEL_PATH', BASE_DIR / 'data' / 'ml_models' / 'suitability_model.joblib'))
+JOB_REFERENCE_CSV = Path(os.getenv('JOB_REFERENCE_CSV') or BASE_DIR / 'data' / 'all_job_post.csv')
+ML_SCREENING_CSV = Path(os.getenv('ML_SCREENING_CSV') or BASE_DIR / 'data' / 'AI_Resume_Screening.csv')
+ML_MODEL_PATH = Path(os.getenv('ML_MODEL_PATH') or BASE_DIR / 'data' / 'ml_models' / 'suitability_model.joblib')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -16,44 +16,31 @@
     <main class="resume-main-column">
     {% if main_resume %}
     <article class="resume-paper">
-<<<<<<< HEAD
         <pre class="resume-draft">{{ main_resume.clean_content }}</pre>
     </article>
     {% else %}
     <article class="resume-paper">
         <header class="resume-document-header">
             <div>
-                <h2>{{ profile_data.name|default:request.user.username }}</h2>
-                <p>{{ profile_data.career|default:"Career area not set" }} · {{ profile_data.specialisation|default:"Specialisation not set" }}</p>
+                <h2 class="preserve-case">{{ profile_data.name|default:request.user.username }}</h2>
+                <p>{{ profile_data.career_label|default:"Career area not set" }} · {{ profile_data.specialisation_label|default:"Specialisation not set" }}</p>
             </div>
             <p class="resume-document-contact">{{ request.user.email }}{% if profile_data.phone %}<br>{{ profile_data.phone }}{% endif %}{% if profile_data.linkedin %}<br>{{ profile_data.linkedin }}{% endif %}</p>
         </header>
-=======
-        <h2>{{ profile_data.name|default:request.user.username }}</h2>
-        <p>
-            {% if profile_data.career_label %}{{ profile_data.career_label }}{% endif %}
-            {% if profile_data.specialisation_label %} · {{ profile_data.specialisation_label }}{% endif %}
-            {% if profile_data.institution_label %} · {{ profile_data.institution_label }}{% endif %}
-        </p>
->>>>>>> origin/model
         <h3>Profile</h3>
         {% if profile_data.career_stage_label %}<p><strong>Current level:</strong> {{ profile_data.career_stage_label }}</p>{% endif %}
         {% if profile_data.career_interest_labels %}<p><strong>Career directions:</strong> {{ profile_data.career_interest_labels|join:", " }}</p>{% endif %}
         <p>Interested in {{ profile_data.specialisation_label|default:"a new career direction" }}.</p>
         {% if profile_data.email or profile_data.phone or profile_data.linkedin %}<p><strong>Contact:</strong> {{ profile_data.email }}{% if profile_data.phone %} · {{ profile_data.phone }}{% endif %}{% if profile_data.linkedin %} · {{ profile_data.linkedin }}{% endif %}</p>{% endif %}
 
-        <h3>Education</h3><p>{{ profile_data.education|default:"Education level not set" }}{% if profile_data.institution %}<br>{{ profile_data.institution }}{% endif %}</p>
+        <h3>Education</h3><p>{{ profile_data.education_label|default:"Education level not set" }}{% if profile_data.institution %}<br>{{ profile_data.institution_label }}{% endif %}</p>
 
         <h3>Experience</h3>
         <p>{{ profile_data.experience|default:"Add your work experience through My profile."|linebreaksbr }}</p>
 
-        <h3>Education</h3>
-        <p>{% if profile_data.education_label %}{{ profile_data.education_label }}{% endif %}{% if profile_data.institution_label %}{% if profile_data.education_label %} · {% endif %}{{ profile_data.institution_label }}{% endif %}</p>
-
         <h3>Certifications</h3>
         <p>{{ profile_data.certifications|default:"No certifications added yet."|linebreaksbr }}</p>
 
-<<<<<<< HEAD
         <section class="resume-document-highlight">
             <h3>Skills, work and achievements</h3>
             <div class="resume-document-columns">
@@ -66,16 +53,6 @@
 
         <h3>LinkedIn</h3>
         <p>{{ profile_data.linkedin|default:"No LinkedIn profile added yet." }}</p>
-=======
-        <h3>Skills</h3>
-        <p>{{ profile_data.skills|default:"Add your technical skills through My profile."|linebreaksbr }}</p>
-
-        <h3>Projects and portfolio</h3>
-        <p>{{ profile_data.portfolio|default:"No projects or portfolio links added yet."|linebreaksbr }}</p>
-
-        <h3>Awards and achievements</h3>
-        <p>{{ profile_data.awards|default:"No awards or achievements added yet."|linebreaksbr }}</p>
->>>>>>> origin/model
     </article>
     {% endif %}
 

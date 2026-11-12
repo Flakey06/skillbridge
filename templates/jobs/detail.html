@@ -46,29 +46,6 @@
 
     {% if has_pro %}
     <div class="card match-summary">
-<<<<<<< HEAD
-        <div class="skill-summary-group">
-            <h3>Matched:</h3>
-            <ul class="skill-summary-list">{% for skill in match.matched_skills %}<li>{{ skill }}</li>{% empty %}<li>None yet</li>{% endfor %}</ul>
-        </div>
-        <div class="skill-summary-group">
-            <h3>Missing:</h3>
-            <ul class="skill-summary-list">{% for skill in match.missing_skills %}<li>{{ skill }}</li>{% empty %}<li>None</li>{% endfor %}</ul>
-        </div>
-        {% if match.score_breakdown.evidence_match.details %}
-        <div class="skill-summary-group">
-            <h3>Evidence found:</h3>
-            <ul class="skill-summary-list">{% for label, detail in match.score_breakdown.evidence_match.details.items %}{% if detail.earned %}<li>{{ label|capfirst }}</li>{% endif %}{% endfor %}</ul>
-            {% if not match.score_breakdown.evidence_match.earned %}<p class="muted">None yet</p>{% endif %}
-        </div>
-        <div class="skill-summary-group">
-            <h3>Missing evidence:</h3>
-            <ul class="skill-summary-list">{% for label, detail in match.score_breakdown.evidence_match.details.items %}{% if not detail.earned %}<li>{{ label|capfirst }}</li>{% endif %}{% endfor %}</ul>
-            {% if match.score_breakdown.evidence_match.earned == match.score_breakdown.evidence_match.max %}<p class="muted">None</p>{% endif %}
-        </div>
-        {% endif %}
-        {% if match.missing_skills %}<a class="button small" href="{% url 'candidate_learning' %}?job={{ job.id }}">Explore courses to bridge the gap →</a>{% endif %}
-=======
         <div class="section-heading">
             <div>
                 <p class="eyebrow">YOUR READINESS</p>
@@ -96,7 +73,6 @@
             <div class="score-breakdown-item"><span>Skill Match (70%)</span><strong>{{ match.score }}%</strong></div>
             <div class="score-breakdown-item"><span>ML suitability signal (30%)</span><strong>{{ ml_prediction.score }}%</strong></div>
         </div>
->>>>>>> origin/model
     </div>
     {% else %}
     <div class="card match-summary">
@@ -136,8 +112,6 @@
         <p><span class="pill">{{ application.get_status_display }}</span></p>
         <p class="sub">You applied for this job on {{ application.created_at|date:"d M Y" }}.</p>
     {% else %}
-<<<<<<< HEAD
-=======
         <div class="divider"></div>
         <h2>Apply for this job</h2>
         {% if tailored_draft %}
@@ -149,7 +123,6 @@
         {% else %}
             <p class="sub">SkillBridge will generate a job-specific draft from your current profile. You must review and approve it before applying.</p>
         {% endif %}
->>>>>>> origin/model
         {% if profile_missing_fields %}
             <div class="card profile-message">
                 <strong>Complete your essential profile first.</strong>

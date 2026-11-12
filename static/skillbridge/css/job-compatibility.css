@@ -210,3 +210,28 @@
     .job-header-compatibility .job-header-scores { width: 100%; }
     .job-compatibility-caption { max-width: none; }
 }
+
+/* Two-row job discovery filters; each control keeps its own grid cell. */
+.job-search-panel .job-discovery-filters {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 20px 16px;
+}
+.job-discovery-filters .job-filter-query { grid-column: span 5; }
+.job-discovery-filters .job-filter-location { grid-column: span 3; }
+.job-discovery-filters .job-filter-employment { grid-column: span 4; }
+.job-discovery-filters .job-filter-skills { grid-column: span 3; }
+.job-discovery-filters .job-filter-experience { grid-column: span 2; }
+.job-discovery-filters .job-filter-salary { grid-column: span 3; }
+.job-discovery-filters .job-filter-sort { grid-column: span 3; }
+.job-discovery-filters .field { margin: 0; align-self: start; }
+.job-discovery-filters .job-filter-submit { display: inline-flex; align-items: center; justify-content: center; padding: 10px; }
+.job-filter-submit svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.job-discovery-filters .job-filter-help { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; }
+.job-discovery-filters .errorlist { color: #ba1c1c; }
+@media (max-width: 1100px) {
+    .job-search-panel .job-discovery-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .job-discovery-filters > .field, .job-discovery-filters > .job-filter-submit { grid-column: span 1; }
+}
+@media (max-width: 600px) {
+    .job-search-panel .job-discovery-filters { grid-template-columns: minmax(0, 1fr); }
+}

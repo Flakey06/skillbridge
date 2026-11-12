@@ -755,3 +755,54 @@
         grid-template-columns:75px 1fr
     }
 }
+
+.cal-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.calendar-update-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1000;
+    max-width: min(430px, calc(100vw - 48px));
+    padding: 18px 22px;
+    border-radius: 12px;
+    background: #223e76;
+    color: white;
+    box-shadow: 0 8px 28px #17244733;
+    font: inherit;
+    animation: calendar-toast-dismiss 18s forwards;
+}
+.calendar-update-toast a {
+    display: block;
+    margin-top: 8px;
+    color: white;
+    font-weight: 700;
+}
+.calendar-update-toast:focus-within,
+.calendar-update-toast:hover { animation-play-state: paused; }
+@keyframes calendar-toast-dismiss {
+    0%, 94% { opacity: 1; visibility: visible; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
+.cal-toolbar-actions > a.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid var(--line, #cfdbef);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--primary, #223e76);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.cal-toolbar-actions > a.button:hover {
+    background: #edf2fc;
+}

@@ -159,4 +159,30 @@ class JobFilterForm(forms.Form):
         required=False,
         choices=[("", "Any employment type")] + Job.EMPLOYMENT_TYPES,
     )
-    industry = forms.ChoiceField(required=False, choices=[("", "Any industry")] + list(Job._meta.get_field("industry").choices))
+
+    required_skills = forms.CharField(
+        required=False, label="Required Skills", max_length=500,
+        widget=forms.TextInput(attrs={"placeholder": "e.g. Python, SQL"}),
+        help_text="Separate skills with commas. Jobs must require all listed skills.",
+    )
+    experience_level = forms.ChoiceField(
+        required=False, label="Experience Level",
+        choices=[("", "Any experience level")] + Job.EXPERIENCE_LEVELS,
+    )
+
+    # Upper bounds are exclusive, so adjacent bands have no ambiguous boundary.
+    SALARY_RANGES = {
+        "under_2000": (None, 2000),
+        "2000_3999": (2000, 4000),
+        "4000_5999": (4000, 6000),
+        "6000_7999": (6000, 8000),
+        "8000_plus": (8000, None),
+    }
+    salary_range = forms.ChoiceField(
+        required=False, label="Salary Range (SGD / Month)",
+        choices=[
+            ("", "Any salary"), ("under_2000", "Under S$2,000"),
+            ("2000_3999", "S$2,000–S$3,999"), ("4000_5999", "S$4,000–S$5,999"),
+            ("6000_7999", "S$6,000–S$7,999"), ("8000_plus", "S$8,000 and above"),
+        ],
+    )

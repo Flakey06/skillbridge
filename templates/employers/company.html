@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Company profile · SkillBridge{% endblock %}
+{% block title %}Company profile · SkillBridge<section class="card account-card company-card">
+    <h2>Find a company</h2>
+    <p class="sub">Search your saved companies or use a LinkedIn company URL. LinkedIn lookup is enabled when the server has an approved API token.</p>
+    <form method="get" class="filterbar">
+        {{ lookup_form.query }}
+        <button class="button" type="submit">Find company</button>
+    </form>
+    {% if lookup_data %}
+        <div class="profile-message">
+            <strong>Company found from {{ lookup_data.source|title }}.</strong>
+            <p>{{ lookup_data.name }}{% if lookup_data.website %} · {{ lookup_data.website }}{% endif %}</p>
+            {% if lookup_data.logo_url %}<img src="{{ lookup_data.logo_url }}" alt="{{ lookup_data.name }} logo" width="48" height="48">{% endif %}
+            <p class="sub">The details above are now prefilled in the company form. Review and save them.</p>
+        </div>
+    {% endif %}
+</section>
+
+{% endblock %}
 
 {% block content %}
 <div class="page-head">
@@ -8,15 +25,11 @@
         <h1>Company profile</h1>
         <p class="sub">Keep your hiring information current.</p>
     </div>
+    <a class="account-settings-link" href="{% url 'account_settings' %}" aria-label="Account Settings" title="Account Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2v3l3 1 1 3h5l1-3 3-1v-3l2-2-2-4-3-1-1-3z"/><circle cx="11.5" cy="11.5" r="3"/></svg></a>
 </div>
 
 
-<<<<<<< HEAD
-<form method="post" enctype="multipart/form-data" class="card account-card">
-=======
-
-<form method="post" class="card account-card company-card">
->>>>>>> origin/model
+<form method="post" enctype="multipart/form-data" class="card account-card company-card">
     {% csrf_token %}
     <div class="form-grid">
         {% for field in form %}
@@ -31,7 +44,6 @@
     <div class="static-page-actions"><button class="primary" type="submit">Save company profile</button></div>
 </form>
 
-<<<<<<< HEAD
 {% if company.logo_url %}
 <section class="card account-card company-logo-status">
     <p class="eyebrow">Company logo</p>
@@ -40,7 +52,11 @@
         <div>
             <strong>{{ company.name }}</strong>
             <p class="sub">Logo connected and visible on your job listings.</p>
-=======
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <section class="card account-card company-card">
     <h2>Find a company</h2>
     <p class="sub">Search your saved companies or use a LinkedIn company URL. LinkedIn lookup is enabled when the server has an approved API token.</p>
@@ -54,10 +70,8 @@
             <p>{{ lookup_data.name }}{% if lookup_data.website %} · {{ lookup_data.website }}{% endif %}</p>
             {% if lookup_data.logo_url %}<img src="{{ lookup_data.logo_url }}" alt="{{ lookup_data.name }} logo" width="48" height="48">{% endif %}
             <p class="sub">The details above are now prefilled in the company form. Review and save them.</p>
->>>>>>> origin/model
         </div>
-    </div>
+    {% endif %}
 </section>
-{% endif %}
 
 {% endblock %}

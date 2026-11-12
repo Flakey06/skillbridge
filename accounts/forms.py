@@ -53,6 +53,10 @@ class SignupForm(UserCreationForm):
         model = User
         fields = ("username", "email", "password1", "password2", "role")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password2"].label = "Re-enter Password"
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]

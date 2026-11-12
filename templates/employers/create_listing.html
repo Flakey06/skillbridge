@@ -18,7 +18,6 @@
         <form method="post" class="form-grid">
             {% csrf_token %}
             {% for field in form %}
-<<<<<<< HEAD
                 {% if field.name != 'required_skills' and field.name != 'preferred_skills' %}
                 <label class="field {% if field.name == 'description' or field.name == 'required_skills' or field.name == 'required_skill_choices' or field.name == 'preferred_skills' or field.name == 'preferred_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
                     {% include "components/field_label.html" with field=field %}
@@ -47,30 +46,7 @@
                 </label>
                 {% endif %}
             {% endfor %}
-            <div class="static-page-actions span2">
-                <button class="primary" type="submit">{% if editing %}Save changes{% else %}Publish listing{% endif %}</button>
-                {% if editing %}<a class="button" href="{% url 'recruiter_listings' %}">Cancel</a>{% endif %}
-            </div>
-=======
-                {% if field.name == 'title' %}
-                <label class="field">{{ field.label }}{{ field }}{{ field.errors }}</label>
-                {% endif %}
-            {% endfor %}
-            <p class="muted span2">Optional weighted matching: define recruiter priorities such as <code>Creativity: 60</code> and <code>UI/UX: 40</code>. Evidence can be weighted with <code>Projects: 40</code>, <code>Internship: 50</code>, and <code>Self-proclaimed skills: 10</code>.</p>
-            {% if has_pro %}
-            {% endif %}
-            {% for field in form %}
-                {% if field.name != 'title' %}
-                <label class="field {% if field.name == 'description' or field.name == 'required_skills' or field.name == 'preferred_skills' %}span2{% endif %}">
-                    {{ field.label }}{{ field }}{{ field.errors }}
-                </label>
-                {% if field.name == 'stipend' and has_pro %}
-                <div class="reference-action">
-                    <button class="small" type="submit" name="action" value="suggest_reference">Find reference matches</button>
-                </div>
-                {% endif %}
-                {% endif %}
-            {% endfor %}
+            {% if has_pro %}<div class="reference-action span2"><button type="submit" name="action" value="suggest_reference">Find Reference Matches</button></div>{% endif %}
             {% if has_pro and suggestions %}
             <div class="reference-suggestions span2" aria-live="polite">
                 <div class="reference-suggestions-heading">
@@ -100,8 +76,10 @@
             </div>
             {% endif %}
             {% endif %}
-            <div class="static-page-actions span2"><button class="primary" type="submit">Create job</button></div>
->>>>>>> origin/model
+            <div class="static-page-actions span2">
+                <button class="primary" type="submit">{% if editing %}Save changes{% else %}Publish listing{% endif %}</button>
+                {% if editing %}<a class="button" href="{% url 'recruiter_listings' %}">Cancel</a>{% endif %}
+            </div>
         </form>
     {% endif %}
 </section>
