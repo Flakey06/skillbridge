@@ -1,0 +1,20 @@
+<span class="applicant-score-preview">
+    <a class="applicant-score-link" href="{% url 'recruiter_applicant_detail' application.id %}#{{ section }}" aria-label="View {{ label }} details for {{ application.candidate.username }}" aria-describedby="{{ section }}-preview-{{ application.id }}">
+        {% include "components/compatibility_score.html" with label=label score=score hide_label=True %}
+    </a>
+    <span class="applicant-score-tooltip" role="tooltip" id="{{ section }}-preview-{{ application.id }}">
+        <strong>{{ label }}</strong>
+        {% if section == 'skill-compatibility' %}
+            {% if application.match_score is None %}
+                <span>No saved skill assessment is available.</span>
+            {% else %}
+                <span><b>Missing Skills:</b> {{ application.missing_skills|join:", "|default:"No missing skills recorded." }}</span>
+                <span><b>Assessment:</b> {{ application.match_assessment|default:"Not recorded" }}</span>
+            {% endif %}
+        {% else %}
+            <span>{{ application.ml_prediction.label|default:"ML prediction based on the candidate’s profile." }}</span>
+            <span>The model does not provide individual gap explanations. View Skill Compatibility for recorded missing skills.</span>
+        {% endif %}
+        <span class="applicant-score-tooltip-hint">Click To View Details</span>
+    </span>
+</span>

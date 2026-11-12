@@ -540,6 +540,7 @@ main {
     font-size:18px
 }
 .section-icon {
+    flex-shrink:0;
     width:20px;
     height:20px;
     stroke:currentColor;

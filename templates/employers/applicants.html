@@ -10,51 +10,27 @@
     </div>
 </div>
 
-<form class="card filterbar" method="get">
-    <select name="job">
-        <option value="">All job listings</option>
-        {% for job in jobs %}<option value="{{ job.id }}"{% if request.GET.job == job.id|stringformat:"s" %} selected{% endif %}>{{ job.title }}</option>{% endfor %}
-    </select>
-    <select name="status">
-        <option value="">All statuses</option>
-        {% for value, label in status_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
-    </select>
-    <input name="q" placeholder="Search applicants" value="{{ request.GET.q|default:'' }}" aria-label="Search applicants">
-    {% if has_pro %}<label class="field">Sort by<select name="sort"><option value="newest"{% if sort != 'match' %} selected{% endif %}>Newest first</option><option value="match"{% if sort == 'match' %} selected{% endif %}>Highest match score</option></select></label>{% endif %}
-    <button type="submit">Filter</button>
+<form class="card filterbar recruiter-applicant-filters{% if not has_pro %} recruiter-applicant-filters-free{% endif %}" method="get">
+    <label class="field" for="applicant-job">Job Name
+        <select id="applicant-job" name="job">
+            <option value="">All Job Listings</option>
+            {% for job in jobs %}<option value="{{ job.id }}"{% if request.GET.job == job.id|stringformat:"s" %} selected{% endif %}>{{ job.title }}</option>{% endfor %}
+        </select>
+    </label>
+    <label class="field" for="applicant-status">Status
+        <select id="applicant-status" name="status">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </label>
+    <label class="field" for="applicant-search">Search Applicants
+        <input id="applicant-search" name="q" placeholder="Search applicants" value="{{ request.GET.q|default:'' }}">
+    </label>
+    {% if has_pro %}<label class="field" for="applicant-sort">Sort By<select id="applicant-sort" name="sort"><option value="newest"{% if sort != 'match' %} selected{% endif %}>Newest First</option><option value="match"{% if sort == 'match' %} selected{% endif %}>Highest Skill Compatibility</option></select></label>{% endif %}
+    <button class="primary applicant-filter-submit" type="submit" aria-label="Filter Applicants" title="Filter Applicants"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
 </form>
 
-<div class="card table-wrap">
-    <table>
-        <thead><tr><th>Candidate</th><th>Role</th><th>Fit score</th><th>Status</th><th>Update</th></tr></thead>
-        <tbody>
-            {% for application in applications %}
-                <tr>
-                    <td><a href="{% url 'recruiter_applicant_detail' application.id %}">{{ application.candidate.username }}</a></td>
-                    <td>{{ application.job.title }}</td>
-                    <td>{% if has_pro and application.overall_score is not None %}{{ application.overall_score }}%<br><small>Overall suitability</small>{% elif not has_pro %}<a href="{% url 'plans' %}">Pro ranking</a>{% else %}—{% endif %}</td>
-                    <td><span class="pill {% if application.status == 'shortlisted' or application.status == 'interview' %}progress-green{% endif %}">{{ application.get_status_display }}</span></td>
-                    <td>
-                        <form method="post" class="row">
-                            {% csrf_token %}
-                            <input type="hidden" name="application_id" value="{{ application.id }}">
-                            {{ application.status_form.status }}
-                            <button type="submit">Save</button>
-                        </form>
-                        {% if application.status == "submitted" %}
-                            <form method="post" class="row" style="margin-top: 8px">
-                                {% csrf_token %}
-                                <input type="hidden" name="application_id" value="{{ application.id }}">
-                                <input type="hidden" name="status" value="shortlisted">
-                                <button class="button small" type="submit">Shortlist</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="5">No applicants match your filters.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card table-wrap applicant-score-table-wrap">
+    {% include "components/applicant_table.html" with applications=applications show_update=True %}
 </div>
 {% endblock %}

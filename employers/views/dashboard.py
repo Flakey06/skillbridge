@@ -4,6 +4,7 @@ from matching.ml_model import predict_suitability
 from matching.services import calculate_overall_suitability
 from django.shortcuts import render
 from django.utils import timezone
+from accounts.dashboard_helpers import dashboard_greeting
 from accounts.decorators import recruiter_required
 from applications.models import Interview, JobApplication
 from jobs.models import Job
@@ -21,6 +22,7 @@ def dashboard(request):
     if has_pro:
         for application in recent_applications:
             ml_prediction = predict_suitability(application.candidate, application.job)
+            application.ml_prediction = ml_prediction
             application.overall_score = calculate_overall_suitability(
                 application.match_score,
                 ml_prediction["score"],
@@ -31,6 +33,7 @@ def dashboard(request):
         "employers/dashboard.html",
         _context(
             request,
+            greeting=dashboard_greeting(),
             active_jobs=jobs.filter(status="open").count(),
             applicant_count=applications.count(),
             shortlisted_count=applications.filter(status="shortlisted").count(),

@@ -806,3 +806,10 @@
 .cal-toolbar-actions > a.button:hover {
     background: #edf2fc;
 }
+
+.past-interviews > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; list-style: none; }
+.past-interviews > summary::-webkit-details-marker { display: none; }
+.past-interviews > summary h2 { margin: 0; }
+.past-interviews > summary::after { content: "+"; color: #223e76; font-size: 24px; }
+.past-interviews[open] > summary { margin-bottom: 16px; }
+.past-interviews[open] > summary::after { content: "−"; }

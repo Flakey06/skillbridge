@@ -51,7 +51,7 @@
                 <p class="eyebrow">YOUR READINESS</p>
                 <h2><span class="match-badge match-badge-with-help {% if overall_score <= 40 %}match-badge-low{% elif overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">Overall suitability: {{ overall_score }}%<span class="match-help" role="tooltip">70% comes from your explainable Skill Match and 30% from the historical ML suitability signal.</span></span></h2>
             </div>
-            <div>{% if match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}{% if application %}<span class="pill progress-green">{{ application.get_status_display }}</span>{% endif %}</div>
+            <div>{% if match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}</div>
         </div>
         <div class="skill-match-explanation">
             <p><strong>Matched skills:</strong> {{ match.matched_skills|join:", "|default:"None yet" }}</p>
@@ -109,7 +109,7 @@
     <section class="job-application-panel">
     <h2 id="job-application-title">Apply for this job</h2>
     {% if application %}
-        <p><span class="pill">{{ application.get_status_display }}</span></p>
+        {% if application.status != 'rejected' and application.status != 'offer' %}<p><span class="pill">{{ application.get_status_display }}</span></p>{% endif %}
         <p class="sub">You applied for this job on {{ application.created_at|date:"d M Y" }}.</p>
     {% else %}
         <div class="divider"></div>
@@ -144,7 +144,16 @@
         </form>
     {% endif %}
     </section>
-    {% if application %}<button class="job-submit-button" type="button" disabled>Already Applied</button><a class="text-link" href="{% url 'candidate_applications' %}">View My Applications →</a>{% else %}<button class="primary job-submit-button" type="submit" form="job-application-form">Submit application →</button>{% endif %}
+    {% if application %}
+    {% if application.status == 'rejected' or application.status == 'offer' %}
+    <div class="candidate-application-outcome application-status-{{ application.status }}" role="status">{% if application.status == 'offer' %}Offered{% else %}Rejected{% endif %}</div>
+    {% else %}
+    <div class="candidate-applied-actions">
+        <button class="job-submit-button" type="button" disabled>Already Applied</button>
+        {% if application.status != 'withdrawn' and application.status != 'rejected' and application.status != 'offer' %}<form method="post" action="{% url 'candidate_withdraw_application' application.id %}">{% csrf_token %}<input type="hidden" name="return_to" value="job"><button class="candidate-withdraw-button" type="submit">Withdraw</button></form>{% elif application.status == 'withdrawn' %}<button class="candidate-withdraw-button" type="button" disabled>Withdrawn</button>{% endif %}
+    </div>
+    {% endif %}
+    <a class="text-link" href="{% url 'candidate_applications' %}">View My Applications →</a>{% else %}<button class="primary job-submit-button" type="submit" form="job-application-form">Submit application →</button>{% endif %}
     </aside>
     </div>
 </article>

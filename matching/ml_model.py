@@ -234,5 +234,5 @@ def predict_suitability(candidate, job):
         "label": label,
         "job_role": features["job_role"] or "General role",
         "model_name": "Controlled demo classifier",
-        "note": "Prediction based on the screening dataset; it is not a hiring decision.",
+        "note": "This prediction is based on the ML model and its training dataset and should be interpreted with caution.",
     }

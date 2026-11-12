@@ -190,3 +190,5 @@ label.required-field::after, legend.required-field::after { content: " *"; color
 
 .account-settings-phone { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; min-width: 0; }
 .account-settings-card > .static-page-actions { display: flex; justify-content: flex-end; }
+
+.create-listing-card > h2 { margin-bottom: 28px; }

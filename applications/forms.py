@@ -13,6 +13,19 @@ class ApplicationForm(forms.ModelForm):
 
 
 class ApplicationStatusForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = [("", "Choose a status")] + [
+            (value, label) for value, label in JobApplication.STATUS_CHOICES if value not in {"interview", "withdrawn"}
+        ]
+        if not self.is_bound and self.instance.status in {"interview", "withdrawn"}:
+            self.initial["status"] = ""
+
+    def clean_status(self):
+        if self.instance.pk and self.instance.status == "withdrawn":
+            raise forms.ValidationError("This application was withdrawn by the candidate and cannot be updated.")
+        return self.cleaned_data["status"]
+
     class Meta:
         model = JobApplication
         fields = ["status"]

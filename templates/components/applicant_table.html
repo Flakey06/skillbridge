@@ -1,0 +1,28 @@
+    <table class="recruiter-applicants-table">
+        <thead><tr><th>Candidate</th><th>Role</th><th>Skill Compatibility</th><th>Predicted Job Fit</th><th>Status</th>{% if show_update %}<th>Update</th>{% endif %}</tr></thead>
+        <tbody>
+            {% for application in applications %}
+                <tr>
+                    <td><a href="{% url 'recruiter_applicant_detail' application.id %}">{{ application.candidate.username }}</a></td>
+                    <td>{{ application.job.title }}</td>
+                    <td class="applicant-score-cell">{% if has_pro %}{% include "components/applicant_score_link.html" with application=application label="Skill Compatibility" score=application.match_score section="skill-compatibility" %}{% else %}<a href="{% url 'plans' %}">Pro Insights</a>{% endif %}</td>
+                    <td class="applicant-score-cell">{% if has_pro %}{% include "components/applicant_score_link.html" with application=application label="Predicted Job Fit" score=application.ml_prediction.score section="predicted-job-fit" %}{% else %}<a href="{% url 'plans' %}">Pro Insights</a>{% endif %}</td>
+                    <td><span class="pill application-status application-status-{{ application.status }}">{{ application.get_status_display }}</span></td>
+                    {% if show_update %}
+                    <td>
+                        {% if application.status == 'withdrawn' %}<span class="muted">Withdrawn By Candidate</span>{% else %}
+                        <form method="post" action="{% url 'recruiter_applicants' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="row application-update-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="application_id" value="{{ application.id }}">
+                            {{ application.status_form.status }}
+                            <button type="submit">Save</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+            {% empty %}
+                <tr><td colspan="{% if show_update %}6{% else %}5{% endif %}">No applicants match your filters.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>

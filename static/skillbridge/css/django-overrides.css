@@ -160,6 +160,12 @@ th {
     background:var(--paper);
     box-shadow:var(--shadow);
 }
+.skills-picker-suggestions[hidden] {
+    display:none;
+}
+.skills-picker-selected:empty {
+    display:none;
+}
 .skills-picker-suggestion {
     padding:9px 10px;
     border:0;

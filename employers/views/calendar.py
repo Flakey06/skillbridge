@@ -23,6 +23,9 @@ def calendar(request):
     download, calendar_changed = calendar_download_or_reminder(request, interviews)
     if download is not None:
         return download
+    selected_application = None
+    if request.method == "GET" and request.GET.get("application"):
+        selected_application = get_object_or_404(applications, pk=request.GET["application"], status="shortlisted")
     interview_id = request.POST.get("interview_id")
     interview = None
     if interview_id:
@@ -45,7 +48,7 @@ def calendar(request):
             notify(
                 interview.application.candidate,
                 "Interview reschedule accepted",
-                f"Your interview for {interview.application.job.title} was moved to {interview.scheduled_start:%d %b %Y, %H:%M}.",
+                f"Your interview for {interview.application.job.title} was moved to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
                 "interview",
             )
             messages.success(request, "Reschedule accepted and the calendar was updated.")
@@ -65,7 +68,7 @@ def calendar(request):
     if request.method == "POST" and form.is_valid():
         interview = form.save(commit=False)
         if interview.pk is None:
-            application = get_object_or_404(applications, pk=request.POST.get("application_id"))
+            application = get_object_or_404(applications, pk=request.POST.get("application_id"), status="shortlisted")
             interview.application = application
             interview.created_by = request.user
         else:
@@ -78,7 +81,7 @@ def calendar(request):
             notify(
                 application.candidate,
                 "Interview time updated",
-                f"The recruiter changed your interview for {application.job.title} to {interview.scheduled_start:%d %b %Y, %H:%M}.",
+                f"The recruiter changed your interview for {application.job.title} to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
                 "interview",
             )
         application.status = "interview"
@@ -87,7 +90,7 @@ def calendar(request):
             notify(
                 application.candidate,
                 "Interview scheduled",
-                f"An interview for {application.job.title} is scheduled for {interview.scheduled_start:%d %b %Y, %H:%M}.",
+                f"An interview for {application.job.title} is scheduled for {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
                 "interview",
             )
         messages.success(request, "Interview rescheduled." if interview_id else "Interview scheduled.")
@@ -100,7 +103,8 @@ def calendar(request):
         upcoming_interviews=interviews.filter(scheduled_start__gte=now),
         past_interviews=interviews.filter(scheduled_start__lt=now),
         pending_reschedules=interviews.filter(reschedule_status="pending"),
-        applications=applications,
+        applications=applications.filter(status="shortlisted"),
+        selected_application=selected_application,
         form=form,
         calendar=calendar_data,
         calendar_changed=calendar_changed,

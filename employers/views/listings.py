@@ -2,6 +2,7 @@
 
 from jobs.reference_catalog import suggest_skills_for_title
 from django.contrib import messages
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from accounts.decorators import recruiter_required
 from jobs.forms import JobForm
@@ -30,7 +31,7 @@ def listings(request):
     response = _publish_listing(request, recruiter, form)
     if response:
         return response
-    jobs = Job.objects.filter(created_by=request.user).select_related("company")
+    jobs = Job.objects.filter(created_by=request.user).select_related("company").annotate(applicant_count=Count("applications"))
     return render(request, "employers/listings.html", _context(request, jobs=jobs, form=form, company=recruiter.company))
 
 

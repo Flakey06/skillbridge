@@ -5,6 +5,7 @@ from matching.services import calculate_overall_suitability
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.db.models import F
 from accounts.decorators import recruiter_required
 from accounts.notification_helpers import notify
@@ -26,7 +27,7 @@ def applicants(request):
     if job_id:
         applications = applications.filter(job_id=job_id)
     if status:
-        applications = applications.filter(status=status)
+        applications = applications.filter(status=status) if status in dict(JobApplication.STATUS_CHOICES) and status != "withdrawn" else applications.none()
     if query:
         applications = applications.filter(candidate__username__icontains=query)
 
@@ -66,7 +67,7 @@ def applicants(request):
                 application.match_score,
                 application.ml_prediction["score"],
             )
-    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, sort=sort, has_pro=has_pro))
+    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro))
 
 
 @recruiter_required
@@ -95,7 +96,7 @@ def applicant_detail(request, application_id):
             "application",
         )
         messages.success(request, "Applicant status updated.")
-        return redirect("recruiter_applicant_detail", application_id=application.id)
+        return redirect(reverse("recruiter_applicant_detail", kwargs={"application_id": application.id}) + "#update-progress")
     return render(
         request,
         "employers/applicant_detail.html",

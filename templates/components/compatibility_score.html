@@ -1,11 +1,11 @@
 {% if score or score == 0 %}
 <div class="compatibility-box {% if score < 40 %}compatibility-red{% elif score < 60 %}compatibility-orange{% else %}compatibility-yellow{% endif %}">
-    <span class="compatibility-box-label">{{ label }}</span>
+    {% if not hide_label %}<span class="compatibility-box-label">{{ label }}</span>{% endif %}
     <strong>{{ score }}%</strong>
 </div>
 {% else %}
 <div class="compatibility-box compatibility-unavailable">
-    <span class="compatibility-box-label">{{ label }}</span>
+    {% if not hide_label %}<span class="compatibility-box-label">{{ label }}</span>{% endif %}
     <strong>Not available</strong>
 </div>
 {% endif %}
