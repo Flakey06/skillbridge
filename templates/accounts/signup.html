@@ -16,7 +16,7 @@
     {{ form.company_name }}{{ form.company_website }}{{ form.company_logo_url }}
     <div class="signup-company-selected" data-company-selected hidden></div>
 </section>
-<label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
+<label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<a class="forgot-password-link" href="{% url 'password_reset' %}">Forgot Password?</a><span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <label class="field signup-password-field">{% include "components/field_label.html" with field=form.password2 %}{{ form.password2 }}<span class="signup-field-errors" id="id_password2_error">{% for error in form.password2.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <button class="primary full" type="submit">Create account →</button></form><p class="sub auth-existing-account">Already registered? <a href="{% url 'login' %}">Sign in</a></p></div><p class="auth-footer">Find work. Build your team.</p></section></div>
 <script>

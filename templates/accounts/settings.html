@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Account Settings · SkillBridge{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Account Settings</h1><p class="sub">Update your personal details and password.</p></div><a href="{% url profile_url %}">← Back To Profile</a></div>
+{% for message in messages %}<p class="card profile-message" role="status">{{ message }}</p>{% endfor %}
+<form method="post" class="card account-settings-card">
+    {% csrf_token %}
+    {{ details_form.non_field_errors }}{{ password_form.non_field_errors }}
+    <h2>Personal Details</h2>
+    <div class="account-settings-grid">
+        <label class="field" for="{{ details_form.name.id_for_label }}">{% include "components/field_label.html" with field=details_form.name %}{{ details_form.name }}{{ details_form.name.errors }}</label>
+        <div class="account-settings-phone">
+            <label class="field" for="{{ details_form.phone_country_code.id_for_label }}">{% include "components/field_label.html" with field=details_form.phone_country_code %}{{ details_form.phone_country_code }}{{ details_form.phone_country_code.errors }}</label>
+            <label class="field" for="{{ details_form.phone.id_for_label }}">{% include "components/field_label.html" with field=details_form.phone %}{{ details_form.phone }}{{ details_form.phone.errors }}</label>
+        </div>
+        <label class="field" for="{{ details_form.email.id_for_label }}">{% include "components/field_label.html" with field=details_form.email %}{{ details_form.email }}{{ details_form.email.errors }}</label>
+    </div>
+    <h2>Change Password</h2>
+    <p class="sub">Leave the new password fields blank to keep your password. Enter your current password when changing your email address or password.</p>
+    <div class="account-settings-grid">
+        {% for field in password_form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}{% if field.help_text %}<small class="muted">{{ field.help_text|safe }}</small>{% endif %}</label>{% endfor %}
+    </div>
+    <div class="static-page-actions"><button type="submit" class="primary">Confirm Changes</button></div>
+</form>
+{% endblock %}

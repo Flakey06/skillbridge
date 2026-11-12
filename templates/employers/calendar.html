@@ -4,6 +4,12 @@
 
 {% block content %}
 <div class="calendar-view">
+{% if calendar_changed %}
+<aside class="calendar-update-toast" role="status" aria-live="polite">
+    Your interview calendar has changed. Download a new .ics file to update your personal calendar.
+    <a href="?download=ics" download="skillbridge-interviews.ics">Download Updated Calendar</a>
+</aside>
+{% endif %}
 <div class="page-head">
     <div>
         <h1>Recruiter calendar</h1>
@@ -20,7 +26,8 @@
         <div class="card calendar-card"><h2>Past interviews</h2>{% for interview in past_interviews %}<div class="notification-item"><div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.application.candidate.username }}</span></div><p>{{ interview.scheduled_start|date:"d M Y, H:i" }}</p><button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}">Reschedule</button></div>{% empty %}<p class="sub">No past interviews.</p>{% endfor %}</div>
     </aside>
     <section class="cal-board" id="calendar">
-        <div class="cal-toolbar"><div class="cal-arrows"><a class="button small" href="{% url 'recruiter_calendar' %}?month={{ calendar.previous_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Previous month">‹</a><a class="button small" href="{% url 'recruiter_calendar' %}?month={{ calendar.next_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Next month">›</a></div><h2>{{ calendar.month_label }}</h2><a class="button small" href="{% url 'recruiter_calendar' %}">Today</a></div>
+        <div class="cal-toolbar"><div class="cal-arrows"><a class="button small" href="{% url 'recruiter_calendar' %}?month={{ calendar.previous_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Previous month">‹</a><a class="button small" href="{% url 'recruiter_calendar' %}?month={{ calendar.next_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Next month">›</a></div><h2>{{ calendar.month_label }}</h2><div class="cal-toolbar-actions"><a class="button small" href="{% url 'recruiter_calendar' %}?download=ics" download="skillbridge-interviews.ics">Download .ics</a>
+            <a class="button small" href="{% url 'recruiter_calendar' %}">Today</a></div></div>
         <div class="cal-weekdays">{% for weekday in calendar.weekdays %}<div>{{ weekday }}</div>{% endfor %}</div>
         <div class="cal-month cal-rows-{{ calendar.row_count }}">{% for week in calendar.weeks %}<div class="cal-week">{% for day in week %}<a class="cal-day{% if not day.in_month %} outside{% endif %}{% if day.is_selected %} selected{% endif %}" href="{% url 'recruiter_calendar' %}?month={{ calendar.month|date:'Y-m' }}&date={{ day.date|date:'Y-m-d' }}" data-calendar-date="{{ day.date|date:'Y-m-d' }}"{% for interview in day.events %}{% if forloop.first %} data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}"{% endif %}{% endfor %}><span class="cal-date{% if day.is_today %} today{% endif %}">{{ day.day }}</span>{% for interview in day.events %}<span class="cal-event progress-yellow" title="{{ interview.application.job.title }}">{{ interview.scheduled_start|date:"H:i" }} · {{ interview.application.candidate.username }}</span>{% endfor %}</a>{% endfor %}</div>{% endfor %}</div>
     </section>

@@ -12,27 +12,17 @@
 
 {% if not saved_page %}
 <section class="card search-panel job-search-panel">
-    <form class="filterbar{% if has_pro %} job-filters-with-sort{% endif %}" method="get">
-        <label class="field">
-            Search jobs
-            {{ form.q }}
-        </label>
-        <label class="field">
-            Location
-            {{ form.location }}
-        </label>
-        <label class="field">
-            Employment type
-            {{ form.employment_type }}
-        </label>
-        <label class="field">
-            Industry
-            {{ form.industry }}
-        </label>
-        {% if has_pro %}
-        <label class="field">Sort by<select name="sort" onchange="this.form.requestSubmit()"><option value="newest"{% if sort != 'match' %} selected{% endif %}>Newest first</option><option value="match"{% if sort == 'match' %} selected{% endif %}>Highest skill compatibility</option></select></label>
-        {% endif %}
-        <button class="primary" type="submit">Search</button>
+    <form class="filterbar job-discovery-filters" method="get">
+        {{ form.non_field_errors }}
+        <label class="field job-filter-query" for="{{ form.q.id_for_label }}">Search Jobs{{ form.q }}{{ form.q.errors }}</label>
+        <label class="field job-filter-location" for="{{ form.location.id_for_label }}">Location{{ form.location }}{{ form.location.errors }}</label>
+        <label class="field job-filter-employment" for="{{ form.employment_type.id_for_label }}">Employment Type{{ form.employment_type }}{{ form.employment_type.errors }}</label>
+        <label class="field job-filter-skills" for="{{ form.required_skills.id_for_label }}">Required Skills{{ form.required_skills }}{{ form.required_skills.errors }}</label>
+        <label class="field job-filter-experience" for="{{ form.experience_level.id_for_label }}">Experience Level{{ form.experience_level }}{{ form.experience_level.errors }}</label>
+        <label class="field job-filter-salary" for="{{ form.salary_range.id_for_label }}">Salary Range (SGD / Month){{ form.salary_range }}{{ form.salary_range.errors }}</label>
+        <label class="field job-filter-sort" for="job-sort">Sort By<select id="job-sort" name="sort"><option value="newest"{% if sort != 'match' %} selected{% endif %}>Newest First</option>{% if has_pro %}<option value="match"{% if sort == 'match' %} selected{% endif %}>Highest Skill Compatibility</option>{% endif %}</select></label>
+        <button class="primary job-filter-submit" type="submit" aria-label="Search Jobs" title="Search Jobs"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
+        <p class="job-filter-help">Skills: separate names with commas; all must be required by the job. Salary: matches overlapping monthly SGD ranges.</p>
     </form>
 </section>
 {% endif %}

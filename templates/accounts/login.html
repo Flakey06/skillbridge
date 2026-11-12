@@ -38,7 +38,7 @@
                 <p class="eyebrow">Welcome back</p>
                 <h2>Sign in to SkillBridge</h2>
                 <p class="sub">Access your candidate or recruiter workspace.</p>
-                <form method="post">{% csrf_token %}{% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}{{ form.non_field_errors }}{% for field in form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>{% endfor %}<button class="primary full" type="submit">Sign in →</button></form>
+                <form method="post">{% csrf_token %}{% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}{{ form.non_field_errors }}{% for field in form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>{% endfor %}<p class="forgot-password-link"><a href="{% url 'password_reset' %}">Forgot Password?</a></p><button class="primary full" type="submit">Sign in →</button></form>
                 <p class="login-responsible-use"><strong>Terms and responsible use.</strong> Provide accurate information, respect candidate privacy, and use hiring tools fairly. Scams, harassment, and discriminatory content are not allowed.</p>
                 <div class="login-signup-option">
                     <span>or</span>
