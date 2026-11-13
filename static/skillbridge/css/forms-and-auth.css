@@ -192,3 +192,18 @@ label.required-field::after, legend.required-field::after { content: " *"; color
 .account-settings-card > .static-page-actions { display: flex; justify-content: flex-end; }
 
 .create-listing-card > h2 { margin-bottom: 28px; }
+
+.resume-editor-actions { display: flex; align-items: stretch; gap: 16px; margin-top: 18px; }
+.resume-editor-actions > button, .resume-editor-actions > form { flex: 1 1 0; min-width: 0; margin: 0; }
+.resume-editor-actions .button { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 48px; min-height: 48px; padding: 10px 16px; box-sizing: border-box; }
+@media (max-width: 550px) { .resume-editor-actions { flex-wrap: wrap; } .resume-editor-actions > button, .resume-editor-actions > form { flex-basis: 100%; } }
+
+.candidate-resume-document { padding: clamp(24px, 4vw, 48px); color: #18212f; }
+.candidate-resume-document .resume-document-header { display: block; padding-bottom: 20px; margin-bottom: 24px; border-bottom: 2px solid #223e76; }
+.candidate-resume-document .resume-document-name { margin: 0 0 10px; font-size: clamp(28px, 3vw, 40px); line-height: 1.15; font-weight: 800; }
+.candidate-resume-document .resume-document-contact { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.candidate-resume-document h3 { margin: 24px 0 12px; padding-bottom: 7px; border-bottom: 1px solid #dce3ee; font-size: 16px; font-weight: 700; letter-spacing: .03em; }
+.candidate-resume-document p { margin: 6px 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.candidate-resume-document .resume-document-section { margin: 0 0 20px; }
+.candidate-resume-document .resume-entry-bullet { position: relative; padding-left: 16px; }
+.candidate-resume-document .resume-entry-bullet::before { content: "•"; position: absolute; left: 0; }

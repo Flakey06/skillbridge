@@ -16,21 +16,23 @@
     <h2>Edit resume</h2>
     <p class="muted">Save your changes to refresh the underlined review and job requirements.</p>
     {% if tailored_resume.is_main %}<p class="pill progress-green">Main resume</p>{% endif %}
-    <form method="post" class="stack">
+    <form method="post" class="stack" id="resume-edit-form">
         {% csrf_token %}
         <label class="field" for="resume-content">
             <span class="required-label">Resume content <span class="required-marker" aria-hidden="true">*</span></span>
             <textarea id="resume-content" name="content" rows="32" required>{{ editor_content }}</textarea>
         </label>
         <p class="muted">Edit this draft, then save it. The saved version is used for applications and resume-fit scoring when selected as your main resume.</p>
-        <button class="primary button" type="submit">Save and review</button>
     </form>
+    <div class="resume-editor-actions">
+    <button class="primary button" type="submit" form="resume-edit-form">Save and review</button>
     {% if not tailored_resume.is_main %}
     <form method="post" action="{% url 'set_main_resume' tailored_resume.id %}">
         {% csrf_token %}
         <button class="primary button" type="submit">Use as main resume</button>
     </form>
     {% endif %}
+    </div>
 </article>
 <aside class="resume-review-sidebar">
     <section class="card">

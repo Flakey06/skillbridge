@@ -15,14 +15,23 @@
     <div class="resume-top-grid">
     <main class="resume-main-column">
     {% if main_resume %}
-    <article class="resume-paper">
-        <pre class="resume-draft">{{ main_resume.clean_content }}</pre>
+    <article class="resume-paper candidate-resume-document">
+        <header class="resume-document-header">
+            <h2 class="resume-document-name preserve-case">{{ main_resume_document.name }}</h2>
+            {% if main_resume_document.contacts %}<div class="resume-document-contact">{% for line in main_resume_document.contacts %}<span>{{ line }}</span>{% endfor %}</div>{% endif %}
+        </header>
+        {% for section in main_resume_document.sections %}
+        <section class="resume-document-section">
+            {% if section.heading %}<h3>{{ section.heading }}</h3>{% endif %}
+            {% for line in section.lines %}<p{% if line.bullet %} class="resume-entry-bullet"{% endif %}>{{ line.text }}</p>{% endfor %}
+        </section>
+        {% endfor %}
     </article>
     {% else %}
-    <article class="resume-paper">
+    <article class="resume-paper candidate-resume-document">
         <header class="resume-document-header">
             <div>
-                <h2 class="preserve-case">{{ profile_data.name|default:request.user.username }}</h2>
+                <h2 class="resume-document-name preserve-case">{{ profile_data.name|default:request.user.username }}</h2>
                 <p>{{ profile_data.career_label|default:"Career area not set" }} · {{ profile_data.specialisation_label|default:"Specialisation not set" }}</p>
             </div>
             <p class="resume-document-contact">{{ request.user.email }}{% if profile_data.phone %}<br>{{ profile_data.phone }}{% endif %}{% if profile_data.linkedin %}<br>{{ profile_data.linkedin }}{% endif %}</p>
@@ -72,6 +81,35 @@
     {% endif %}
     </aside>
     </div>
+
+    <section class="card resume-fit-card" id="resume-timeline">
+        <h2>Resume timeline</h2>
+        <p class="sub">Follow your resume versions, newest first. Hover or focus for details; click to open a version. The filled blue dot marks your current main resume.</p>
+        <div class="resume-snake-timeline" aria-label="Resume versions, newest first">
+            {% for row in resume_timeline_rows %}
+            <div class="resume-timeline-row">
+                {% for item in row %}
+                <a class="resume-timeline-point{% if item.resume.is_main %} resume-timeline-current{% endif %}" href="{% url 'resume_detail' item.resume.id %}"{% if item.resume.is_main %} aria-current="true"{% endif %} aria-describedby="resume-version-{{ item.resume.id }}">
+                    <time datetime="{{ item.updated_at|date:'c' }}">{{ item.updated_at|date:"j M Y" }}</time>
+                    <span class="resume-timeline-dot" aria-hidden="true"></span>
+                    <span class="resume-timeline-job">{% if item.resume.job_id %}{{ item.resume.job.title }}{% else %}{{ item.resume.title }}{% endif %}</span>
+                    {% if item.resume.is_main %}<span class="resume-timeline-main-label">Current Main</span>{% endif %}
+                    <span class="resume-timeline-tooltip" role="tooltip" id="resume-version-{{ item.resume.id }}">
+                        <strong>{{ item.resume.title }}</strong>
+                        {% if item.resume.job_id %}<span>{{ item.resume.job.company.name }}</span>{% endif %}
+                        <span>{{ item.category }}</span>
+                        <span>{{ item.version }}</span>
+                        <span>Updated: {{ item.updated_at|date:"j M Y, g:i A" }} SGT</span>
+                        <span>Click To Open Version</span>
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+            {% empty %}
+            <p class="muted">Your first dated version will appear after you create or edit a resume.</p>
+            {% endfor %}
+        </div>
+    </section>
 
     {% if fit_matrix %}
     <section class="card resume-fit-card" id="resume-fit">

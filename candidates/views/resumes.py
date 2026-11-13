@@ -3,6 +3,7 @@
 from accounts.choices import CAREER_CHOICES, CAREER_INTEREST_CHOICES, CAREER_STAGE_CHOICES, EDUCATION_CHOICES, INSTITUTION_CHOICES, SPECIALISATION_CHOICES
 from ..services import merge_completed_certifications
 from django.contrib import messages
+from django.utils import timezone
 from django.shortcuts import redirect, render
 from accounts.notification_helpers import notify
 from accounts.decorators import candidate_required
@@ -15,8 +16,30 @@ from ..career_paths import (
 )
 from ..resume_parser import extract_resume_text, review_resume
 from resumes.models import TailoredResume
+from resumes.presentation import resume_document
 from resumes.services import build_interest_tailored_resume
 from .common import _current_profile, _selected_career_interests, _career_interest_labels, _context
+
+
+def _resume_timeline(user):
+    timeline = []
+    for draft in TailoredResume.objects.filter(candidate=user).select_related("job", "job__company"):
+        if draft.job_id:
+            category = "Job application"
+        elif draft.title == "My resume":
+            category = "Main profile resume"
+        elif draft.title.startswith("Resume for "):
+            category = "Career direction"
+        else:
+            category = "General draft"
+        updated_at = timezone.localtime(draft.updated_at)
+        timeline.append({
+            "resume": draft,
+            "category": category,
+            "version": updated_at.strftime("v%Y.%m.%d-%H%M"),
+            "updated_at": updated_at,
+        })
+    return timeline
 
 
 @candidate_required
@@ -76,6 +99,7 @@ def resume(request):
     if profile and profile.resume:
         with profile.resume.open("rb") as resume_file:
             feedback = review_resume(extract_resume_text(resume_file))
+    resume_timeline = _resume_timeline(request.user)
     return render(request, "candidates/resume.html", _context(
         request,
         profile=profile,
@@ -83,6 +107,9 @@ def resume(request):
         feedback=feedback,
         fit_matrix=fit_matrix,
         main_resume=main_resume,
+        main_resume_document=resume_document(main_resume.clean_content, profile.display_name if profile else request.user.username) if main_resume else None,
+        resume_timeline=resume_timeline,
+        resume_timeline_rows=[resume_timeline[index:index + 4] for index in range(0, len(resume_timeline), 4)],
     ))
 
 
