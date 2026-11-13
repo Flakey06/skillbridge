@@ -1,7 +1,6 @@
 from django.contrib import admin, messages
 
-from .models import Payment, Referral, SecurityQuestionAnswer, UserProfile
-from .referral_services import award_referral
+from .models import Payment, SecurityQuestionAnswer, UserProfile
 from .payment_services import set_stripe_entitlement
 
 
@@ -103,20 +102,3 @@ class PaymentAdmin(admin.ModelAdmin):
             )
             updated += 1
         self.message_user(request, f"Revoked Pro access for {updated} Stripe payment(s).", messages.SUCCESS)
-
-
-@admin.register(Referral)
-class ReferralAdmin(admin.ModelAdmin):
-    list_display = ("referrer", "referred_user", "status", "reward_days", "created_at", "rewarded_at")
-    list_filter = ("status", "created_at")
-    search_fields = ("referrer__username", "referrer__email", "referred_user__username", "referred_user__email", "referral_code")
-    readonly_fields = ("created_at", "rewarded_at", "metadata")
-    actions = ("retry_rewards",)
-
-    @admin.action(description="Retry selected referral rewards")
-    def retry_rewards(self, request, queryset):
-        rewarded = 0
-        for referral in queryset.select_related("referrer__profile", "referred_user__profile"):
-            award_referral(referral)
-            rewarded += referral.status == "rewarded"
-        self.message_user(request, f"{rewarded} referral reward(s) are fully applied.", messages.SUCCESS)

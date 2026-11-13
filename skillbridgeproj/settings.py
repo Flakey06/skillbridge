@@ -180,3 +180,6 @@ ML_MODEL_PATH = Path(os.getenv('ML_MODEL_PATH') or BASE_DIR / 'data' / 'ml_model
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Optional configured Stripe customer portal with payment-method updates enabled.
+STRIPE_PORTAL_CONFIGURATION_ID = os.getenv('STRIPE_PORTAL_CONFIGURATION_ID', '')

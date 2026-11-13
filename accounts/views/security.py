@@ -1,5 +1,6 @@
 """Password recovery and authenticated personal account settings."""
 
+from django.conf import settings
 from django.contrib import messages
 from django import forms
 from django.contrib.auth import update_session_auth_hash
@@ -196,6 +197,8 @@ def account_settings(request):
             return redirect("account_settings")
     return render(request, "accounts/settings.html", {
         "details_form": details_form, "password_form": password_form,
+        "stripe_enabled": settings.STRIPE_SECRET_KEY.startswith("sk_test_"),
+        "billing_demo": bool(profile.is_pro and profile.plan_expires_at and (profile.pro_trial_started_at or profile.trial_started_at)),
         "role": profile.role, "has_pro": profile.is_pro,
         "profile_url": "recruiter_company" if profile.role == "recruiter" else "candidate_profile",
     })

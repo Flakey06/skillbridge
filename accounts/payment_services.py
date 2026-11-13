@@ -9,6 +9,8 @@ from urllib.request import Request, urlopen
 
 from django.conf import settings
 
+from .models import Payment
+
 
 class PaymentProviderError(Exception):
     """Raised when a payment provider cannot create or retrieve a checkout."""
@@ -60,6 +62,10 @@ def create_stripe_checkout(*, user, payment_id, success_url, cancel_url):
         "subscription_data[metadata][payment_id]": str(payment_id),
         "line_items[0][quantity]": "1",
     }
+    customer = (user.profile.profile_data or {}).get("stripe_customer_id")
+    if customer:
+        data.pop("customer_email", None)
+        data["customer"] = customer
     if price_id:
         data["line_items[0][price]"] = price_id
     else:
@@ -80,19 +86,6 @@ def retrieve_stripe_checkout(session_id):
 def cancel_stripe_subscription(subscription_id):
     """Cancel a Stripe subscription in the current Stripe mode."""
     return _stripe_request(f"subscriptions/{subscription_id}", method="DELETE")
-
-
-def extend_stripe_subscription_trial(subscription_id, trial_end):
-    """Move the next Stripe charge to the end of a referral reward period."""
-    return _stripe_request(
-        f"subscriptions/{subscription_id}",
-        data={
-            "trial_end": str(int(trial_end.timestamp())),
-            "proration_behavior": "none",
-            "metadata[last_reward]": "referral_week",
-        },
-        method="POST",
-    )
 
 
 def stripe_payment_for_subscription(subscription_id):
@@ -151,3 +144,45 @@ def verify_stripe_signature(payload, signature):
         return any(hmac.compare_digest(expected, value) for value in parts.get("v1", []))
     except (KeyError, TypeError, ValueError):
         return False
+
+
+def create_stripe_card_portal(*, customer_id, return_url):
+    """Open Stripe's card-update flow; card data never passes through Django."""
+    data = {
+        "customer": customer_id,
+        "return_url": return_url,
+        "flow_data[type]": "payment_method_update",
+        "flow_data[after_completion][type]": "redirect",
+        "flow_data[after_completion][redirect][return_url]": return_url,
+    }
+    configuration = getattr(settings, "STRIPE_PORTAL_CONFIGURATION_ID", "")
+    if configuration:
+        data["configuration"] = configuration
+    return _stripe_request("billing_portal/sessions", data=data, method="POST")
+
+
+def stripe_customer_for_user(user):
+    """Use this account's stored customer, including older subscription records."""
+    profile = user.profile
+    customer = (profile.profile_data or {}).get("stripe_customer_id", "")
+    if customer:
+        return customer
+    for payment in Payment.objects.filter(user=user, provider="stripe").order_by("-created_at"):
+        customer = (payment.metadata or {}).get("customer", "")
+        subscription = (payment.metadata or {}).get("subscription", "")
+        if not customer and subscription:
+            customer = _stripe_request(f"subscriptions/{subscription}").get("customer", "")
+        if customer:
+            break
+    if not customer:
+        customer = _stripe_request("customers", data={
+            "email": user.email, "metadata[user_id]": str(user.pk),
+        }, method="POST").get("id", "")
+    if isinstance(customer, dict):
+        customer = customer.get("id", "")
+    if not customer:
+        raise PaymentProviderError("Stripe did not return a customer account.")
+    profile.refresh_from_db(fields=["profile_data"])
+    profile.profile_data = {**(profile.profile_data or {}), "stripe_customer_id": customer}
+    profile.save(update_fields=["profile_data"])
+    return customer

@@ -207,3 +207,46 @@ label.required-field::after, legend.required-field::after { content: " *"; color
 .candidate-resume-document .resume-document-section { margin: 0 0 20px; }
 .candidate-resume-document .resume-entry-bullet { position: relative; padding-left: 16px; }
 .candidate-resume-document .resume-entry-bullet::before { content: "•"; position: absolute; left: 0; }
+
+.payment-method-card { margin-top: 24px; scroll-margin-top: 32px; }
+.payment-method-card > * + * { margin-top: 16px; }
+.payment-demo-prompt { padding: 18px; border: 1px solid #c6d6f0; border-radius: 10px; background: #edf3ff; }
+.payment-demo-prompt h3 { margin: 0 0 8px; }
+.payment-demo-prompt p { margin: 0; line-height: 1.5; }
+
+.plan-management-card { margin-top: 15px; display: flex; align-items: center; justify-content: space-between; gap: 28px; width: 100%; max-width: none; box-sizing: border-box; }
+.plan-management-copy { min-width: 0; flex: 1; }
+.plan-management-copy h2 { margin: 0 0 10px; }
+.plan-management-copy .sub { margin: 0; }
+.plan-management-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0; margin-left: auto; }
+.plan-management-actions > a { display: inline-flex; align-items: center; justify-content: center; padding: 11px 20px; min-height: 44px; border: 1px solid; border-radius: 8px; box-sizing: border-box; color: #fff; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.plan-management-actions .plan-manage-button { background: #223e76; border-color: #223e76; }
+.plan-management-actions .plan-cancel-button { background: #b42332; border-color: #b42332; }
+.plan-management-actions .plan-manage-button:hover { background: #172f5b; }
+.plan-management-actions .plan-cancel-button:hover { background: #921c29; }
+@media (max-width: 750px) { .plan-management-card { flex-direction: column; align-items: stretch; gap: 18px; } }
+
+.administration-page { max-width: 1500px; margin: 0 auto; padding: clamp(20px, 4vw, 48px); }
+.administration-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 28px; }
+.administration-header h1 { margin: 8px 0; }
+.administration-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 24px; }
+.administration-metrics .card { padding: 24px; }
+.administration-metrics h2 { font-size: 15px; margin: 0 0 16px; }
+.administration-metrics strong { font-size: 36px; color: #223e76; }
+.administration-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.administration-panels > .card, .administration-popular-jobs { padding: 24px; }
+.administration-status { margin-top: 18px; }
+.administration-status > div { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.administration-status progress { width: 100%; accent-color: #223e76; }
+.administration-subheading { margin-top: 32px; }
+.administration-popular-jobs { margin-top: 24px; }
+@media (max-width: 950px) { .administration-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .administration-panels, .administration-metrics { grid-template-columns: minmax(0, 1fr); } }
+
+.administration-highlights { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-bottom: 24px; }
+.administration-highlights > .card, .administration-onboarding, .administration-payment-details, .administration-staff-details { padding: 24px; }
+.administration-percentage { display: block; margin: 14px 0; color: #223e76; font-size: 36px; }
+.administration-onboarding { margin-bottom: 24px; }
+.administration-payment-details, .administration-staff-details { margin-top: 24px; }
+.administration-highlights p { margin-top: 12px; line-height: 1.5; }
+@media (max-width: 650px) { .administration-highlights { grid-template-columns: minmax(0, 1fr); } }

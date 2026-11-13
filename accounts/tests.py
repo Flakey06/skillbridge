@@ -478,9 +478,8 @@ class AccountOnboardingTests(TestCase):
         self.assertFalse(referrer_profile.is_pro)
         self.assertFalse(referred_profile.is_pro)
 
-    @patch("accounts.referral_services.extend_stripe_subscription_trial")
-    def test_legacy_referral_does_not_change_stripe_billing(self, extend_trial):
-        extend_trial.return_value = {"trial_end": 1234567890}
+    @patch("accounts.payment_services._stripe_request")
+    def test_legacy_referral_does_not_change_stripe_billing(self, stripe_request):
         referrer = self._create_user("paid_referrer")
         referrer_profile = UserProfile.objects.create(user=referrer, role="candidate", plan="pro")
         Payment.objects.create(
@@ -504,7 +503,7 @@ class AccountOnboardingTests(TestCase):
             },
         )
 
-        extend_trial.assert_not_called()
+        stripe_request.assert_not_called()
         self.assertFalse(Referral.objects.filter(referrer=referrer).exists())
     def test_trial_pro_can_be_cancelled_without_stripe_subscription(self):
         user = self._create_user("trial_plan")
