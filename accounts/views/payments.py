@@ -14,6 +14,8 @@ from django.views.decorators.http import require_POST
 from ..models import Payment, UserProfile
 from ..payment_services import (
     PaymentProviderError,
+    stripe_customer_for_user,
+    create_stripe_card_portal,
     cancel_stripe_subscription,
     create_stripe_checkout,
     retrieve_stripe_checkout,
@@ -76,6 +78,7 @@ def _mark_payment_paid(payment, session_data):
     payment.metadata = {
         "checkout_status": session_data.get("status", ""),
         "payment_status": session_data.get("payment_status", ""),
+        "customer": session_data.get("customer", ""),
         "subscription": session_data.get("subscription", ""),
     }
     payment.save(update_fields=["status", "paid_at", "metadata"])
@@ -214,3 +217,24 @@ def stripe_webhook(request):
                 stripe_status=stripe_status,
             )
     return JsonResponse({"received": True})
+
+
+@login_required
+@require_POST
+def manage_payment_method(request):
+    if not settings.STRIPE_SECRET_KEY.startswith("sk_test_"):
+        messages.info(request, "Card management is available once Stripe test mode is configured.")
+        return redirect(reverse("account_settings") + "#payment-method")
+    try:
+        customer_id = stripe_customer_for_user(request.user)
+        session = create_stripe_card_portal(
+            customer_id=customer_id,
+            return_url=request.build_absolute_uri(reverse("account_settings")) + "#payment-method",
+        )
+        url = session.get("url", "")
+        if not url.startswith("https://billing.stripe.com/"):
+            raise PaymentProviderError("Stripe did not return a valid billing portal link.")
+    except PaymentProviderError as exc:
+        messages.error(request, f"Card management could not be opened: {exc}")
+        return redirect(reverse("account_settings") + "#payment-method")
+    return redirect(url)

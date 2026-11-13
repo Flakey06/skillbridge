@@ -1,6 +1,9 @@
 """Onboarding steps, completion checks, and guided profile persistence."""
 
 from django.shortcuts import redirect
+from django.utils import timezone
+from ..administration_stats import ONBOARDING_COMPLETED_KEY
+from .common import _profile
 from employers.choices import INDUSTRY_CHOICES
 from ..choices import CAREER_INTEREST_CHOICES, CAREER_STAGE_CHOICES, VISA_CHOICES
 
@@ -44,6 +47,12 @@ def _next_step(profile, steps):
 
 
 def _finish_onboarding(request):
+    profile = _profile(request)
+    data = dict(profile.profile_data or {})
+    if not data.get(ONBOARDING_COMPLETED_KEY):
+        data[ONBOARDING_COMPLETED_KEY] = timezone.now().isoformat()
+        profile.profile_data = data
+        profile.save(update_fields=['profile_data'])
     request.session["onboarding_complete"] = True
     next_url = request.session.pop("post_onboarding_next", "")
     return redirect(next_url or "home")

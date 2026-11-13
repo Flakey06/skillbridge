@@ -67,7 +67,6 @@
             <span class="pill progress-green">Pro active{% if profile.plan_expires_at %} until {{ profile.plan_expires_at|date:"d M Y" }}{% endif %}</span>
             <p class="sub">Your Pro insights are available on job pages and applicant review pages.</p>
             {% if profile.pro_trial_started_at and profile.plan_expires_at %}<p class="sub">Your trial ends automatically. No payment is taken.</p>{% endif %}
-            <a class="button button-danger" href="{% url 'cancel_pro_confirm' %}">{% if profile.pro_trial_started_at and profile.plan_expires_at %}End trial{% else %}Cancel Pro{% endif %}</a>
             {% if not profile.plan_expires_at %}<p class="sub">You can cancel before the next renewal. We will ask you to confirm first.</p>{% endif %}
         {% else %}
             <div class="plan-actions">
@@ -96,6 +95,19 @@
             {% endif %}
         {% endif %}
     </article>
+</section>
+
+<section class="card account-card plan-management-card" id="manage-plan">
+    <div class="plan-management-copy">
+        <h2>Manage Plan And Payments</h2>
+        {% if has_pro %}
+            <p class="sub">{% if profile.pro_trial_started_at and profile.plan_expires_at %}Your trial expires automatically. You can end it early; no payment is taken.{% else %}Cancel your monthly plan to stop future renewals. Cancellation ends Pro access immediately; previous payments remain in your payment history.{% endif %}</p>
+        {% else %}<p class="sub">You are on SkillBridge Free.</p>{% endif %}
+    </div>
+    <div class="plan-management-actions">
+        <a class="plan-manage-button" href="{% url 'account_settings' %}#payment-method">Manage Plan</a>
+        {% if has_pro %}<a class="plan-cancel-button" href="{% url 'cancel_pro_confirm' %}">{% if profile.pro_trial_started_at and profile.plan_expires_at %}End Free Trial{% else %}Cancel Plan{% endif %}</a>{% endif %}
+    </div>
 </section>
 
 {% if payments %}

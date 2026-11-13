@@ -1,0 +1,12 @@
+{% extends "accounts/recovery_base.html" %}
+{% block title %}Staff Sign In · SkillBridge{% endblock %}
+{% block recovery_content %}
+<p class="eyebrow">SkillBridge Administration</p>
+<h1>Staff Sign In</h1>
+<p>Sign in with your SkillBridge staff account to view platform statistics.</p>
+<form method="post">
+    {% csrf_token %}{{ form.non_field_errors }}
+    {% for field in form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>{% endfor %}
+    <button class="primary full" type="submit">Sign In</button>
+</form>
+{% endblock %}

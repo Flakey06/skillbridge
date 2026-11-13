@@ -22,4 +22,13 @@
     </div>
     <div class="static-page-actions"><button type="submit" class="primary">Confirm Changes</button></div>
 </form>
+
+<section class="card account-settings-card payment-method-card" id="payment-method">
+    <h2>Payment Method</h2>
+    {% if billing_demo %}<div class="payment-demo-prompt"><h3>Add Payment Details</h3><p>You are using the seven-day free trial. Add a test card to prepare your payment method. Adding a card does not start a paid plan.</p></div>{% endif %}
+    <p class="sub">Add or update your card through Stripe’s hosted form. SkillBridge stores the customer reference, not your card number or security code.</p>
+    {% if stripe_enabled %}<form method="post" action="{% url 'manage_payment_method' %}">{% csrf_token %}<button type="submit" class="primary">Add / Update Card</button></form><p class="sub">Test mode only. Use Stripe test payment details.</p>
+    {% else %}<button class="primary" type="button" disabled>Add / Update Card</button><p class="sub">Card entry is unavailable until Stripe test mode is connected.</p>{% endif %}
+    <a class="button" href="{% url 'plans' %}#manage-plan">Manage Or Cancel Plan</a>
+</section>
 {% endblock %}
