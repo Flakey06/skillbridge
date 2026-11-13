@@ -818,7 +818,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin: 0 0 18px;
+    margin: 20px 0;
     padding: 11px 14px;
     border: 1px solid #b8c8e4;
     border-radius: 10px;
@@ -831,3 +831,32 @@
 .interview-conflict-warning p { margin: 6px 0; }
 .interview-conflict-warning ul { margin: 8px 0; padding-left: 20px; }
 @media (max-width: 600px) { .calendar-timezone-notice { align-items: flex-start; flex-direction: column; gap: 3px; } }
+
+/* Fit calendar workspaces within the desktop viewport. */
+@media (min-width: 901px) {
+    body:has(.calendar-view) { overflow: hidden; }
+    body:has(.calendar-view) .shell { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+    body:has(.calendar-view) .topbar { flex-shrink: 0; }
+    body:has(.calendar-view) .shell > main { flex: 1; min-height: 0; width: 100%; box-sizing: border-box; display: flex; overflow: hidden; padding-top: 20px; padding-bottom: 20px; }
+    .calendar-view { flex: 1; width: 100%; min-width: 0; min-height: 0; grid-template-columns: minmax(240px, 1fr) minmax(0, 3fr); grid-template-rows: auto minmax(0, 1fr) auto; row-gap: 16px; }
+    .calendar-view > .page-head { grid-column: 1; grid-row: 1; margin: 0; }
+    .calendar-view > .page-head h1 { font-size: clamp(24px, 2.2vw, 34px); line-height: 1.15; margin: 0 0 8px; }
+    .calendar-view > .page-head .sub { font-size: 13px; line-height: 1.5; margin: 0; }
+    .calendar-view .calendar-sidebar { grid-column: 1; grid-row: 2; min-height: 0; max-height: none; overflow-y: auto; gap: 16px; align-content: start; }
+    .calendar-view .calendar-sidebar .card { padding: 16px; }
+    .calendar-view .calendar-sidebar h2 { font-size: 18px; margin-top: 0; }
+    .calendar-view > .calendar-timezone-notice { grid-column: 1; grid-row: 3; margin: 4px 0 0; display: block; padding: 12px; }
+    .calendar-view > .calendar-timezone-notice strong, .calendar-view > .calendar-timezone-notice span { display: block; }
+    .calendar-view > .calendar-timezone-notice span { margin-top: 6px; }
+    .calendar-view .cal-board { grid-column: 2; grid-row: 1 / 4; height: 100%; min-height: 0; }
+    .calendar-view .cal-toolbar, .calendar-view .cal-weekdays { flex-shrink: 0; }
+}
+
+/* Consistent spacing in the recruiter interview editor. */
+.interview-dialog > form.stack { display: grid; gap: 20px; }
+.interview-dialog [data-create-only]:not([hidden]) { display: grid; gap: 20px; }
+.interview-dialog .field { margin: 0; gap: 8px; min-width: 0; }
+.interview-dialog .field input, .interview-dialog .field select, .interview-dialog .field textarea { margin: 0; box-sizing: border-box; width: 100%; }
+.interview-dialog .field .muted { margin: 0; line-height: 1.5; }
+.interview-dialog .interview-reschedule-fields { gap: 20px; padding: 18px; }
+.interview-dialog .interview-reschedule-fields[hidden] { display: none; }

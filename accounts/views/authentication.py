@@ -1,13 +1,10 @@
-"""Registration, login, logout, and signup company lookup."""
+"""Registration, login, and logout."""
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET
-from employers.services import lookup_company
 from ..forms import SignupForm
 from ..models import UserProfile
 from .common import _profile, _safe_next_url
@@ -75,12 +72,6 @@ def signup_view(request):
             request.session["post_onboarding_next"] = requested_next
         return redirect("onboarding")
     return render(request, "accounts/signup.html", {"form": form})
-
-
-@require_GET
-def signup_company_lookup(request):
-    query = request.GET.get("q", "").strip()
-    return JsonResponse({"query": query, "result": lookup_company(query) if query else None})
 
 
 @login_required

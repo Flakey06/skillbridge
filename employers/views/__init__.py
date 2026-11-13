@@ -5,7 +5,7 @@ from .listings import job_detail, _publish_listing, listings, create_listing, ed
 from .imports import job_import_template, import_listings
 from .applicants import applicants, applicant_detail
 from .calendar import calendar
-from .company import company, company_lookup
+from .company import company
 from .dashboard import dashboard
 
 __all__ = [
@@ -20,6 +20,5 @@ __all__ = [
     'applicant_detail',
     'calendar',
     'company',
-    'company_lookup',
     'dashboard',
 ]

@@ -1,7 +1,9 @@
 from django.urls import path
 from . import views
+from .views.comparison import compare_candidates
 
 urlpatterns = [
+    path("applicants/<int:application_id>/compare/", compare_candidates, name="recruiter_compare_candidates"),
     path("", views.dashboard, name="recruiter_dashboard"),
     path("jobs/", views.listings, name="recruiter_listings"),
     path("jobs/create/", views.create_listing, name="recruiter_create_listing"),
@@ -14,5 +16,4 @@ urlpatterns = [
     path("applicants/<int:application_id>/", views.applicant_detail, name="recruiter_applicant_detail"),
     path("calendar/", views.calendar, name="recruiter_calendar"),
     path("company/", views.company, name="recruiter_company"),
-    path("company/lookup/", views.company_lookup, name="recruiter_company_lookup"),
 ]

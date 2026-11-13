@@ -1,23 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Company profile · SkillBridge<section class="card account-card company-card">
-    <h2>Find a company</h2>
-    <p class="sub">Search your saved companies or use a LinkedIn company URL. LinkedIn lookup is enabled when the server has an approved API token.</p>
-    <form method="get" class="filterbar">
-        {{ lookup_form.query }}
-        <button class="button" type="submit">Find company</button>
-    </form>
-    {% if lookup_data %}
-        <div class="profile-message">
-            <strong>Company found from {{ lookup_data.source|title }}.</strong>
-            <p>{{ lookup_data.name }}{% if lookup_data.website %} · {{ lookup_data.website }}{% endif %}</p>
-            {% if lookup_data.logo_url %}<img src="{{ lookup_data.logo_url }}" alt="{{ lookup_data.name }} logo" width="48" height="48">{% endif %}
-            <p class="sub">The details above are now prefilled in the company form. Review and save them.</p>
-        </div>
-    {% endif %}
-</section>
-
-{% endblock %}
+{% block title %}Company Profile · SkillBridge{% endblock %}
 
 {% block content %}
 <div class="page-head">
@@ -25,53 +8,34 @@
         <h1>Company profile</h1>
         <p class="sub">Keep your hiring information current.</p>
     </div>
-    <a class="account-settings-link" href="{% url 'account_settings' %}" aria-label="Account Settings" title="Account Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2v3l3 1 1 3h5l1-3 3-1v-3l2-2-2-4-3-1-1-3z"/><circle cx="11.5" cy="11.5" r="3"/></svg></a>
+    <a class="account-settings-link" href="{% url 'account_settings' %}" aria-label="Account Settings" title="Account Settings">{% include "components/settings_icon.html" %}</a>
 </div>
 
 
-<form method="post" enctype="multipart/form-data" class="card account-card company-card">
+<form method="post" class="card account-card company-card company-profile-form">
     {% csrf_token %}
-    <div class="form-grid">
-        {% for field in form %}
-            <label class="field {% if field.name == 'description' or field.name == 'profile_photo' %}span2{% endif %}">
-                {% include "components/field_label.html" with field=field %}
-                {% if field.name == 'profile_photo' and request.user.profile.profile_photo %}<img class="profile-photo-preview" src="{{ request.user.profile.profile_photo.url }}" alt="Current profile photo">{% endif %}
-                {{ field }}{{ field.errors }}
-                {% if field.name == 'profile_photo' %}<small class="muted">JPG, PNG, or WebP. Maximum 5 MB.</small>{% endif %}
-            </label>
-        {% endfor %}
+    {{ form.non_field_errors }}
+    {% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+    <div class="company-identity-layout">
+        <div class="company-profile-logo">
+            {% if form.logo_url.value %}
+            <img src="{{ form.logo_url.value }}" alt="{{ company.name }} logo" width="112" height="112">
+            {% else %}<span aria-label="Company logo placeholder">{{ form.name.value|default:"C"|first|upper }}</span>{% endif %}
+        </div>
+        <div class="company-identity-fields">
+{% include "employers/company_field.html" with field=form.name %}
+{% include "employers/company_field.html" with field=form.industry %}
+        </div>
     </div>
-    <div class="static-page-actions"><button class="primary" type="submit">Save company profile</button></div>
+    <div class="company-details-layout">
+        <div class="company-link-fields">
+{% include "employers/company_field.html" with field=form.website %}
+{% include "employers/company_field.html" with field=form.linkedin_url %}
+{% include "employers/company_field.html" with field=form.logo_url %}
+        </div>
+{% include "employers/company_field.html" with field=form.description %}
+    </div>
+    <div class="company-profile-actions"><button class="primary" type="submit">Save Company Profile</button></div>
 </form>
-
-{% if company.logo_url %}
-<section class="card account-card company-logo-status">
-    <p class="eyebrow">Company logo</p>
-    <div class="row">
-        <span class="company-logo company-logo-image"><img src="{{ company.logo_url }}" alt="{{ company.name }} logo" width="56" height="56"></span>
-        <div>
-            <strong>{{ company.name }}</strong>
-            <p class="sub">Logo connected and visible on your job listings.</p>
-        </div>
-    </div>
-</section>
-{% endif %}
-
-<section class="card account-card company-card">
-    <h2>Find a company</h2>
-    <p class="sub">Search your saved companies or use a LinkedIn company URL. LinkedIn lookup is enabled when the server has an approved API token.</p>
-    <form method="get" class="filterbar">
-        {{ lookup_form.query }}
-        <button class="button" type="submit">Find company</button>
-    </form>
-    {% if lookup_data %}
-        <div class="profile-message">
-            <strong>Company found from {{ lookup_data.source|title }}.</strong>
-            <p>{{ lookup_data.name }}{% if lookup_data.website %} · {{ lookup_data.website }}{% endif %}</p>
-            {% if lookup_data.logo_url %}<img src="{{ lookup_data.logo_url }}" alt="{{ lookup_data.name }} logo" width="48" height="48">{% endif %}
-            <p class="sub">The details above are now prefilled in the company form. Review and save them.</p>
-        </div>
-    {% endif %}
-</section>
 
 {% endblock %}

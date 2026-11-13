@@ -10,11 +10,8 @@
 <fieldset class="role-choice"><legend>{% include "components/field_label.html" with field=form.role %}</legend>{{ form.role }}{% for error in form.role.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</fieldset>
 <section class="signup-company" data-signup-company>
     <h3>Which company are you recruiting for?</h3>
-    <p class="sub">Find your company so its name and logo appear on your job listings.</p>
-    <input type="search" placeholder="Search company name or LinkedIn URL" autocomplete="organization" data-company-search>
-    <div class="signup-company-results" data-company-results></div>
-    {{ form.company_name }}{{ form.company_website }}{{ form.company_logo_url }}
-    <div class="signup-company-selected" data-company-selected hidden></div>
+    <label class="field">Company Name{{ form.company_name }}{{ form.company_name.errors }}</label>
+    {{ form.company_website }}{{ form.company_logo_url }}
 </section>
 <label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<a class="forgot-password-link" href="{% url 'security_question_recovery' %}">Forgot Password?</a><span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <label class="field signup-password-field">{% include "components/field_label.html" with field=form.password2 %}{{ form.password2 }}<span class="signup-field-errors" id="id_password2_error">{% for error in form.password2.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
@@ -29,55 +26,5 @@
     <label class="field" for="{{ form.password_hint.id_for_label }}">{% include "components/field_label.html" with field=form.password_hint %}{{ form.password_hint }}{{ form.password_hint.errors }}<small class="muted">{{ form.password_hint.help_text }}</small></label>
 </details>
 <button class="primary full" type="submit">Create account →</button></form><p class="sub auth-existing-account">Already registered? <a href="{% url 'login' %}">Sign in</a></p></div><p class="auth-footer">Find work. Build your team.</p></section></div>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const search = document.querySelector("[data-company-search]");
-    const results = document.querySelector("[data-company-results]");
-    const selected = document.querySelector("[data-company-selected]");
-    const nameField = document.querySelector("#id_company_name");
-    const websiteField = document.querySelector("#id_company_website");
-    const logoField = document.querySelector("#id_company_logo_url");
-    let timer;
-    const showResult = (company) => {
-        results.replaceChildren();
-        if (!company) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "signup-company-result";
-        if (company.logo_url) {
-            const image = document.createElement("img");
-            image.src = company.logo_url;
-            image.alt = "";
-            button.append(image);
-        }
-        const text = document.createElement("span");
-        text.textContent = `${company.name}${company.website ? ` · ${company.website}` : ""}`;
-        button.append(text);
-        button.addEventListener("click", () => {
-            nameField.value = company.name || "";
-            websiteField.value = company.website || "";
-            logoField.value = company.logo_url || "";
-            selected.hidden = false;
-            selected.innerHTML = company.logo_url
-                ? `<img src="${company.logo_url}" alt="${company.name} logo"><strong>${company.name}</strong>`
-                : `<strong>${company.name}</strong>`;
-            results.replaceChildren();
-            search.value = company.name || "";
-        });
-        results.append(button);
-    };
-    const lookup = () => {
-        const query = search.value.trim();
-        if (!query) { results.replaceChildren(); return; }
-        fetch(`{% url 'signup_company_lookup' %}?q=${encodeURIComponent(query)}`)
-            .then((response) => response.json())
-            .then((data) => showResult(data.result))
-            .catch(() => results.replaceChildren());
-    };
-    search.addEventListener("input", () => {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(lookup, 300);
-    });
-});
-</script>
+
 {% endblock %}

@@ -34,8 +34,8 @@
             <option value="blacklisted"{% if history_filter == 'blacklisted' %} selected{% endif %}>Permanently blacklisted</option>
         </select>
     </label>
-    <div class="field">
-        <span class="row between"><label for="applicant-ats-score">Minimum ATS score</label><button class="text-link" type="button" data-ats-help-toggle aria-expanded="false" aria-controls="ats-scoring-help">Read more</button></span>
+    <div class="field applicant-ats-filter">
+        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum ATS Score</label><button class="applicant-ats-info" type="button" data-ats-help-toggle aria-label="About the minimum ATS score" title="About the minimum ATS score" aria-expanded="false" aria-controls="ats-scoring-help"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v2"/></svg></button></span>
         <select id="applicant-ats-score" name="min_ats_score">
             <option value="">Any score</option>
             <option value="50"{% if minimum_ats_score == '50' %} selected{% endif %}>50+</option>
@@ -76,11 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!panel || !toggle) return;
     panel.hidden = true;
     toggle.setAttribute("aria-expanded", "false");
-    toggle.textContent = "Read more";
     const setOpen = (open) => {
         panel.hidden = !open;
         toggle.setAttribute("aria-expanded", String(open));
-        toggle.textContent = open ? "Close" : "Read more";
         if (open) {
             panel.focus({preventScroll: true});
             requestAnimationFrame(() => panel.scrollIntoView({behavior: "smooth", block: "nearest"}));
