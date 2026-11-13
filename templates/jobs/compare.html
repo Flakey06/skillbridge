@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Compare Jobs · SkillBridge{% endblock %}
+{% block content %}
+<section class="job-comparison-page">
+    <a href="{% url 'job_detail' job.pk %}" class="text-link">← Back To Job</a>
+    <h1>Compare Jobs</h1>
+    <div class="job-comparison-grid">
+        <section class="card job-comparison-column" aria-label="Current job">
+            <p class="eyebrow">Current Job</p>
+            {% include "jobs/comparison_content.html" with item=job %}
+        </section>
+        <section class="card job-comparison-column" aria-label="Comparison job">
+            <form method="get" class="job-comparison-picker">
+                <label for="comparison-job">Compare With</label>
+                <div>
+                    <select name="compare" id="comparison-job" required>
+                        <option value="">Choose A Job</option>
+                        {% for item in comparison_choices %}
+                        <option value="{{ item.pk }}"{% if comparison_job.pk == item.pk %} selected{% endif %}>{{ item.title }} · {{ item.company.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="primary">Compare</button>
+                </div>
+            </form>
+            {% if comparison_job %}
+                {% include "jobs/comparison_content.html" with item=comparison_job %}
+            {% else %}
+                <p class="sub">Choose a job to compare its details alongside the current listing.</p>
+                {% if not comparison_choices %}<p>No other open jobs are available to compare.</p>{% endif %}
+            {% endif %}
+        </section>
+    </div>
+</section>
+{% endblock %}

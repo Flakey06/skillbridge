@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Compare Candidates · SkillBridge{% endblock %}
+{% block content %}
+<section class="job-comparison-page">
+    <a class="text-link" href="{% url 'recruiter_applicants' %}?job={{ application.job_id }}">← Back To Applicants</a>
+    <h1>Compare Candidates</h1>
+    <p class="sub">{{ application.job.title }} · {{ application.job.company.name }}</p>
+    <div class="job-comparison-grid">
+        <section class="card job-comparison-column" aria-label="Selected candidate">
+            <p class="eyebrow">Selected Candidate</p>
+            {% include "employers/candidate_comparison_content.html" with item=application %}
+        </section>
+        <section class="card job-comparison-column" aria-label="Comparison candidate">
+            <form method="get" class="job-comparison-picker">
+                <label for="comparison-candidate">Compare With</label>
+                <div>
+                    <select id="comparison-candidate" name="compare" required>
+                        <option value="">Choose A Candidate</option>
+                        {% for item in comparison_choices %}
+                        <option value="{{ item.pk }}"{% if comparison_application.pk == item.pk %} selected{% endif %}>{{ item.candidate.username }} · {{ item.get_status_display }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="primary" type="submit">Compare</button>
+                </div>
+            </form>
+            {% if comparison_application %}
+                {% include "employers/candidate_comparison_content.html" with item=comparison_application %}
+            {% elif comparison_choices %}<p>Choose another applicant for this job to compare.</p>
+            {% else %}<p>No other applicants for this job are available to compare.</p>{% endif %}
+        </section>
+    </div>
+</section>
+{% endblock %}

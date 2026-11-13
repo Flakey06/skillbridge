@@ -45,7 +45,6 @@ urlpatterns = [
     path('password-reset/complete/', security.password_reset_complete, name='password_reset_complete'),
     path('login/', views.login_view, name='login'),
     path('signup/', views.signup_view, name='signup'),
-    path('signup/company-lookup/', views.signup_company_lookup, name='signup_company_lookup'),
     path('logout/', views.logout_view, name='logout'),
     path('inbox/', views.inbox, name='inbox'),
     path('onboarding/', views.onboarding, name='onboarding'),

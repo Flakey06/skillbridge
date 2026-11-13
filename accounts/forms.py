@@ -46,7 +46,7 @@ class SignupForm(UserCreationForm):
         widget=forms.RadioSelect,
         initial="candidate",
     )
-    company_name = forms.CharField(required=False, widget=forms.HiddenInput())
+    company_name = forms.CharField(label="Company Name", required=False)
     company_website = forms.URLField(required=False, widget=forms.HiddenInput())
     company_logo_url = forms.URLField(required=False, widget=forms.HiddenInput())
     security_question_1 = forms.ChoiceField(

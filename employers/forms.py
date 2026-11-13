@@ -1,22 +1,11 @@
 from django import forms
 
-from accounts.forms import validate_profile_photo
 from .choices import INDUSTRY_CHOICES
 from .models import Company
 from .services import website_logo_url
 
 
-class CompanyLookupForm(forms.Form):
-    query = forms.CharField(label="Company name or LinkedIn URL", max_length=200)
-
-
 class CompanyForm(forms.ModelForm):
-    profile_photo = forms.FileField(
-        label="Your profile photo",
-        required=False,
-        validators=[validate_profile_photo],
-        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
-    )
     name = forms.CharField(label="Name")
     industry = forms.ChoiceField(label="Industry", choices=[("", "Choose an industry")] + INDUSTRY_CHOICES)
     website = forms.CharField(label="Website")

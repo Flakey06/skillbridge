@@ -32,12 +32,9 @@ class CompanyWorkflowTests(TestCase):
         self.assertEqual(company.website, "https://example.com")
         self.assertIn("google.com/s2/favicons", company.logo_url)
 
-    def test_local_company_lookup_endpoint_returns_company_data(self):
-        company = Company.objects.create(name="Northstar Labs", website="https://northstar.example")
-
-        response = self.client.get(reverse("recruiter_company_lookup"), {"q": "Northstar"})
-
+    def test_company_form_has_manual_linkedin_field_without_lookup(self):
+        self.assertIn("linkedin_url", CompanyForm().fields)
+        self.assertNotIn("profile_photo", CompanyForm().fields)
+        response = self.client.get(reverse("recruiter_company"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["result"]["name"], company.name)
-
-# Create your tests here.
+        self.assertNotContains(response, "Look Up Company")

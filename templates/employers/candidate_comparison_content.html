@@ -1,0 +1,29 @@
+<div class="job-comparison-content candidate-comparison-content">
+    <h2 class="preserve-case">{{ item.candidate.username }}</h2>
+    <span class="pill application-status application-status-{{ item.status }}">{{ item.get_status_display }}</span>
+    <p>Applied: {{ item.created_at|date:"d M Y" }}</p>
+    {% if has_pro %}
+    <div class="compatibility-scores">
+        {% include "components/compatibility_score.html" with label="Skill Compatibility" score=item.match_score %}
+        {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=item.ml_prediction.score %}
+    </div>
+    <h3>Matched Skills</h3>
+    <ul class="skill-summary-list">{% for skill in item.matched_skills %}<li>{{ skill }}</li>{% empty %}<li>None recorded.</li>{% endfor %}</ul>
+    <h3>Missing Skills</h3>
+    <ul class="skill-summary-list">{% for skill in item.missing_skills %}<li>{{ skill }}</li>{% empty %}<li>No missing skills recorded.</li>{% endfor %}</ul>
+    <p><strong>Readiness:</strong> {{ item.match_assessment|default:"Not calculated" }}</p>
+    {% if item.ml_prediction.note %}<p class="muted">{{ item.ml_prediction.note }}</p>{% endif %}
+    {% endif %}
+    <h3>Candidate Profile</h3>
+    <dl>
+        <dt>Career</dt><dd>{{ item.candidate.profile.profile_data.career|default:"Not provided" }}</dd>
+        <dt>Specialisation</dt><dd>{{ item.candidate.profile.profile_data.specialisation|default:"Not provided" }}</dd>
+        <dt>Skills</dt><dd>{{ item.candidate.profile.profile_data.skills|default:"Not provided"|linebreaksbr }}</dd>
+        <dt>Experience</dt><dd>{{ item.candidate.profile.profile_data.experience|default:"Not provided"|linebreaksbr }}</dd>
+    </dl>
+    <h3>Submitted Cover Note</h3>
+    <p>{{ item.cover_note|default:"No cover note provided."|linebreaksbr }}</p>
+    <h3>Submitted Resume</h3>
+    <p>{{ item.tailored_resume|default:"No resume recorded."|linebreaksbr }}</p>
+    <a class="text-link" href="{% url 'recruiter_applicant_detail' item.pk %}">Open Applicant Details →</a>
+</div>

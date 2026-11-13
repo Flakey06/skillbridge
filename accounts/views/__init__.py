@@ -11,7 +11,7 @@ from .onboarding_helpers import (
     _resume_form_initial,
     _save_resume_form,
 )
-from .authentication import login_view, signup_view, signup_company_lookup, logout_view
+from .authentication import login_view, signup_view, logout_view
 from .onboarding import (
     onboarding,
     scan_resume_upload,
@@ -38,7 +38,6 @@ __all__ = [
     'inbox',
     'login_view',
     'signup_view',
-    'signup_company_lookup',
     'onboarding',
     'scan_resume_upload',
     'delete_onboarding_resume',
