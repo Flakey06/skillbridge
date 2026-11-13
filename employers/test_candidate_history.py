@@ -101,8 +101,11 @@ class RecruiterCandidateHistoryTests(TestCase):
         self.assertEqual(evaluation.total_score, 80)
         self.assertEqual(evaluation.reviewed_by, self.recruiter)
 
+        application.match_score = 85
+        application.save(update_fields=["match_score"])
         response = self.client.get(reverse("recruiter_applicants"), {"min_ats_score": "80"})
         applications = list(response.context["applications"])
         self.assertEqual(applications, [application])
-        self.assertContains(response, "80/100")
+        self.assertContains(response, "85/100")
+        self.assertContains(response, "Automatic application match")
 

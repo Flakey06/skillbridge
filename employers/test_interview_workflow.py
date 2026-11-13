@@ -13,7 +13,8 @@ class InterviewSchedulingRulesTests(TestCase):
     def setUp(self):
         recruiter = User.objects.create_user(username='interview-rule-recruiter')
         UserProfile.objects.create(user=recruiter, role='recruiter')
-        candidate = User.objects.create_user(username='interview-rule-candidate')
+        candidate = User.objects.create_user(username='interview-rule-candidate', email='candidate@example.com')
+        UserProfile.objects.create(user=candidate, role='candidate', profile_data={'phone': '+65 8123 4567', 'linkedin': 'https://www.linkedin.com/in/candidate'})
         company = Company.objects.create(name='Interview Company')
         job = Job.objects.create(title='Role', company=company, created_by=recruiter, employment_type='full_time')
         self.application = JobApplication.objects.create(candidate=candidate, job=job)
@@ -42,6 +43,8 @@ class InterviewSchedulingRulesTests(TestCase):
         self.application.save(update_fields=['status'])
         response = self.client.get(reverse('recruiter_calendar'), {'application': self.application.pk})
         self.assertEqual(response.context['selected_application'].pk, self.application.pk)
+        self.assertContains(response, 'Calendar downloads sync it to the timezone configured')
+        self.assertContains(response, 'Interview start')
         response = self.client.post(reverse('recruiter_calendar'), {
             'application_id': self.application.pk, 'scheduled_start': '2026-12-01T14:00',
         })
@@ -62,8 +65,57 @@ class InterviewSchedulingRulesTests(TestCase):
         url = reverse('recruiter_applicant_detail', args=[self.application.pk])
         response = self.client.post(url, {'status': 'shortlisted'})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], url + '#update-progress')
+        self.assertEqual(response['Location'], reverse('recruiter_calendar') + f'?application={self.application.pk}')
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, 'shortlisted')
         response = self.client.get(url)
         self.assertContains(response, 'id="update-progress"')
+
+    def test_recruiter_sees_candidate_contact_methods(self):
+        response = self.client.get(reverse('recruiter_applicant_detail', args=[self.application.pk]))
+        self.assertContains(response, 'mailto:candidate@example.com')
+        self.assertContains(response, 'tel:+65 8123 4567')
+        self.assertContains(response, 'https://www.linkedin.com/in/candidate')
+
+    def test_interview_records_contact_method(self):
+        self.application.status = 'shortlisted'
+        self.application.save(update_fields=['status'])
+        self.client.post(reverse('recruiter_calendar'), {
+            'application_id': self.application.pk,
+            'scheduled_start': '2026-12-01T14:00',
+            'contact_method': 'phone',
+            'contact_details': '+65 8123 4567',
+        })
+        interview = Interview.objects.get(application=self.application)
+        self.assertEqual(interview.contact_method, 'phone')
+        self.assertEqual(interview.contact_details, '+65 8123 4567')
+
+    def test_candidate_interview_clash_requires_confirmation(self):
+        other_job = Job.objects.create(
+            title='Other interview role', company=self.application.job.company,
+            created_by=self.application.job.created_by, employment_type='full_time',
+        )
+        other_application = JobApplication.objects.create(
+            candidate=self.application.candidate, job=other_job, status='interview',
+        )
+        Interview.objects.create(
+            application=other_application,
+            created_by=self.application.job.created_by,
+            scheduled_start='2026-12-01T14:00:00+08:00',
+            scheduled_end='2026-12-01T15:00:00+08:00',
+        )
+        self.application.status = 'shortlisted'
+        self.application.save(update_fields=['status'])
+        url = reverse('recruiter_calendar')
+        data = {
+            'application_id': self.application.pk,
+            'scheduled_start': '2026-12-01T14:30',
+            'scheduled_end': '2026-12-01T15:30',
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Potential interview clash')
+        self.assertEqual(Interview.objects.filter(application=self.application).count(), 0)
+        response = self.client.post(url, {**data, 'confirm_conflict': 'yes'})
+        self.assertRedirects(response, url)
+        self.assertEqual(Interview.objects.filter(application=self.application).count(), 1)

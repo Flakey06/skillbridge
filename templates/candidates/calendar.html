@@ -17,6 +17,7 @@
     </div>
 </div>
 
+<div class="calendar-timezone-notice" role="note"><strong>Interview timing follows your calendar</strong><span>Download the calendar event to display it in your configured timezone and keep the timing available in your calendar.</span></div>
 <div class="calendar-page-layout">
 <aside class="calendar-sidebar">
 <div class="card selected-day"><h2>{{ calendar.selected_date|date:"l, d F Y" }}</h2>{% for interview in calendar.selected_events %}<div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }}{% if interview.application.job.company.name %} · {{ interview.application.job.company.name }}{% endif %}</span>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}{% if interview.calcom_event_url %}<a href="{{ interview.calcom_event_url }}" target="_blank" rel="noreferrer">Open Cal.com booking</a>{% endif %}</div>{% empty %}<p class="sub">No interview scheduled for this date.</p>{% endfor %}</div>

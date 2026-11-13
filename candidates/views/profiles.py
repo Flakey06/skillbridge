@@ -147,7 +147,15 @@ def profile(request):
         _sync_main_resume(request.user)
         if is_async_save:
             message = "File uploaded and all changes saved" if is_auto_upload else "All changes saved automatically"
-            return JsonResponse({"ok": True, "message": message})
+            required_fields = ("name", "career", "specialisation")
+            missing_required = [field for field in required_fields if not str(data.get(field, "")).strip()]
+            return JsonResponse({
+                "ok": True,
+                "message": message,
+                "application_ready": not missing_required,
+                "missing_required": missing_required,
+                "saved_required": {field: data.get(field, "") for field in required_fields},
+            })
         notify(request.user, "Profile updated", "Your SkillBridge profile has been updated successfully.", "profile")
         profile.refresh_from_db()
         form = CandidateProfileForm(initial=_profile_initial(request, profile))

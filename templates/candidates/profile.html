@@ -29,7 +29,7 @@
 </nav>
 
 <section class="content-columns profile-layout">
-    <form class="profile-form" method="post" enctype="multipart/form-data"{% if form.errors %} data-restore-scroll="{{ request.POST.profile_scroll_y }}" data-restore-sections="{{ request.POST.profile_open_sections }}"{% endif %}>
+    <form class="profile-form" method="post" action="{% url 'candidate_profile' %}" data-autosave-url="{% url 'candidate_profile_autosave' %}" enctype="multipart/form-data"{% if form.errors %} data-restore-scroll="{{ request.POST.profile_scroll_y }}" data-restore-sections="{{ request.POST.profile_open_sections }}"{% endif %}>
         {% csrf_token %}
         <input type="hidden" name="profile_scroll_y" value="0">
         <input type="hidden" name="profile_open_sections" value="[]">
@@ -41,7 +41,7 @@
             <section class="profile-form-section" id="profile-details">
                 <div class="profile-form-section-heading">
                     <div><p class="eyebrow">Profile completeness</p><h2>{{ completion_percent }}% complete</h2></div>
-                    <div class="profile-autosave-box" aria-live="polite">
+                    <div class="profile-autosave-box profile-autosave-floating" data-profile-autosave-bar data-state="saved" role="status" aria-live="polite" aria-atomic="true">
                         <strong>Changes save automatically</strong>
                         <p data-profile-autosave-status>All changes saved</p>
                         <small>Profile fields, experience, and certifications save continuously as you edit. Resume and profile-photo files upload automatically when selected.</small>
@@ -172,37 +172,68 @@
 document.addEventListener("DOMContentLoaded", () => {
     const profileForm = document.querySelector(".profile-form");
     const autosaveStatus = document.querySelector("[data-profile-autosave-status]");
+    const autosaveBar = document.querySelector("[data-profile-autosave-bar]");
     const resumeField = profileForm.querySelector('#id_resume');
     const resumeAutofill = profileForm.querySelector('[data-resume-autofill]');
     const fileFields = new Set(["resume", "profile_photo"]);
     let autosaveTimer;
     let autosaveController;
+    let changeRevision = 0;
+    let savedRevision = 0;
+    let activeSave = null;
 
     const setAutosaveStatus = (message) => {
         autosaveStatus.textContent = message;
+        const normalised = String(message).toLowerCase();
+        autosaveBar.dataset.state = normalised.includes("error") || normalised.includes("could not") || normalised.includes("expired") || normalised.includes("instead of data")
+            ? "error"
+            : normalised.includes("saving") || normalised.includes("uploading") || normalised.includes("waiting")
+                ? "saving"
+                : "saved";
     };
     const saveProfile = async ({uploadFiles = false} = {}) => {
+        const revision = changeRevision;
         autosaveController?.abort();
         autosaveController = new AbortController();
         const formData = new FormData(profileForm);
         formData.set("action", uploadFiles ? "auto_upload" : "autosave");
         if (!uploadFiles) fileFields.forEach((name) => formData.delete(name));
         setAutosaveStatus(uploadFiles ? "Uploading selected file…" : "Saving changes…");
-        try {
-            const response = await fetch(profileForm.action || window.location.href, {
+        activeSave = (async () => { try {
+            const response = await fetch(profileForm.dataset.autosaveUrl, {
                 method: "POST",
                 body: formData,
                 headers: {"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"},
-                signal: autosaveController.signal
+                signal: autosaveController.signal,
+                credentials: "same-origin"
             });
+            const contentType = response.headers.get("content-type") || "";
+            if (response.redirected || response.url.includes("/login/")) {
+                throw new Error("Your session expired. Refresh the page and sign in again.");
+            }
+            if (!contentType.includes("application/json")) {
+                throw new Error(`Autosave received a server page instead of data (${response.status}). Refresh the page; if it continues, check the Django terminal for the error.`);
+            }
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "Changes could not be saved.");
-            setAutosaveStatus(result.message || "All changes saved automatically");
+            savedRevision = Math.max(savedRevision, revision);
+            if (revision === changeRevision) {
+                const readiness = result.application_ready
+                    ? " Profile ready for job applications."
+                    : result.missing_required?.length
+                        ? ` Still needed to apply: ${result.missing_required.map((field) => field.replaceAll("_", " ")).join(", ")}.`
+                        : "";
+                setAutosaveStatus(`${result.message || "All changes saved automatically"}.${readiness}`.replace("automatically..", "automatically."));
+            }
+            return true;
         } catch (error) {
             if (error.name !== "AbortError") setAutosaveStatus(error.message || "Changes could not be saved. Please try again.");
-        }
+            return false;
+        } })();
+        return activeSave;
     };
     const queueAutosave = (event) => {
+        changeRevision += 1;
         if (event.target.type === "file" || fileFields.has(event.target.name)) {
             window.clearTimeout(autosaveTimer);
             setAutosaveStatus("Uploading selected file…");
@@ -215,6 +246,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     profileForm.addEventListener("input", queueAutosave);
     profileForm.addEventListener("change", queueAutosave);
+    profileForm.addEventListener("focusout", (event) => {
+        if (event.target.type === "file" || savedRevision >= changeRevision) return;
+        window.clearTimeout(autosaveTimer);
+        autosaveTimer = window.setTimeout(saveProfile, 50);
+    });
     resumeField?.addEventListener("change", () => {
         resumeAutofill.hidden = !(resumeField.files?.length || {{ profile.resume|yesno:"true,false" }});
     });
@@ -225,6 +261,24 @@ document.addEventListener("DOMContentLoaded", () => {
         autosaveController?.abort();
         profileForm.elements.profile_scroll_y.value = String(window.scrollY);
         profileForm.elements.profile_open_sections.value = JSON.stringify(entrySections().map((section) => section.open));
+    });
+    document.addEventListener("click", async (event) => {
+        const link = event.target.closest("a[href]");
+        if (!link || link.target === "_blank" || link.hasAttribute("download") || savedRevision >= changeRevision) return;
+        const destination = new URL(link.href, window.location.href);
+        if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+        event.preventDefault();
+        window.clearTimeout(autosaveTimer);
+        setAutosaveStatus("Saving before leaving…");
+        const saved = await saveProfile();
+        if (saved) window.location.assign(destination.href);
+    });
+    window.addEventListener("pagehide", () => {
+        if (savedRevision >= changeRevision || !navigator.sendBeacon) return;
+        const formData = new FormData(profileForm);
+        formData.set("action", "autosave");
+        fileFields.forEach((name) => formData.delete(name));
+        navigator.sendBeacon(profileForm.dataset.autosaveUrl, formData);
     });
     if (profileForm.dataset.restoreScroll) {
         window.addEventListener("load", async () => {

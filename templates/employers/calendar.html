@@ -17,7 +17,7 @@
     </div>
 </div>
 
-
+<div class="calendar-timezone-notice" role="note"><strong>Choose the interview timing that works for both parties</strong><span>Calendar downloads sync it to the timezone configured in Google Calendar, Outlook, or Apple Calendar.</span></div>
 
 <div class="calendar-page-layout">
     <aside class="calendar-sidebar">
@@ -36,9 +36,12 @@
 <dialog class="interview-dialog" data-interview-dialog data-auto-open="{{ selected_application|yesno:'true,false' }}">
     <form method="post" class="stack">
         {% csrf_token %}
+        {% if schedule_conflicts %}<div class="interview-conflict-warning" role="alert"><strong>Potential interview clash</strong><p>The proposed time overlaps with:</p><ul>{% for conflict in schedule_conflicts %}<li><b>{{ conflict.kind }} conflict:</b> {{ conflict.title }} with {{ conflict.candidate }}, {{ conflict.start|date:"d M Y, H:i" }}–{{ conflict.end|date:"H:i" }}</li>{% endfor %}</ul><p>Choose another time, or confirm that both parties can still attend.</p><input type="hidden" name="confirm_conflict" value="yes"></div>{% endif %}
         <input type="hidden" name="interview_id" data-interview-id-field>
         <label class="field" data-application-field>Candidate and role<select name="application_id"><option value="">Choose an applicant</option>{% for application in applications %}<option value="{{ application.id }}"{% if selected_application.id == application.id %} selected{% endif %}>{{ application.candidate.username }} · {{ application.job.title }}</option>{% endfor %}</select></label>
         <div data-create-only>
+            <label class="field">{% include "components/field_label.html" with field=form.contact_method %}{{ form.contact_method }}{{ form.contact_method.errors }}</label>
+            <label class="field">{% include "components/field_label.html" with field=form.contact_details %}{{ form.contact_details }}{{ form.contact_details.errors }}<small class="muted">Add the email, phone number, location, or joining instructions the candidate should use.</small></label>
             <label class="field">{% include "components/field_label.html" with field=form.meeting_url %}{{ form.meeting_url }}{{ form.meeting_url.errors }}</label>
             <label class="field">{% include "components/field_label.html" with field=form.calcom_event_url %}{{ form.calcom_event_url }}{{ form.calcom_event_url.errors }}</label>
         </div>
@@ -47,10 +50,10 @@
         </div>
         <button class="button" type="button" data-toggle-reschedule>Reschedule interview</button>
         <div class="interview-reschedule-fields" data-reschedule-fields hidden>
-            <label class="field">{% include "components/field_label.html" with field=form.scheduled_start %}{{ form.scheduled_start }}{{ form.scheduled_start.errors }}</label>
-            <label class="field">{% include "components/field_label.html" with field=form.scheduled_end %}{{ form.scheduled_end }}{{ form.scheduled_end.errors }}</label>
+            <label class="field">{% include "components/field_label.html" with field=form.scheduled_start %}{{ form.scheduled_start }}<small class="muted">This will use the timezone configured in the connected calendar.</small>{{ form.scheduled_start.errors }}</label>
+            <label class="field">{% include "components/field_label.html" with field=form.scheduled_end %}{{ form.scheduled_end }}<small class="muted">Optional. The timing can be changed later.</small>{{ form.scheduled_end.errors }}</label>
         </div>
-        <div class="row between"><button class="button" type="button" data-close-interview>Cancel</button><button class="primary" type="submit" data-submit-interview>Schedule interview</button></div>
+        <div class="row between"><button class="button" type="button" data-close-interview>Cancel</button><button class="primary" type="submit" data-submit-interview>{% if schedule_conflicts %}Schedule anyway{% else %}Schedule interview{% endif %}</button></div>
     </form>
  </dialog>
 <script>

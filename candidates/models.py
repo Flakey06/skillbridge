@@ -49,6 +49,7 @@ class CandidateMilestone(models.Model):
         ("planned", "Planned"),
         ("in_progress", "In progress"),
         ("pending_verification", "Pending verification"),
+        ("rejected", "Rejected"),
         ("completed", "Completed"),
     ]
 
@@ -68,6 +69,9 @@ class CandidateMilestone(models.Model):
     verification_method = models.CharField(max_length=50, blank=True)
     verification_details = models.TextField(blank=True)
     verified_at = models.DateTimeField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="reviewed_certificates")
+    review_comment = models.TextField(blank=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
     notes = models.TextField(blank=True)
     evidence_file = models.FileField(upload_to="certificate_evidence/", blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)

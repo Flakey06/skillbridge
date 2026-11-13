@@ -101,6 +101,7 @@
                                                         </div>
                                                     </details>
                                                 {% elif not course.completed %}
+                                                    {% if course.submission.status == 'rejected' %}<div class="profile-message error" role="alert"><strong>Changes required:</strong> {{ course.submission.review_comment|default:course.submission.verification_details }} You can correct the details and resubmit below.</div>{% endif %}
                                                     <form method="post" enctype="multipart/form-data" data-certificate-verification-form>
                                                         {% csrf_token %}
                                                         <input type="hidden" name="action" value="complete_course">

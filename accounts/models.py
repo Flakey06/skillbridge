@@ -139,6 +139,43 @@ class Notification(models.Model):
         return f"{self.recipient.username} · {self.title}"
 
 
+class AdminAuditLog(models.Model):
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="admin_audit_logs")
+    action = models.CharField(max_length=80)
+    target_type = models.CharField(max_length=80)
+    target_id = models.CharField(max_length=80, blank=True)
+    target_label = models.CharField(max_length=255)
+    details = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.action} · {self.target_label}"
+
+
+class ModerationReport(models.Model):
+    STATUS_CHOICES = [("open", "Open"), ("resolved", "Resolved"), ("dismissed", "Dismissed")]
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="moderation_reports")
+    subject_type = models.CharField(max_length=40)
+    subject_id = models.CharField(max_length=80)
+    subject_label = models.CharField(max_length=255)
+    reason = models.CharField(max_length=120)
+    details = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
+    moderator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="moderated_reports")
+    resolution_note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.reason} · {self.subject_label}"
+
+
 class Referral(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),

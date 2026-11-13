@@ -25,6 +25,11 @@ from accounts.views.payments import manage_payment_method
 
 urlpatterns = [
     path('administration/', administration.administration_dashboard, name='administration_dashboard'),
+    path('administration/certificates/<int:milestone_id>/review/', administration.review_certificate, name='administration_review_certificate'),
+    path('administration/users/<int:user_id>/manage/', administration.manage_user, name='administration_manage_user'),
+    path('administration/companies/<int:company_id>/review/', administration.review_company, name='administration_review_company'),
+    path('administration/jobs/<int:job_id>/review/', administration.review_job, name='administration_review_job'),
+    path('administration/reports/<int:report_id>/review/', administration.review_report, name='administration_review_report'),
     path('administration/login/', administration.administration_login, name='administration_login'),
     path('administration/logout/', administration.administration_logout, name='administration_logout'),
     path('admin/', admin.site.urls),

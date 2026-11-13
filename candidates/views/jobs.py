@@ -17,7 +17,7 @@ from .common import _context, _current_profile
 @candidate_required
 def jobs(request):
     form = JobFilterForm(request.GET)
-    job_queryset = Job.objects.filter(status="open").select_related("company")
+    job_queryset = Job.objects.filter(status="open", moderation_status="approved").select_related("company")
     if form.is_valid():
         query = form.cleaned_data.get("q")
         location = form.cleaned_data.get("location")

@@ -84,6 +84,26 @@ class ApplicationWorkflowTests(TestCase):
         self.assertEqual(application.match_breakdown["required_skills"], {"earned": 40, "max": 60})
         self.assertEqual(application.tailored_resume, tailored_resume.content)
 
+    def test_free_candidate_can_submit_without_a_pro_match_object(self):
+        self.candidate.profile.plan = "free"
+        self.candidate.profile.save(update_fields=["plan"])
+        resume = TailoredResume.objects.create(
+            candidate=self.candidate,
+            title="Free candidate resume",
+            content="Python and Django experience",
+            approved_at=timezone.now(),
+        )
+        self.client.force_login(self.candidate)
+        response = self.client.post(reverse("job_detail", args=[self.job.pk]), {
+            "action": "apply",
+            "cover_note": "I am interested.",
+            "resume_id": resume.pk,
+        })
+        self.assertRedirects(response, reverse("candidate_applications"))
+        application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
+        self.assertIsNotNone(application.match_score)
+        self.assertIn("Python", application.matched_skills)
+
     def test_candidate_application_submits_saved_tailored_resume(self):
         TailoredResume.objects.create(
             candidate=self.candidate,
@@ -170,7 +190,7 @@ class ApplicationWorkflowTests(TestCase):
             reverse("recruiter_applicants"),
             {"application_id": application.pk, "status": "shortlisted"},
         )
-        self.assertRedirects(response, reverse("recruiter_applicants"))
+        self.assertRedirects(response, reverse("recruiter_calendar") + f"?application={application.pk}")
         application.refresh_from_db()
         self.assertEqual(application.status, "shortlisted")
 

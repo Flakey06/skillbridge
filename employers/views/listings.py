@@ -18,8 +18,9 @@ def _publish_listing(request, recruiter, form):
             job = form.save(commit=False)
             job.company = recruiter.company
             job.created_by = request.user
+            job.moderation_status = "pending"
             job.save()
-            messages.success(request, "Job listing created.")
+            messages.success(request, "Job listing submitted for administrator approval.")
             return redirect("recruiter_listings")
     return None
 
@@ -80,8 +81,13 @@ def edit_listing(request, job_id):
     job = get_object_or_404(Job, pk=job_id, created_by=request.user)
     form = JobForm(request.POST or None, instance=job)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Job listing updated.")
+        job = form.save(commit=False)
+        job.moderation_status = "pending"
+        job.moderation_comment = ""
+        job.reviewed_by = None
+        job.reviewed_at = None
+        job.save()
+        messages.success(request, "Job listing updated and submitted for administrator approval.")
         return redirect("recruiter_job_detail", job_id=job.id)
     return render(request, "employers/create_listing.html", _context(
         request, form=form, job=job, company=job.company, editing=True,

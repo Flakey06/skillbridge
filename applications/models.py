@@ -146,6 +146,17 @@ class ApplicantEvaluation(models.Model):
 
 
 class Interview(models.Model):
+    ATTENDANCE_CHOICES = [
+        ("scheduled", "Scheduled"),
+        ("attended", "Attended"),
+        ("no_show", "No-show"),
+    ]
+    CONTACT_METHOD_CHOICES = [
+        ("video", "Video meeting"),
+        ("phone", "Phone call"),
+        ("email", "Email"),
+        ("in_person", "In person"),
+    ]
     RESCHEDULE_STATUS_CHOICES = [
         ("", "No pending request"),
         ("pending", "Pending recruiter review"),
@@ -160,6 +171,11 @@ class Interview(models.Model):
     scheduled_start = models.DateTimeField()
     scheduled_end = models.DateTimeField(blank=True, null=True)
     meeting_url = models.URLField(blank=True)
+    contact_method = models.CharField(max_length=20, choices=CONTACT_METHOD_CHOICES, default="video")
+    contact_details = models.CharField(max_length=300, blank=True)
+    attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_CHOICES, default="scheduled")
+    recruiter_feedback = models.TextField(blank=True)
+    serious_concern = models.BooleanField(default=False)
     calcom_event_url = models.URLField(blank=True)
     notes = models.TextField(blank=True)
     candidate_notes = models.TextField(blank=True)

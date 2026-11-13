@@ -62,11 +62,20 @@ class ApplicantEvaluationForm(forms.ModelForm):
 
 
 class InterviewForm(forms.ModelForm):
+    contact_method = forms.ChoiceField(
+        choices=Interview.CONTACT_METHOD_CHOICES,
+        required=False,
+        initial="video",
+    )
     scheduled_start = forms.DateTimeField(
+        label="Interview start",
+        help_text="This time will sync to the timezone configured in your calendar.",
         input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"],
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
     )
     scheduled_end = forms.DateTimeField(
+        label="Interview end",
+        help_text="Optional. You can change the timing later.",
         required=False,
         input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"],
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
@@ -82,9 +91,10 @@ class InterviewForm(forms.ModelForm):
 
     class Meta:
         model = Interview
-        fields = ["scheduled_start", "scheduled_end", "meeting_url", "calcom_event_url", "notes"]
+        fields = ["scheduled_start", "scheduled_end", "contact_method", "contact_details", "meeting_url", "calcom_event_url", "notes"]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 4}),
+            "contact_details": forms.TextInput(attrs={"placeholder": "Email, phone number, address, or instructions"}),
         }
 
     def _clean_url(self, field_name):
@@ -98,6 +108,9 @@ class InterviewForm(forms.ModelForm):
         except ValidationError:
             raise forms.ValidationError("Enter a valid URL, for example https://cal.com/your-link.")
         return value
+
+    def clean_contact_method(self):
+        return self.cleaned_data.get("contact_method") or "video"
 
     def clean_meeting_url(self):
         return self._clean_url("meeting_url")

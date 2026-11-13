@@ -10,7 +10,7 @@ from django.db.models import Count, Exists, F, OuterRef, Q
 from accounts.decorators import recruiter_required
 from accounts.notification_helpers import notify
 from applications.forms import ApplicantEvaluationForm, ApplicationStatusForm
-from applications.models import ApplicantEvaluation, ApplicationReviewEvent, CandidateCompanyBlacklist, JobApplication
+from applications.models import ApplicantEvaluation, ApplicationReviewEvent, CandidateCompanyBlacklist, Interview, JobApplication
 from jobs.models import Job
 from .common import _context, _recruiter
 
@@ -67,7 +67,7 @@ def applicants(request):
     elif candidate_history == "blacklisted":
         applications = applications.filter(is_blacklisted=True)
     if minimum_ats_score.isdigit():
-        applications = applications.filter(evaluation__total_score__gte=int(minimum_ats_score))
+        applications = applications.filter(match_score__gte=int(minimum_ats_score))
 
     sort = "match" if request.GET.get("sort") == "match" and request.user.profile.is_pro else "newest"
     if sort == "match":
@@ -102,6 +102,9 @@ def applicants(request):
                     fail_silently=True,
                 )
             messages.success(request, "Applicant status updated.")
+            if previous_status != "shortlisted" and application.status == "shortlisted":
+                messages.info(request, "Candidate shortlisted. Schedule the interview and confirm how you will contact them.")
+                return redirect(f"{reverse('recruiter_calendar')}?application={application.pk}")
             return redirect("recruiter_applicants")
     else:
         status_form = ApplicationStatusForm()
@@ -133,6 +136,13 @@ def applicant_detail(request, application_id):
     ).select_related("job").order_by("-created_at")
     company_application_count = company_applications.count()
     company_rejection_count = company_applications.filter(status="rejected").count()
+    company_interviews = Interview.objects.filter(
+        application__candidate=application.candidate,
+        application__job__company=application.job.company,
+    )
+    company_no_show_count = company_interviews.filter(attendance_status="no_show").count()
+    serious_concerns = company_interviews.filter(serious_concern=True).select_related("application__job").order_by("-scheduled_start")
+    blacklist_eligible = company_no_show_count >= 2 or serious_concerns.exists()
     blacklist_entry = CandidateCompanyBlacklist.objects.filter(
         company=application.job.company,
         candidate=application.candidate,
@@ -149,8 +159,8 @@ def applicant_detail(request, application_id):
         reason = request.POST.get("blacklist_reason", "").strip()
         if blacklist_entry:
             messages.info(request, "This candidate is already permanently blacklisted for your company.")
-        elif company_rejection_count < 2:
-            messages.error(request, "Permanent blacklisting is available after at least two rejected applications at your company.")
+        elif not blacklist_eligible:
+            messages.error(request, "Permanent blacklisting is available after two interview no-shows or a documented serious interview concern.")
         elif not reason:
             messages.error(request, "Enter a reason before permanently blacklisting this candidate.")
         else:
@@ -169,7 +179,7 @@ def applicant_detail(request, application_id):
             evaluation.application = application
             evaluation.reviewed_by = request.user
             evaluation.save()
-            messages.success(request, f"ATS evaluation saved with a fixed score of {evaluation.total_score}/100.")
+            messages.success(request, f"Recruiter evaluation saved with a fixed score of {evaluation.total_score}/100.")
             return redirect(reverse("recruiter_applicant_detail", kwargs={"application_id": application.id}) + "#ats-evaluation")
     else:
         evaluation_form = ApplicantEvaluationForm(instance=evaluation)
@@ -192,6 +202,9 @@ def applicant_detail(request, application_id):
             "application",
         )
         messages.success(request, "Applicant status updated.")
+        if previous_status != "shortlisted" and application.status == "shortlisted":
+            messages.info(request, "Candidate shortlisted. Schedule the interview and confirm how you will contact them.")
+            return redirect(f"{reverse('recruiter_calendar')}?application={application.pk}")
         return redirect(reverse("recruiter_applicant_detail", kwargs={"application_id": application.id}) + "#update-progress")
     return render(
         request,
@@ -208,6 +221,9 @@ def applicant_detail(request, application_id):
             company_applications=company_applications,
             company_application_count=company_application_count,
             company_rejection_count=company_rejection_count,
+            company_no_show_count=company_no_show_count,
+            serious_concerns=serious_concerns,
+            blacklist_eligible=blacklist_eligible,
             review_history=ApplicationReviewEvent.objects.filter(
                 application__candidate=application.candidate,
                 application__job__company=application.job.company,

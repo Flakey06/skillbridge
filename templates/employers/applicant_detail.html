@@ -64,9 +64,32 @@
             <p><b>Experience:</b> {{ profile.profile_data.experience|default:"Not provided"|linebreaksbr }}</p>
         </div>
 
+        <div class="card candidate-contact-card">
+            <div class="section-heading"><div><h2>Contact candidate</h2><p class="sub">Use these details only for this recruitment process.</p></div></div>
+            <div class="candidate-contact-methods">
+                {% if application.candidate.email %}<a class="button" href="mailto:{{ application.candidate.email }}?subject={{ application.job.title|urlencode }} interview">Email {{ application.candidate.email }}</a>{% endif %}
+                {% if profile.profile_data.phone %}<a class="button" href="tel:{{ profile.profile_data.phone }}">Call {{ profile.profile_data.phone }}</a>{% endif %}
+                {% if profile.profile_data.linkedin %}<a class="button" href="{{ profile.profile_data.linkedin }}" target="_blank" rel="noopener noreferrer">Open LinkedIn</a>{% endif %}
+                {% if not application.candidate.email and not profile.profile_data.phone and not profile.profile_data.linkedin %}<p class="sub">The candidate has not provided a contact method.</p>{% endif %}
+            </div>
+            {% if application.status == 'shortlisted' %}<a class="primary button" href="{% url 'recruiter_calendar' %}?application={{ application.id }}">Schedule interview and choose contact method →</a>{% endif %}
+        </div>
+
+        {% if application.interviews.exists %}<div class="card" id="interview-outcomes">
+            <div class="section-heading"><div><h2>Interview attendance and feedback</h2><p class="sub">Record attendance after an interview. A no-show can still be rescheduled from the calendar.</p></div><a class="button small" href="{% url 'recruiter_calendar' %}">Open calendar / reschedule</a></div>
+            {% for interview in application.interviews.all %}<form method="post" action="{% url 'recruiter_calendar' %}" class="form-grid interview-outcome-form">
+                {% csrf_token %}<input type="hidden" name="action" value="record_outcome"><input type="hidden" name="interview_id" value="{{ interview.pk }}">
+                <p class="span2"><strong>{{ interview.scheduled_start|date:"d M Y, H:i" }}</strong>{% if interview.attendance_status == 'no_show' %} · <span class="pill">No-show</span>{% elif interview.attendance_status == 'attended' %} · <span class="pill progress-green">Attended</span>{% endif %}</p>
+                <label class="field">Attendance<select name="attendance_status"><option value="scheduled"{% if interview.attendance_status == 'scheduled' %} selected{% endif %}>Scheduled</option><option value="attended"{% if interview.attendance_status == 'attended' %} selected{% endif %}>Attended</option><option value="no_show"{% if interview.attendance_status == 'no_show' %} selected{% endif %}>No-show</option></select></label>
+                <label class="field span2">Recruiter feedback<textarea name="recruiter_feedback" rows="3" placeholder="Record factual interview feedback">{{ interview.recruiter_feedback }}</textarea></label>
+                <label class="experience-current span2"><input type="checkbox" name="serious_concern" value="yes"{% if interview.serious_concern %} checked{% endif %}> Record a serious interview concern for blacklist review</label>
+                <div class="static-page-actions span2"><button class="button" type="submit">Save interview outcome</button></div>
+            </form>{% endfor %}
+        </div>{% endif %}
+
         <div class="card" id="ats-evaluation">
             <div class="section-heading">
-                <div><h2>Structured ATS evaluation</h2><p class="sub">Use the same four job-related questions for every candidate.</p></div>
+                <div><h2>Structured recruiter evaluation</h2><p class="sub">Use the same four job-related questions for every candidate.</p></div>
                 {% if evaluation %}<span class="pill progress-green">{{ evaluation.total_score }}/100</span>{% endif %}
             </div>
             <p class="sub">Score only evidence relevant to this role. Each answer is worth 1–5 points; the fixed score is calculated from 20 possible points.</p>
@@ -82,7 +105,7 @@
 
         <div class="card" id="candidate-history">
             <div class="section-heading">
-                <div><h2>Company application history</h2><p class="sub">{{ company_application_count }} application{{ company_application_count|pluralize }} · {{ company_rejection_count }} rejected</p></div>
+                <div><h2>Company application history</h2><p class="sub">{{ company_application_count }} application{{ company_application_count|pluralize }} · {{ company_no_show_count }} interview no-show{{ company_no_show_count|pluralize }}</p></div>
                 {% if blacklist_entry %}<span class="pill">Permanently blacklisted</span>{% endif %}
             </div>
             {% for past_application in company_applications %}
@@ -101,17 +124,19 @@
                 </div>
             {% empty %}<p class="sub">No recorded review changes yet.</p>{% endfor %}
 
+            {% if serious_concerns %}<h3>Documented interview concerns</h3>{% for concern in serious_concerns %}<div class="notification-item"><strong>{{ concern.application.job.title }}</strong><p>{{ concern.recruiter_feedback|default:"Serious concern recorded by recruiter." }}</p><small>{{ concern.scheduled_start|date:"d M Y, H:i" }}</small></div>{% endfor %}{% endif %}
+
             {% if blacklist_entry %}
                 <div class="profile-message error"><strong>Permanent company blacklist</strong><p>{{ blacklist_entry.reason }}</p><small>Added {{ blacklist_entry.created_at|date:"d M Y, H:i" }}{% if blacklist_entry.blocked_by %} by {{ blacklist_entry.blocked_by.username }}{% endif %}</small></div>
-            {% elif company_rejection_count >= 2 %}
+            {% elif blacklist_eligible %}
                 <form method="post" class="stack">
                     {% csrf_token %}<input type="hidden" name="action" value="blacklist">
                     <label class="field">Permanent blacklist reason<textarea name="blacklist_reason" rows="3" required></textarea></label>
-                    <p class="sub">This permanently prevents the candidate from applying to any current or future role at {{ application.job.company.name }}.</p>
+                    <p class="sub">Available because the candidate has two recorded interview no-shows or a documented serious interview concern. This permanently prevents applications to {{ application.job.company.name }}.</p>
                     <button class="button" type="submit">Permanently blacklist candidate</button>
                 </form>
             {% else %}
-                <p class="sub">Permanent blacklisting becomes available after two rejected applications at this company.</p>
+                <p class="sub">Permanent blacklisting becomes available after two recorded interview no-shows or a documented serious interview concern.</p>
             {% endif %}
         </div>
     </section>

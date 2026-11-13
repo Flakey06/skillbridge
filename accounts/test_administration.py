@@ -5,7 +5,8 @@ from django.urls import reverse
 from applications.models import JobApplication
 from employers.models import Company
 from jobs.models import Job
-from .models import UserProfile
+from candidates.models import CandidateMilestone, Certification
+from .models import AdminAuditLog, ModerationReport, UserProfile
 
 
 class AdministrationTests(TestCase):
@@ -95,6 +96,99 @@ class AdministrationTests(TestCase):
         response = self.client.get(reverse('administration_dashboard'))
         self.assertEqual(response.context['match_statistics']['percent'], 0)
         self.assertIsNone(response.context['most_popular_job'])
+
+    def test_staff_can_review_pending_certificates(self):
+        certification = Certification.objects.create(title='Verified Course', provider='Course Provider')
+        submission = CandidateMilestone.objects.create(
+            candidate=self.candidate,
+            certification=certification,
+            status='pending_verification',
+            certificate_id='CERT-123456',
+            verification_url='https://example.com/verify/CERT-123456',
+        )
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('administration_dashboard'))
+        self.assertContains(response, 'Verified Course')
+        self.assertContains(response, 'CERT-123456')
+
+        response = self.client.post(
+            reverse('administration_review_certificate', args=[submission.pk]),
+            {'decision': 'approve'},
+        )
+        self.assertRedirects(response, reverse('administration_dashboard') + '#certifications')
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'completed')
+        self.assertEqual(submission.verification_method, 'admin_review')
+        self.assertIsNotNone(submission.verified_at)
+        self.candidate.profile.refresh_from_db()
+        self.assertIn('Verified Course', self.candidate.profile.profile_data['certifications'])
+
+    def test_staff_can_reject_pending_certificates(self):
+        certification = Certification.objects.create(title='Invalid Course', provider='Course Provider')
+        submission = CandidateMilestone.objects.create(
+            candidate=self.candidate,
+            certification=certification,
+            status='pending_verification',
+        )
+        self.client.force_login(self.staff)
+        self.client.post(
+            reverse('administration_review_certificate', args=[submission.pk]),
+            {'decision': 'reject', 'comment': 'The credential ID could not be verified.'},
+        )
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'rejected')
+        self.assertIsNone(submission.verified_at)
+        self.assertEqual(submission.reviewed_by, self.staff)
+        self.assertIn('could not be verified', submission.review_comment)
+
+    def test_rejection_requires_a_reason(self):
+        certification = Certification.objects.create(title='Needs Review', provider='Provider')
+        submission = CandidateMilestone.objects.create(candidate=self.candidate, certification=certification, status='pending_verification')
+        self.client.force_login(self.staff)
+        self.client.post(reverse('administration_review_certificate', args=[submission.pk]), {'decision': 'reject'})
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'pending_verification')
+
+    def test_staff_can_suspend_and_restore_user_with_audit_log(self):
+        self.client.force_login(self.staff)
+        url = reverse('administration_manage_user', args=[self.candidate.pk])
+        self.client.post(url, {'action': 'suspend'})
+        self.candidate.refresh_from_db()
+        self.assertFalse(self.candidate.is_active)
+        self.client.post(url, {'action': 'restore'})
+        self.candidate.refresh_from_db()
+        self.assertTrue(self.candidate.is_active)
+        self.assertEqual(AdminAuditLog.objects.filter(target_id=str(self.candidate.pk)).count(), 2)
+
+    def test_staff_can_review_company_job_and_report(self):
+        from employers.models import RecruiterProfile
+        recruiter = User.objects.create_user(username='review-recruiter')
+        UserProfile.objects.create(user=recruiter, role='recruiter')
+        company = Company.objects.create(name='Review Company')
+        RecruiterProfile.objects.create(user=recruiter, company=company)
+        job = Job.objects.create(title='Review Job', company=company, created_by=recruiter, employment_type='full_time', moderation_status='pending')
+        report = ModerationReport.objects.create(reporter=self.candidate, subject_type='job', subject_id=str(job.pk), subject_label=str(job), reason='Possible scam')
+        self.client.force_login(self.staff)
+        self.client.post(reverse('administration_review_company', args=[company.pk]), {'decision': 'approve'})
+        self.client.post(reverse('administration_review_job', args=[job.pk]), {'decision': 'approve'})
+        self.client.post(reverse('administration_review_report', args=[report.pk]), {'decision': 'resolve', 'comment': 'Listing reviewed.'})
+        company.refresh_from_db(); job.refresh_from_db(); report.refresh_from_db()
+        self.assertEqual(company.verification_status, 'verified')
+        self.assertEqual(job.moderation_status, 'approved')
+        self.assertEqual(report.status, 'resolved')
+        self.assertEqual(AdminAuditLog.objects.count(), 3)
+
+    def test_candidate_can_report_an_approved_job(self):
+        recruiter = User.objects.create_user(username='reported-recruiter')
+        UserProfile.objects.create(user=recruiter, role='recruiter')
+        company = Company.objects.create(name='Reported Company')
+        job = Job.objects.create(title='Reported Job', company=company, created_by=recruiter, employment_type='full_time')
+        self.client.force_login(self.candidate)
+        response = self.client.post(reverse('job_report', args=[job.pk]), {'reason': 'Possible scam', 'details': 'Requests an upfront fee.'})
+        self.assertRedirects(response, reverse('job_detail', args=[job.pk]))
+        report = ModerationReport.objects.get()
+        self.assertEqual(report.reporter, self.candidate)
+        self.assertEqual(report.subject_id, str(job.pk))
 
     def test_onboarding_completion_is_persisted_once_without_losing_answers(self):
         from django.test import RequestFactory

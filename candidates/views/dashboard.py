@@ -25,7 +25,7 @@ def dashboard_context(request):
         "saved_count": SavedJob.objects.filter(candidate=request.user).count(),
         "profile_completion": _completion_percent(profile) if profile else 0,
         "upcoming_interviews": interviews.filter(scheduled_start__gte=now)[:1],
-        "recent_jobs": Job.objects.filter(status="open").select_related("company").annotate(
+        "recent_jobs": Job.objects.filter(status="open", moderation_status="approved").select_related("company").annotate(
             is_saved=Exists(SavedJob.objects.filter(candidate=request.user, job_id=OuterRef("pk"))),
             has_applied=Exists(JobApplication.objects.filter(candidate=request.user, job_id=OuterRef("pk"))),
         )[:3],

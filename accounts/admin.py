@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 
-from .models import Payment, SecurityQuestionAnswer, UserProfile
+from .models import AdminAuditLog, ModerationReport, Payment, SecurityQuestionAnswer, UserProfile
 from .payment_services import set_stripe_entitlement
 
 
@@ -102,3 +102,27 @@ class PaymentAdmin(admin.ModelAdmin):
             )
             updated += 1
         self.message_user(request, f"Revoked Pro access for {updated} Stripe payment(s).", messages.SUCCESS)
+
+
+@admin.register(AdminAuditLog)
+class AdminAuditLogAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "actor", "action", "target_type", "target_label")
+    list_filter = ("action", "target_type", "created_at")
+    search_fields = ("actor__username", "target_label", "details")
+    readonly_fields = ("actor", "action", "target_type", "target_id", "target_label", "details", "created_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ModerationReport)
+class ModerationReportAdmin(admin.ModelAdmin):
+    list_display = ("subject_label", "reason", "reporter", "status", "moderator", "created_at")
+    list_filter = ("status", "subject_type", "reason")
+    search_fields = ("subject_label", "reporter__username", "details")

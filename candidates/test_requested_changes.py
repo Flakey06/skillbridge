@@ -75,10 +75,10 @@ class RequestedWorkflowTests(TestCase):
         }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, {
-            "ok": True,
-            "message": "All changes saved automatically",
-        })
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["message"], "All changes saved automatically")
+        self.assertFalse(payload["application_ready"])
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.profile_data["name"], "Jamie Tan")
         self.assertEqual(self.profile.profile_data["skills"], "Python, Django")
@@ -139,6 +139,22 @@ class RequestedWorkflowTests(TestCase):
         self.assertEqual(upload_response.json()["message"], "File uploaded and all changes saved")
         self.profile.refresh_from_db()
         self.assertIn("automatic-resume", self.profile.resume.name)
+
+    def test_required_application_profile_fields_autosave_together(self, predictor):
+        response = self.client.post(reverse("candidate_profile_autosave"), {
+            "action": "autosave",
+            "name": "Jamie Candidate",
+            "career": "technology",
+            "specialisation": "software-engineering",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["application_ready"])
+        self.assertEqual(payload["missing_required"], [])
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.profile_data["name"], "Jamie Candidate")
+        self.assertEqual(self.profile.profile_data["career"], "technology")
+        self.assertEqual(self.profile.profile_data["specialisation"], "software-engineering")
 
     def test_removing_all_experience_and_certifications_persists(self, predictor):
         self.profile.profile_data = {

@@ -203,6 +203,15 @@
     </aside>
     </div>
 </article>
+<details class="card report-content-card">
+    <summary><strong>Report this job</strong></summary>
+    <form method="post" action="{% url 'job_report' job.pk %}" class="stack-form">
+        {% csrf_token %}
+        <label>Reason<select name="reason" required><option value="">Select a reason</option><option>Misleading information</option><option>Possible scam</option><option>Discrimination or harassment</option><option>Duplicate or expired listing</option><option>Other</option></select></label>
+        <label>Additional details<textarea name="details" rows="3" maxlength="1000"></textarea></label>
+        <button class="button" type="submit">Send report</button>
+    </form>
+</details>
 {% if has_pro and recommended_resume %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {

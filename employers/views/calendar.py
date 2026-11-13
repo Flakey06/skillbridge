@@ -1,5 +1,7 @@
 """Recruiter interviews, scheduling, and reschedule requests."""
 
+from datetime import timedelta
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -10,6 +12,34 @@ from applications.forms import InterviewForm
 from applications.models import Interview, JobApplication
 from jobs.models import Job
 from .common import _context
+
+
+def _scheduling_conflicts(application, recruiter, start, end):
+    """Return candidate/recruiter interviews overlapping a proposed slot."""
+    proposed_end = end or start + timedelta(hours=1)
+    candidate_interviews = Interview.objects.filter(
+        application__candidate=application.candidate,
+    ).select_related("application__job", "created_by")
+    recruiter_interviews = Interview.objects.filter(
+        created_by=recruiter,
+    ).select_related("application__candidate", "application__job")
+    conflicts = []
+    seen = set()
+    for kind, existing in [
+        *(("Candidate", item) for item in candidate_interviews),
+        *(("Recruiter", item) for item in recruiter_interviews),
+    ]:
+        existing_end = existing.scheduled_end or existing.scheduled_start + timedelta(hours=1)
+        if existing.scheduled_start < proposed_end and existing_end > start and existing.pk not in seen:
+            seen.add(existing.pk)
+            conflicts.append({
+                "kind": kind,
+                "title": existing.application.job.title,
+                "candidate": existing.application.candidate.username,
+                "start": timezone.localtime(existing.scheduled_start),
+                "end": timezone.localtime(existing_end),
+            })
+    return conflicts
 
 
 @recruiter_required
@@ -31,6 +61,24 @@ def calendar(request):
     if interview_id:
         interview = get_object_or_404(interviews, pk=interview_id)
     action = request.POST.get("action")
+    if request.method == "POST" and interview and action == "record_outcome":
+        attendance_status = request.POST.get("attendance_status")
+        if attendance_status not in dict(Interview.ATTENDANCE_CHOICES):
+            messages.error(request, "Choose a valid attendance outcome.")
+        else:
+            interview.attendance_status = attendance_status
+            interview.recruiter_feedback = request.POST.get("recruiter_feedback", "").strip()
+            interview.serious_concern = request.POST.get("serious_concern") == "yes"
+            interview.save(update_fields=["attendance_status", "recruiter_feedback", "serious_concern"])
+            if attendance_status == "no_show":
+                notify(
+                    interview.application.candidate,
+                    "Interview marked as no-show",
+                    f"The interview for {interview.application.job.title} was recorded as a no-show. Contact the recruiter or request a new time if needed.",
+                    "interview",
+                )
+            messages.success(request, "Interview outcome recorded. You can reschedule a no-show using the Reschedule button.")
+        return redirect("recruiter_calendar")
     if request.method == "POST" and interview and action in {"accept_reschedule", "reject_reschedule"}:
         if interview.reschedule_status != "pending":
             messages.error(request, "That reschedule request is no longer pending.")
@@ -48,7 +96,7 @@ def calendar(request):
             notify(
                 interview.application.candidate,
                 "Interview reschedule accepted",
-                f"Your interview for {interview.application.job.title} was moved to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
+                f"Your interview for {interview.application.job.title} was moved to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M}.",
                 "interview",
             )
             messages.success(request, "Reschedule accepted and the calendar was updated.")
@@ -65,6 +113,7 @@ def calendar(request):
             messages.success(request, "Reschedule request rejected.")
         return redirect("recruiter_calendar")
     form = InterviewForm(request.POST or None, instance=interview)
+    schedule_conflicts = []
     if request.method == "POST" and form.is_valid():
         interview = form.save(commit=False)
         if interview.pk is None:
@@ -73,28 +122,43 @@ def calendar(request):
             interview.created_by = request.user
         else:
             application = interview.application
-        interview.save()
-        if interview_id:
-            interview.reschedule_status = "accepted"
-            interview.reschedule_message = "The recruiter changed the interview time."
-            interview.save(update_fields=["reschedule_status", "reschedule_message"])
-            notify(
-                application.candidate,
-                "Interview time updated",
-                f"The recruiter changed your interview for {application.job.title} to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
-                "interview",
-            )
-        application.status = "interview"
-        application.save(update_fields=["status", "updated_at"])
         if not interview_id:
-            notify(
-                application.candidate,
-                "Interview scheduled",
-                f"An interview for {application.job.title} is scheduled for {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
-                "interview",
+            schedule_conflicts = _scheduling_conflicts(
+                application,
+                request.user,
+                form.cleaned_data["scheduled_start"],
+                form.cleaned_data.get("scheduled_end"),
             )
-        messages.success(request, "Interview rescheduled." if interview_id else "Interview scheduled.")
-        return redirect("recruiter_calendar")
+        if schedule_conflicts and request.POST.get("confirm_conflict") != "yes":
+            selected_application = application
+            messages.warning(request, "This interview may clash with another approved interview. Review the overlap before continuing.")
+        else:
+            interview.save()
+            if interview_id:
+                interview.reschedule_status = "accepted"
+                interview.reschedule_message = "The recruiter changed the interview time."
+                interview.save(update_fields=["reschedule_status", "reschedule_message"])
+                notify(
+                    application.candidate,
+                    "Interview time updated",
+                    f"The recruiter changed your interview for {application.job.title} to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M}.",
+                    "interview",
+                )
+            application.status = "interview"
+            application.save(update_fields=["status", "updated_at"])
+            if not interview_id:
+                contact_label = interview.get_contact_method_display()
+                contact_copy = f" Contact method: {contact_label}"
+                if interview.contact_details:
+                    contact_copy += f" ({interview.contact_details})"
+                notify(
+                    application.candidate,
+                    "Interview scheduled",
+                    f"An interview for {application.job.title} is scheduled for {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M}.{contact_copy}",
+                    "interview",
+                )
+            messages.success(request, "Interview rescheduled." if interview_id else "Interview scheduled and added to the candidate's SkillBridge calendar.")
+            return redirect("recruiter_calendar")
     now = timezone.now()
     calendar_data = build_month_calendar(interviews, request.GET.get("month"), request.GET.get("date"))
     return render(request, "employers/calendar.html", _context(
@@ -108,4 +172,5 @@ def calendar(request):
         form=form,
         calendar=calendar_data,
         calendar_changed=calendar_changed,
+        schedule_conflicts=schedule_conflicts,
     ))

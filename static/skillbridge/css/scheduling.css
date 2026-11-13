@@ -813,3 +813,21 @@
 .past-interviews > summary::after { content: "+"; color: #223e76; font-size: 24px; }
 .past-interviews[open] > summary { margin-bottom: 16px; }
 .past-interviews[open] > summary::after { content: "−"; }
+.calendar-timezone-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding: 11px 14px;
+    border: 1px solid #b8c8e4;
+    border-radius: 10px;
+    background: #f1f5fb;
+    color: #223e76;
+    font-size: 12px;
+}
+.calendar-timezone-notice span { color: var(--muted); }
+.interview-conflict-warning { padding: 14px 16px; border: 1px solid #e7b25f; border-radius: 10px; background: #fff8e8; color: #70480c; }
+.interview-conflict-warning p { margin: 6px 0; }
+.interview-conflict-warning ul { margin: 8px 0; padding-left: 20px; }
+@media (max-width: 600px) { .calendar-timezone-notice { align-items: flex-start; flex-direction: column; gap: 3px; } }

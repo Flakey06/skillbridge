@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import candidate_required
 from accounts.notification_helpers import notify
+from accounts.models import ModerationReport
 import matching.services as matching_services
 from applications.forms import ApplicationForm
 from applications.models import CandidateCompanyBlacklist, JobApplication, SavedJob
@@ -40,7 +41,7 @@ def save_job(request, job_id):
 
 @candidate_required
 def detail(request, job_id):
-    job = get_object_or_404(Job.objects.select_related("company"), pk=job_id)
+    job = get_object_or_404(Job.objects.select_related("company"), pk=job_id, moderation_status="approved")
     application = JobApplication.objects.filter(candidate=request.user, job=job).first()
     is_blacklisted = CandidateCompanyBlacklist.objects.filter(
         candidate=request.user, company=job.company
@@ -201,11 +202,15 @@ def detail(request, job_id):
                 application = form.save(commit=False)
                 application.candidate = request.user
                 application.job = job
-                application.match_score = match.score
-                application.matched_skills = match.matched_skills
-                application.missing_skills = match.missing_skills
-                application.match_breakdown = match.score_breakdown
-                application.match_assessment = match.assessment
+                # Every submitted application receives a persisted recruiter-facing
+                # ATS score. Candidate plan access only controls whether the
+                # candidate can see insights; it must not leave recruiter data blank.
+                application_match = match or get_or_update_match(request.user, job)
+                application.match_score = application_match.score
+                application.matched_skills = application_match.matched_skills
+                application.missing_skills = application_match.missing_skills
+                application.match_breakdown = application_match.score_breakdown
+                application.match_assessment = application_match.assessment
                 application.tailored_resume = selected_resume.clean_content
                 application.save()
                 notify(
@@ -245,3 +250,23 @@ def detail(request, job_id):
             "is_blacklisted": is_blacklisted,
         },
     )
+
+
+@candidate_required
+@require_POST
+def report_job(request, job_id):
+    job = get_object_or_404(Job, pk=job_id, moderation_status="approved")
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "Select a reason for the report.")
+    else:
+        ModerationReport.objects.create(
+            reporter=request.user,
+            subject_type="job",
+            subject_id=str(job.pk),
+            subject_label=str(job),
+            reason=reason,
+            details=request.POST.get("details", "").strip(),
+        )
+        messages.success(request, "Your report was sent to the moderation team.")
+    return redirect("job_detail", job_id=job.pk)

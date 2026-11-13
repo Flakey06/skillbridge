@@ -78,6 +78,11 @@ class Job(models.Model):
     skill_weights = models.JSONField(default=dict, blank=True)
     evidence_weights = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
+    MODERATION_CHOICES = [("pending", "Pending review"), ("approved", "Approved"), ("rejected", "Rejected")]
+    moderation_status = models.CharField(max_length=20, choices=MODERATION_CHOICES, default="approved")
+    moderation_comment = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="reviewed_jobs")
+    reviewed_at = models.DateTimeField(blank=True, null=True)
     skill_weights = models.JSONField(default=dict, blank=True)
     evidence_weights = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
