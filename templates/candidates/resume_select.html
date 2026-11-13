@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Choose a resume to edit · SkillBridge{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Choose a resume to edit</h1>
+        <p class="sub">Select by resume type and dated version, then review it below before editing.</p>
+    </div>
+    <a class="button" href="{% url 'candidate_resume' %}">← Back to My Resume</a>
+</div>
+
+<section class="card">
+    <form method="get" class="resume-version-picker">
+        <label class="field" for="resume-to-edit">
+            Resume type and version
+            <select id="resume-to-edit" name="resume_id" onchange="this.form.submit()">
+                {% for item in resume_timeline %}
+                    <option value="{{ item.resume.id }}"{% if item.resume.id == selected_resume.id %} selected{% endif %}>{{ item.resume.title }} — {{ item.category }} — {{ item.version }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <noscript><button class="button" type="submit">Show resume</button></noscript>
+    </form>
+</section>
+
+<section class="card resume-selection-preview">
+    <div class="row between">
+        <div>
+            <p class="eyebrow">{{ selected_item.category }} · {{ selected_item.version }}</p>
+            <h2>{{ selected_resume.title }}</h2>
+            <p class="muted">Last updated {{ selected_item.updated_at|date:"j M Y, g:i A" }}</p>
+        </div>
+        <div class="static-page-actions">
+            <a class="primary button" href="{% url 'resume_detail' selected_resume.id %}">Edit this resume</a>
+            {% if selected_resume.is_main %}
+                <span class="pill progress-green">Current main resume</span>
+            {% else %}
+                <form method="post" action="{% url 'set_main_resume' selected_resume.id %}">
+                    {% csrf_token %}
+                    <button class="button" type="submit">Make main resume</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    <article class="resume-paper">
+        <pre class="resume-draft">{{ selected_resume.clean_content }}</pre>
+    </article>
+</section>
+{% endblock %}

@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
 
 
 def generate_referral_code():
@@ -23,6 +24,7 @@ class UserProfile(models.Model):
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
     referral_code = models.CharField(max_length=10, unique=True, default=generate_referral_code)
+    password_hint = models.CharField(max_length=160, blank=True)
 
     @property
     def is_pro(self):
@@ -45,6 +47,44 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f'{self.user.username} ({self.role})'
+
+
+class SecurityQuestionAnswer(models.Model):
+    QUESTION_CHOICES = [
+        ("favorite_color", "What is your favorite color?"),
+        ("childhood_nickname", "What was your childhood nickname?"),
+        ("first_school", "What was the name of your first school?"),
+        ("favorite_teacher", "What was the surname of your favorite teacher?"),
+        ("memorable_city", "In which city did you take a memorable trip?"),
+        ("favorite_book", "What is the title of a favorite childhood book?"),
+        ("first_pet", "What was the name of your first pet?"),
+        ("childhood_street", "What street did you grow up on?"),
+        ("childhood_friend", "What was the first name of your childhood best friend?"),
+        ("first_job", "What was your first job?"),
+    ]
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="security_question_answers"
+    )
+    position = models.PositiveSmallIntegerField()
+    question = models.CharField(max_length=40, choices=QUESTION_CHOICES)
+    answer_hash = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["position"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "position"], name="unique_user_security_position"),
+            models.UniqueConstraint(fields=["user", "question"], name="unique_user_security_question"),
+        ]
+
+    @staticmethod
+    def normalise_answer(value):
+        return " ".join(str(value or "").casefold().split())
+
+    def set_answer(self, value):
+        self.answer_hash = make_password(self.normalise_answer(value))
+
+    def answer_matches(self, value):
+        return check_password(self.normalise_answer(value), self.answer_hash)
 
 
 class Payment(models.Model):

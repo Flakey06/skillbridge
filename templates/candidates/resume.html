@@ -9,6 +9,13 @@
         <p class="sub">Review your generated resume and feedback from the uploaded source file.</p>
         {% if main_resume %}<a class="text-link" href="#resume-fit">Change resume type ↓</a>{% endif %}
     </div>
+    <a class="primary button" href="{% url 'candidate_resume_select' %}">Edit resume</a>
+</div>
+
+<div class="profile-autosave-box resume-profile-sync-note" role="status">
+    <strong>Automatically updated from My Profile</strong>
+    <p>All saved profile details appear in this resume automatically.</p>
+    <small>Update your contact details, education, experience, certifications, skills, portfolio, or achievements in My Profile and they will be reflected here.</small>
 </div>
 
 <div class="content-columns">
@@ -72,6 +79,31 @@
     {% endif %}
     </aside>
     </div>
+
+    <section class="card resume-fit-card" id="resume-timeline">
+        <h2>Resume timeline</h2>
+        <p class="sub">Track which category each resume belongs to and identify its latest date-based version.</p>
+        <div class="resume-fit-table-wrap">
+            <table class="resume-fit-table">
+                <thead>
+                    <tr><th>Resume</th><th>Category</th><th>Version</th><th>Last updated</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for item in resume_timeline %}
+                    <tr>
+                        <th scope="row">{{ item.resume.title }}{% if item.resume.is_main %}<br><span class="pill progress-green">Current main</span>{% endif %}</th>
+                        <td>{{ item.category }}</td>
+                        <td><code>{{ item.version }}</code></td>
+                        <td>{{ item.updated_at|date:"j M Y, g:i A" }}</td>
+                        <td><a class="button small" href="{% url 'resume_detail' item.resume.id %}">Open version</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="muted">Your first dated version will appear after you create or edit a resume.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     {% if fit_matrix %}
     <section class="card resume-fit-card" id="resume-fit">

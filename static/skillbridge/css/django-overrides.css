@@ -451,6 +451,15 @@ textarea:focus {
         flex-direction:column;
     }
 }
+
+.ats-help-dropdown {
+    margin: -4px 0 18px;
+    border-left: 4px solid var(--green);
+    scroll-margin-top: 18px;
+}
+.ats-help-dropdown[hidden] {
+    display: none !important;
+}
 .person img,
 .profile-photo-preview {
     width:100%;
@@ -572,7 +581,7 @@ textarea:focus {
 
 .profile-section-nav {
     display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-template-columns:repeat(5,minmax(0,1fr));
     gap:8px;
     margin:0 0 24px;
     padding:6px;
@@ -727,6 +736,78 @@ textarea:focus {
 .profile-message {
     margin-bottom: 18px;
     color: var(--green);
+}
+
+.profile-autosave-box {
+    padding: 14px 16px;
+    border: 1px solid #b9dfca;
+    border-radius: 10px;
+    background: #f2fbf6;
+    color: var(--green);
+}
+
+.profile-autosave-box p {
+    margin: 4px 0;
+    font-weight: 600;
+}
+
+.profile-autosave-box small {
+    display: block;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.resume-version-picker {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.resume-version-picker .field {
+    width: 100%;
+}
+
+.resume-selection-preview {
+    margin-top: 18px;
+}
+
+.resume-selection-preview > .resume-paper {
+    margin-top: 20px;
+}
+
+@media (max-width: 700px) {
+    .resume-version-picker {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .resume-version-picker .field {
+        min-width: 0;
+    }
+}
+
+.profile-resume-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-resume-upload-row input[type="file"] {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-resume-upload-row .button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .profile-resume-upload-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
 }
 
 .field {

@@ -8,7 +8,7 @@ from .common import (
     _completion_percent,
 )
 from .profiles import _profile_initial, profile
-from .resumes import resume, tailor_resume_for_interest
+from .resumes import choose_resume_to_edit, resume, tailor_resume_for_interest
 from .jobs import jobs, applications, saved_jobs
 from .calendar import calendar
 from .learning import (
@@ -30,6 +30,7 @@ __all__ = [
     'jobs',
     'profile',
     'resume',
+    'choose_resume_to_edit',
     'tailor_resume_for_interest',
     'applications',
     'calendar',

@@ -20,11 +20,34 @@
         <div class="job-compatibility-caption">
             <p class="eyebrow">Your Readiness</p>
             <h2>Compatibility</h2>
-            {% if match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}
+            {% if recommended_resume %}
+                <span class="pill" data-resume-readiness>{{ recommended_resume.assessment }}</span>
+                <p class="sub"><span data-resume-compatibility-prefix>For your highest-scoring resume:</span> <strong data-resume-compatibility-title>{{ recommended_resume.resume.title }}</strong> · <span data-resume-compatibility-version>{{ recommended_resume.version }}</span></p>
+                <label class="field" for="compatibility-resume-version">
+                    Compare another resume
+                    <select id="compatibility-resume-version" data-compatibility-resume>
+                        {% for item in available_resumes %}
+                        <option value="{{ item.resume.id }}"
+                            data-title="{{ item.resume.title }}"
+                            data-version="{{ item.version }}"
+                            data-evidence="{{ item.fit_score }}"
+                            data-ai="{{ item.ai_compatibility }}"
+                            data-combined="{{ item.recommendation_score }}"
+                            data-assessment="{{ item.assessment }}"
+                            {% if item.resume.id == recommended_resume.resume.id %}selected{% endif %}>{{ item.resume.title }} · {{ item.version }} — {{ item.fit_score }}% skill compatibility — {{ item.ai_compatibility }}% predicted fit{% if item.resume.id == recommended_resume.resume.id %} — Highest{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            {% elif match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}
         </div>
         <div class="compatibility-scores job-header-scores" aria-label="Compatibility scores">
-            {% include "components/compatibility_score.html" with label="Skill Compatibility" score=match.score %}
-            {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.ai_match.earned %}
+            {% if recommended_resume %}
+                <div data-resume-evidence-score>{% include "components/compatibility_score.html" with label="Skill Compatibility" score=recommended_resume.fit_score %}</div>
+                <div data-resume-ai-score>{% include "components/compatibility_score.html" with label="Predicted Job Fit" score=recommended_resume.ai_compatibility %}</div>
+            {% else %}
+                {% include "components/compatibility_score.html" with label="Skill Compatibility" score=match.score %}
+                {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.ai_match.earned %}
+            {% endif %}
         </div>
     </section>
     {% endif %}
@@ -43,6 +66,27 @@
             <span class="pill gray">No required skills listed</span>
         {% endfor %}
     </div>
+
+    {% if not application and available_resumes %}
+    <section class="card resume-application-selector">
+        {% if has_pro and recommended_resume %}
+        <div class="profile-message">
+            <strong>Pro recommendation: {{ recommended_resume.resume.title }} · {{ recommended_resume.version }}</strong>
+            <p>Best combined resume fit: {{ recommended_resume.recommendation_score }}%.</p>
+            <p class="sub"><strong>Evidence fit:</strong> {{ recommended_resume.fit_score }}%{% if recommended_resume.matched_skills %} ({{ recommended_resume.matched_skills|join:", " }}){% endif %} · <strong>AI compatibility:</strong> {{ recommended_resume.ai_compatibility }}%</p>
+        </div>
+        {% endif %}
+        <label class="field">
+            Resume to submit
+            <select name="resume_id" form="job-application-form" required>
+                {% for item in available_resumes %}
+                    <option value="{{ item.resume.id }}"{% if item.resume.id|stringformat:"s" == selected_resume_id|stringformat:"s" %} selected{% endif %}>{{ item.resume.title }} — {{ item.type }} — {{ item.version }}{% if has_pro %} — {{ item.fit_score }}% evidence fit — {{ item.ai_compatibility }}% AI compatibility{% if item.resume.id == recommended_resume.resume.id %} — Recommended{% endif %}{% endif %}{% if item.resume.approved_at %} — Reviewed{% else %} — Confirm before applying{% endif %}</option>
+                {% endfor %}
+            </select>
+            <small class="muted">Choose the exact resume version to attach. Pro combines transparent evidence fit (70%) with the dataset-trained AI compatibility signal (30%). This is guidance, not a hiring score.</small>
+        </label>
+    </section>
+    {% endif %}
 
     {% if has_pro %}
     <div class="card match-summary">
@@ -97,11 +141,6 @@
                 <span data-save-label>{% if is_saved %}Remove from saved jobs{% else %}Save job{% endif %}</span>
             </button>
         </form>
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="tailor">
-            <button class="button" type="submit">Tailor my resume</button>
-        </form>
     </div>
 
     </section>
@@ -113,7 +152,6 @@
         <p class="sub">You applied for this job on {{ application.created_at|date:"d M Y" }}.</p>
     {% else %}
         <div class="divider"></div>
-        <h2>Apply for this job</h2>
         {% if tailored_draft %}
             <div class="card profile-message">
                 <strong>{% if tailored_draft.approved_at %}Your tailored resume is approved.{% else %}Your tailored resume needs review.{% endif %}</strong>
@@ -133,6 +171,7 @@
         <form method="post" class="job-application-form" id="job-application-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="apply">
+            {% if is_blacklisted %}<p class="profile-message error" role="alert">You cannot apply to roles at this company.</p>{% endif %}
             {{ form.non_field_errors }}
             <label class="field">
                 Tailored cover letter draft
@@ -140,7 +179,14 @@
                 {{ form.cover_note }}
                 {{ form.cover_note.errors }}
             </label>
-            <p class="muted">{% if main_resume %}Your selected main resume will be attached to this application.{% else %}A job-specific resume draft will be generated for this application.{% endif %}</p>
+            {% if available_resumes %}
+            <label class="experience-current">
+                <input type="checkbox" name="resume_confirmed" value="yes" required>
+                I have checked the selected resume and cover letter and am ready to apply.
+            </label>
+            {% else %}
+            <p class="muted">A job-specific resume draft will be generated for you to review and approve before applying.</p>
+            {% endif %}
         </form>
     {% endif %}
     </section>
@@ -153,8 +199,32 @@
         {% if application.status != 'withdrawn' and application.status != 'rejected' and application.status != 'offer' %}<form method="post" action="{% url 'candidate_withdraw_application' application.id %}">{% csrf_token %}<input type="hidden" name="return_to" value="job"><button class="candidate-withdraw-button" type="submit">Withdraw</button></form>{% elif application.status == 'withdrawn' %}<button class="candidate-withdraw-button" type="button" disabled>Withdrawn</button>{% endif %}
     </div>
     {% endif %}
-    <a class="text-link" href="{% url 'candidate_applications' %}">View My Applications →</a>{% else %}<button class="primary job-submit-button" type="submit" form="job-application-form">Submit application →</button>{% endif %}
+    <a class="text-link" href="{% url 'candidate_applications' %}">View My Applications →</a>{% else %}<button class="primary job-submit-button" type="submit" form="job-application-form"{% if is_blacklisted %} disabled{% endif %}>{% if is_blacklisted %}Applications unavailable{% else %}Submit application →{% endif %}</button>{% endif %}
     </aside>
     </div>
 </article>
+{% if has_pro and recommended_resume %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const selector = document.querySelector("[data-compatibility-resume]");
+    if (!selector) return;
+    const setScore = (container, score) => {
+        const box = container?.querySelector(".compatibility-box");
+        if (!box) return;
+        box.querySelector("strong").textContent = `${score}%`;
+        box.classList.remove("compatibility-red", "compatibility-orange", "compatibility-yellow", "compatibility-unavailable");
+        box.classList.add(score < 40 ? "compatibility-red" : score < 60 ? "compatibility-orange" : "compatibility-yellow");
+    };
+    selector.addEventListener("change", () => {
+        const option = selector.selectedOptions[0];
+        document.querySelector("[data-resume-compatibility-title]").textContent = option.dataset.title;
+        document.querySelector("[data-resume-compatibility-version]").textContent = option.dataset.version;
+        document.querySelector("[data-resume-compatibility-prefix]").textContent = "Comparing resume:";
+        document.querySelector("[data-resume-readiness]").textContent = option.dataset.assessment;
+        setScore(document.querySelector("[data-resume-evidence-score]"), Number(option.dataset.evidence));
+        setScore(document.querySelector("[data-resume-ai-score]"), Number(option.dataset.ai));
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

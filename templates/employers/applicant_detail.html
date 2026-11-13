@@ -10,6 +10,7 @@
     </div>
     <a class="button" href="{% url 'recruiter_applicants' %}">Back to applicants</a>
 </div>
+{% for message in messages %}<div class="card profile-message{% if message.tags %} {{ message.tags }}{% endif %}" role="status">{{ message }}</div>{% endfor %}
 
 <div class="content-columns applicant-detail-layout">
     <section class="stack">
@@ -62,6 +63,57 @@
             <p><b>Skills:</b> {{ profile.profile_data.skills|default:"Not provided"|linebreaksbr }}</p>
             <p><b>Experience:</b> {{ profile.profile_data.experience|default:"Not provided"|linebreaksbr }}</p>
         </div>
+
+        <div class="card" id="ats-evaluation">
+            <div class="section-heading">
+                <div><h2>Structured ATS evaluation</h2><p class="sub">Use the same four job-related questions for every candidate.</p></div>
+                {% if evaluation %}<span class="pill progress-green">{{ evaluation.total_score }}/100</span>{% endif %}
+            </div>
+            <p class="sub">Score only evidence relevant to this role. Each answer is worth 1–5 points; the fixed score is calculated from 20 possible points.</p>
+            <form method="post" class="form-grid">
+                {% csrf_token %}<input type="hidden" name="action" value="save_evaluation">
+                {% for field in evaluation_form %}
+                    <label class="field{% if field.name == 'notes' %} span2{% endif %}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>
+                {% endfor %}
+                <div class="static-page-actions span2"><button class="primary" type="submit">Save ATS evaluation</button></div>
+            </form>
+            {% if evaluation %}<p class="muted">Last reviewed {{ evaluation.updated_at|date:"d M Y, H:i" }}{% if evaluation.reviewed_by %} by {{ evaluation.reviewed_by.username }}{% endif %}.</p>{% endif %}
+        </div>
+
+        <div class="card" id="candidate-history">
+            <div class="section-heading">
+                <div><h2>Company application history</h2><p class="sub">{{ company_application_count }} application{{ company_application_count|pluralize }} · {{ company_rejection_count }} rejected</p></div>
+                {% if blacklist_entry %}<span class="pill">Permanently blacklisted</span>{% endif %}
+            </div>
+            {% for past_application in company_applications %}
+                <div class="notification-item">
+                    <div class="row between"><strong>{{ past_application.job.title }}</strong><span class="pill application-status application-status-{{ past_application.status }}">{{ past_application.get_status_display }}</span></div>
+                    <p class="sub">Applied {{ past_application.created_at|date:"d M Y, H:i" }} · Last updated {{ past_application.updated_at|date:"d M Y, H:i" }}</p>
+                </div>
+            {% empty %}<p class="sub">No previous applications at this company.</p>{% endfor %}
+
+            <h3>Past review history</h3>
+            {% for event in review_history %}
+                <div class="notification-item">
+                    <strong>{{ event.application.job.title }}: {{ event.get_previous_status_display }} → {{ event.get_new_status_display }}</strong>
+                    <p class="sub">{{ event.created_at|date:"d M Y, H:i" }}{% if event.reviewer %} · {{ event.reviewer.username }}{% endif %}</p>
+                    {% if event.note %}<p>{{ event.note }}</p>{% endif %}
+                </div>
+            {% empty %}<p class="sub">No recorded review changes yet.</p>{% endfor %}
+
+            {% if blacklist_entry %}
+                <div class="profile-message error"><strong>Permanent company blacklist</strong><p>{{ blacklist_entry.reason }}</p><small>Added {{ blacklist_entry.created_at|date:"d M Y, H:i" }}{% if blacklist_entry.blocked_by %} by {{ blacklist_entry.blocked_by.username }}{% endif %}</small></div>
+            {% elif company_rejection_count >= 2 %}
+                <form method="post" class="stack">
+                    {% csrf_token %}<input type="hidden" name="action" value="blacklist">
+                    <label class="field">Permanent blacklist reason<textarea name="blacklist_reason" rows="3" required></textarea></label>
+                    <p class="sub">This permanently prevents the candidate from applying to any current or future role at {{ application.job.company.name }}.</p>
+                    <button class="button" type="submit">Permanently blacklist candidate</button>
+                </form>
+            {% else %}
+                <p class="sub">Permanent blacklisting becomes available after two rejected applications at this company.</p>
+            {% endif %}
+        </div>
     </section>
 
     <section class="card applicant-progress-card" id="update-progress" aria-labelledby="applicant-progress-heading">
@@ -70,6 +122,7 @@
         <form method="post" action="{% url 'recruiter_applicant_detail' application.id %}#update-progress" class="applicant-progress-controls">
             {% csrf_token %}
             <label class="field" for="{{ status_form.status.id_for_label }}">Status{{ status_form.status }}{{ status_form.status.errors }}</label>
+            <label class="field">Review note <textarea name="review_note" rows="3" placeholder="Optional reason or internal review note"></textarea></label>
             <button class="primary" type="submit">Save</button>
             {% if application.status == 'shortlisted' %}<a class="button applicant-schedule-interview" href="{% url 'recruiter_calendar' %}?application={{ application.id }}">Schedule Interview</a>{% endif %}
         </form>

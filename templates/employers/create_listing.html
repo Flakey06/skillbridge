@@ -6,7 +6,7 @@
     <div>
         <h1>Create a job listing</h1>
         <p class="sub">Publish a new opportunity for candidates with a clear role type and required skills.</p>
-        {% if not editing %}<a class="button" href="{% url 'recruiter_import_listings' %}">Import listings from CSV / Excel</a>{% endif %}
+        {% if not editing %}<a class="button" href="{% url 'recruiter_import_listings' %}">Download and upload job template</a>{% endif %}
     </div>
 </div>
 
@@ -18,10 +18,10 @@
         <form method="post" class="form-grid">
             {% csrf_token %}
             {% for field in form %}
-                {% if field.name != 'required_skills' and field.name != 'preferred_skills' %}
-                <label class="field {% if field.name == 'description' or field.name == 'required_skills' or field.name == 'required_skill_choices' or field.name == 'preferred_skills' or field.name == 'preferred_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
+                {% if field.name != 'required_skills' %}
+                <label class="field {% if field.name == 'description' or field.name == 'required_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
                     {% include "components/field_label.html" with field=field %}
-                    {% if field.name == 'required_skill_choices' or field.name == 'preferred_skill_choices' %}
+                    {% if field.name == 'required_skill_choices' %}
                         <div class="skills-picker" data-skills-picker>
                             {{ field }}
                             <input class="skills-picker-search" type="search" placeholder="Search skills, e.g. FastAPI, Django, Management..." autocomplete="off" data-skills-search>
@@ -52,7 +52,7 @@
                 <div class="reference-suggestions-heading">
                     <div>
                         <h3>Reference matches</h3>
-                        <p class="sub">Review similar catalogue jobs and use their skills as suggestions. Each choice reloads the form and replaces only the selected skill field.</p>
+                        <p class="sub">Review similar catalogue jobs and use their skills as suggestions.</p>
                     </div>
                 </div>
                 {% for suggestion in suggestions %}
@@ -63,8 +63,7 @@
                     </div>
                     <p class="reference-skills">{{ suggestion.skills|join:", " }}</p>
                     <div class="row wrap">
-                        <button class="small" type="submit" name="action" value="use_reference_required:{{ forloop.counter0 }}">Use skills as required</button>
-                        <button class="small" type="submit" name="action" value="use_reference_preferred:{{ forloop.counter0 }}">Use skills as preferred</button>
+                        <button class="small" type="submit" name="action" value="use_reference_required:{{ forloop.counter0 }}">Use these skills</button>
                     </div>
                 </article>
                 {% endfor %}

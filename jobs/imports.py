@@ -13,7 +13,11 @@ from .models import Job
 
 MAX_IMPORT_ROWS = 100
 MAX_IMPORT_BYTES = 2 * 1024 * 1024
-IMPORT_FIELDS = tuple(JobForm.Meta.fields) + ("evidence_rank_order",)
+# Keep bulk imports simple: spreadsheet skills are treated as required skills.
+# Recruiters can still add preferred skills later from the normal edit form.
+IMPORT_FIELDS = tuple(
+    field for field in JobForm.Meta.fields if field != "preferred_skills"
+) + ("evidence_rank_order",)
 REQUIRED_FIELDS = ("title", "description", "employment_type")
 DEFAULTS = {
     "role_type": "other", "experience_level": "entry", "status": "open",
@@ -30,8 +34,8 @@ def template_example():
         **dict.fromkeys(IMPORT_FIELDS, ""), **DEFAULTS,
         "title": "Backend developer", "description": "Build and maintain Python web services.",
         "employment_type": "full_time", "required_skills": "Python, Django, SQL",
-        "preferred_skills": "Docker", "location": "Singapore", "salary_min": "4000",
-        "salary_max": "6000", "evidence_rank_order": "Internship,Projects,Self-proclaimed skills",
+        "location": "Singapore", "salary_min": "4000", "salary_max": "6000",
+        "evidence_rank_order": "Internship,Projects,Self-proclaimed skills",
     }
 
 
@@ -41,7 +45,7 @@ def import_instructions():
         ("Rows", "One listing per row; maximum 100 listings and 2 MB. Replace or delete the example row before uploading."),
         ("Company", "All rows belong to your current company and recruiter account. Do not add company or recruiter columns."),
         ("Optional defaults", ", ".join(f"{key}={value}" for key, value in DEFAULTS.items())),
-        ("Skills", "Separate skills with commas within a cell. CSV templates quote comma-containing cells automatically."),
+        ("Required skills", "Use the required_skills column and separate skills with commas. To keep bulk imports simple, preferred skills are not included; add them later when editing a listing if needed."),
         ("Evidence order", "List Projects, Internship, Self-proclaimed skills in most-to-least important order, separated by commas."),
         ("Salary", "Optional nonnegative whole numbers; maximum must be at least minimum."),
         ("Confirmation", "Upload validates every row. No listings are saved until you confirm the preview."),

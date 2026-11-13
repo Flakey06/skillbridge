@@ -61,6 +61,85 @@ class RequestedWorkflowTests(TestCase):
         self.assertEqual(_completion_percent(self.profile), before)
         self.assertContains(self.client.get(reverse("home")), '<span class="preserve-case">james</span>')
 
+    def test_profile_fields_autosave_and_page_explains_file_uploads(self, predictor):
+        page = self.client.get(reverse("candidate_profile"))
+        self.assertContains(page, "Changes save automatically")
+        self.assertContains(page, "files upload automatically when selected")
+        self.assertNotContains(page, "Upload selected files")
+        self.assertNotContains(page, ">Save profile<")
+
+        response = self.client.post(reverse("candidate_profile"), {
+            "action": "autosave",
+            "name": "Jamie Tan",
+            "skills": "Python, Django",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {
+            "ok": True,
+            "message": "All changes saved automatically",
+        })
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.profile_data["name"], "Jamie Tan")
+        self.assertEqual(self.profile.profile_data["skills"], "Python, Django")
+        main_resume = TailoredResume.objects.get(candidate=self.candidate, is_main=True)
+        self.assertIn("Jamie Tan", main_resume.content)
+        self.assertIn("Python, Django", main_resume.content)
+
+        self.client.post(reverse("candidate_profile"), {
+            "action": "autosave",
+            "name": "Jamie Tan",
+            "skills": "Python, Django, SQL",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        main_resume.refresh_from_db()
+        self.assertIn("Python, Django, SQL", main_resume.content)
+
+        main_resume.content = "Stale resume content"
+        main_resume.save(update_fields=["content"])
+        resume_page = self.client.get(reverse("candidate_resume"))
+        self.assertContains(resume_page, "Automatically updated from My Profile")
+        self.assertContains(resume_page, "Python, Django, SQL")
+        self.assertContains(resume_page, "Resume timeline")
+        self.assertContains(resume_page, "Main profile resume")
+        self.assertContains(resume_page, "v20")
+        main_resume.refresh_from_db()
+        self.assertNotEqual(main_resume.content, "Stale resume content")
+
+        job_resume = TailoredResume.objects.create(
+            candidate=self.candidate,
+            job=self.high,
+            title="Resume for Older Python job",
+            content="Job-specific resume",
+        )
+        resume_page = self.client.get(reverse("candidate_resume"))
+        self.assertContains(resume_page, "Edit resume")
+        self.assertNotContains(resume_page, "Resume type and version")
+        selector_page = self.client.get(reverse("candidate_resume_select"), {
+            "resume_id": job_resume.id,
+        })
+        self.assertContains(selector_page, "Resume type and version")
+        self.assertContains(selector_page, "Job application")
+        self.assertContains(selector_page, "Job-specific resume")
+        self.assertContains(selector_page, "Edit this resume")
+        self.assertContains(selector_page, "Make main resume")
+        main_response = self.client.post(reverse("set_main_resume", args=[job_resume.id]))
+        self.assertRedirects(main_response, reverse("candidate_resume"))
+        job_resume.refresh_from_db()
+        self.assertTrue(job_resume.is_main)
+
+        upload_response = self.client.post(reverse("candidate_profile"), {
+            "action": "auto_upload",
+            "resume": SimpleUploadedFile(
+                "automatic-resume.txt",
+                b"Jamie Tan\nPython and Django experience",
+                content_type="text/plain",
+            ),
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(upload_response.status_code, 200)
+        self.assertEqual(upload_response.json()["message"], "File uploaded and all changes saved")
+        self.profile.refresh_from_db()
+        self.assertIn("automatic-resume", self.profile.resume.name)
+
     def test_removing_all_experience_and_certifications_persists(self, predictor):
         self.profile.profile_data = {
             "experience": "Previous experience", "experience_entries": [{"position": "Intern"}],

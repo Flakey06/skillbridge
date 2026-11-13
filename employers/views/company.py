@@ -32,6 +32,15 @@ def company(request):
             request.user.profile.save(update_fields=["profile_photo"])
         recruiter.company = company
         recruiter.save(update_fields=["company"])
+        profile = request.user.profile
+        profile_data = dict(profile.profile_data or {})
+        profile_data.update({
+            "company": company.name,
+            "website": company.website,
+            "industry": company.industry,
+        })
+        profile.profile_data = profile_data
+        profile.save(update_fields=["profile_data"])
         messages.success(request, "Company profile saved.")
         return redirect("recruiter_company")
     return render(request, "employers/company.html", _context(request, form=form, company=company, lookup_form=lookup_form, lookup_data=lookup_data))

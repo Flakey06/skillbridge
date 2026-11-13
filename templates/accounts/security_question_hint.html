@@ -1,0 +1,11 @@
+{% extends "accounts/recovery_base.html" %}
+{% block title %}Your Password Hint · SkillBridge{% endblock %}
+{% block recovery_content %}
+<h1>Your password hint</h1>
+<p>Your three security answers were correct.</p>
+<div class="card profile-message" role="status">
+    <strong>{{ password_hint|default:"No password hint was configured for this account." }}</strong>
+</div>
+<p class="muted">The hint is only a reminder. SkillBridge never displays your password.</p>
+<a class="primary button full" href="{% url 'login' %}">Back to sign in</a>
+{% endblock %}

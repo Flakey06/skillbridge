@@ -38,11 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }));
         });
     }
-    const esc = (value) => { const node = document.createElement("div"); node.textContent = value || ""; return node.innerHTML; };
+    const esc = (value) => {
+        const node = document.createElement("div");
+        node.textContent = value || "";
+        return node.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    };
     const month = (value) => {
         if (!value) return "";
-        const [year, number] = value.split("-");
-        return new Intl.DateTimeFormat("en", {month: "short", year: "numeric", timeZone: "UTC"}).format(new Date(Date.UTC(+year, +number - 1, 1)));
+        const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
+        if (!match) return value;
+        const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
+        return new Intl.DateTimeFormat("en", {month: "short", year: "numeric", timeZone: "UTC"}).format(date);
     };
     const parse = (field, fallback) => { try { const data = JSON.parse(field.value || "[]"); return data.length ? data : [fallback]; } catch (_) { return [fallback]; } };
     const form = document.querySelector("[data-onboard-compose]");
@@ -122,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 careerField.dispatchEvent(new Event("change", {bubbles: true}));
             }
             if (updates.specialisation) specialisationField.value = updates.specialisation;
-            if (updates.career_interests) {
+            if (updates.career_interests && interestsField) {
                 const selected = new Set(updates.career_interests);
                 interestsField.querySelectorAll('input[type="checkbox"]').forEach(input => { input.checked = selected.has(input.value); });
             }
@@ -130,10 +136,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const resumeInput = document.querySelector("#id_resume");
             resumeInput.value = "";
             resumeInput.disabled = true;
-            document.querySelector("[data-resume-upload-controls]").hidden = true;
+            const uploadControls = document.querySelector("[data-resume-upload-controls]");
+            if (uploadControls) uploadControls.hidden = true;
             const current = document.querySelector("[data-current-resume]");
-            current.hidden = false;
-            current.querySelector("[data-current-resume-name]").textContent = result.filename;
+            if (current) {
+                current.hidden = false;
+                const currentName = current.querySelector("[data-current-resume-name]");
+                if (currentName) currentName.textContent = result.filename;
+            }
             if (autosaveStatus) autosaveStatus.textContent = "Resume scanned and fields auto-filled";
             renderLivePreview();
         } catch (error) {
@@ -148,10 +158,15 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch(form.dataset.deleteResumeUrl, {method: "POST", body: data, headers: {"X-Requested-With": "XMLHttpRequest"}});
             if (!response.ok) throw new Error("Resume could not be deleted.");
-            document.querySelector("[data-current-resume]").hidden = true;
-            document.querySelector("[data-resume-upload-controls]").hidden = false;
-            document.querySelector("#id_resume").value = "";
-            document.querySelector("#id_resume").disabled = false;
+            const current = document.querySelector("[data-current-resume]");
+            const uploadControls = document.querySelector("[data-resume-upload-controls]");
+            const resumeInput = document.querySelector("#id_resume");
+            if (current) current.hidden = true;
+            if (uploadControls) uploadControls.hidden = false;
+            if (resumeInput) {
+                resumeInput.value = "";
+                resumeInput.disabled = false;
+            }
             if (autosaveStatus) autosaveStatus.textContent = "Current document deleted. You can upload a new resume.";
         } catch (error) {
             if (autosaveStatus) autosaveStatus.textContent = error.message;

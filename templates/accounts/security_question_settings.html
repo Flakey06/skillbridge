@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Security Questions · SkillBridge{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{% if has_security_questions %}Change security questions{% else %}Set security questions{% endif %}</h1>
+        <p class="sub">Your current password is required before these recovery details can be saved.</p>
+    </div>
+    <a class="button" href="{% url 'account_settings' %}">← Back to Account Settings</a>
+</div>
+{% for message in messages %}<p class="card profile-message" role="status">{{ message }}</p>{% endfor %}
+<form method="post" class="card stack">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <label class="field" for="{{ form.current_password.id_for_label }}">{% include "components/field_label.html" with field=form.current_password %}{{ form.current_password }}{{ form.current_password.errors }}<small class="muted">Required to confirm that you own this account.</small></label>
+    <div class="divider"></div>
+    {% for field in form %}
+        {% if field.name != 'current_password' %}
+            <label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}{% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}</label>
+        {% endif %}
+    {% endfor %}
+    <button class="primary button" type="submit">Save security questions</button>
+</form>
+{% endblock %}

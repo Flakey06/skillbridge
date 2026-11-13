@@ -8,7 +8,7 @@ from ..choices import CAREER_INTEREST_CHOICES, CAREER_STAGE_CHOICES, VISA_CHOICE
 CANDIDATE_STEPS = [
     {"id": "resume", "title": "Your resume", "question": "How would you like to build your resume? Upload a PDF, DOCX, or TXT file for automatic extraction, or use our guided resume builder.", "label": "Upload resume", "type": "file", "required": False},
     {"id": "career_stage", "title": "Current level", "question": "Where are you starting from in these directions? This helps us order the roadmap; you can update it later.", "label": "Current level", "type": "select", "choices": CAREER_STAGE_CHOICES, "required": False},
-    {"id": "career_interests", "title": "Skill interests", "question": "Which skill areas are you interested in developing? Select all that apply.", "label": "Skill interests", "type": "multi", "choices": CAREER_INTEREST_CHOICES, "required": False},
+    {"id": "career_interests", "title": "Skill interests", "question": "Which directions do you want to develop? You can also choose a cross-discipline subject outside your main career area.", "label": "Skill interests", "type": "multi", "choices": CAREER_INTEREST_CHOICES, "required": False},
     {"id": "visa", "title": "Work authorisation", "question": "What is your current work authorisation status? This stays in your SkillBridge profile and is not added to your resume.", "label": "Work authorisation", "type": "select", "choices": VISA_CHOICES, "required": False},
 ]
 

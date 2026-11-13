@@ -103,6 +103,64 @@ class ApplicationWorkflowTests(TestCase):
         application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
         self.assertEqual(application.tailored_resume, "My edited tailored resume")
 
+    def test_candidate_can_choose_which_approved_resume_to_submit(self):
+        default_resume = TailoredResume.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            title="Default job resume",
+            content="Default resume content",
+            approved_at=timezone.now(),
+        )
+        chosen_resume = TailoredResume.objects.create(
+            candidate=self.candidate,
+            title="Chosen general resume",
+            content="Chosen resume content with Python and Django evidence",
+            approved_at=timezone.now(),
+        )
+        self.client.force_login(self.candidate)
+
+        page = self.client.get(reverse("job_detail", args=[self.job.pk]))
+        self.assertContains(page, "Resume to submit")
+        self.assertContains(page, "Chosen general resume")
+        self.assertContains(page, "Pro recommendation: Chosen general resume")
+        self.assertContains(page, "AI compatibility")
+        self.assertContains(page, "For your highest-scoring resume")
+        self.assertContains(page, "Compare another resume")
+        self.assertContains(page, "% predicted fit")
+        self.assertContains(page, "Recommended")
+        self.assertNotContains(page, "Tailor my resume")
+        response = self.client.post(reverse("job_detail", args=[self.job.pk]), {
+            "action": "apply",
+            "cover_note": "I am interested.",
+            "resume_id": chosen_resume.id,
+        })
+
+        self.assertRedirects(response, reverse("candidate_applications"))
+        application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
+        self.assertEqual(application.tailored_resume, "Chosen resume content with Python and Django evidence")
+        self.assertNotEqual(application.tailored_resume, default_resume.content)
+
+    def test_candidate_can_confirm_unreviewed_resume_and_apply_without_leaving_job(self):
+        resume = TailoredResume.objects.create(
+            candidate=self.candidate,
+            title="Resume ready to check",
+            content="Python and Django project evidence",
+        )
+        self.client.force_login(self.candidate)
+
+        response = self.client.post(reverse("job_detail", args=[self.job.pk]), {
+            "action": "apply",
+            "cover_note": "I reviewed this cover letter.",
+            "resume_id": resume.id,
+            "resume_confirmed": "yes",
+        })
+
+        self.assertRedirects(response, reverse("candidate_applications"))
+        resume.refresh_from_db()
+        self.assertIsNotNone(resume.approved_at)
+        application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
+        self.assertEqual(application.tailored_resume, "Python and Django project evidence")
+
     def test_recruiter_can_update_status_and_schedule_interview(self):
         JobApplication.objects.create(candidate=self.candidate, job=self.job)
         application = JobApplication.objects.get(candidate=self.candidate, job=self.job)

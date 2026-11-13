@@ -2,6 +2,7 @@
 
 from ..services import merge_completed_certifications
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from accounts.models import UserProfile
 from accounts.notification_helpers import notify
@@ -19,6 +20,30 @@ from ..forms import CandidateProfileForm
 from ..resume_parser import assess_resume_suitability
 from ..services import autofill_from_resume, sync_candidate_profile
 from .common import _context, _completion_percent
+
+
+def _sync_main_resume(user):
+    """Keep the candidate's editable main resume aligned with saved profile data."""
+    from resumes.models import TailoredResume
+    from resumes.services import build_profile_resume
+
+    content = build_profile_resume(user)
+    profile_resume = TailoredResume.objects.filter(
+        candidate=user,
+        job__isnull=True,
+        title="My resume",
+    ).first()
+    if profile_resume:
+        if profile_resume.content != content:
+            profile_resume.content = content
+            profile_resume.save(update_fields=["content", "updated_at"])
+        return profile_resume
+    return TailoredResume.objects.create(
+        candidate=user,
+        title="My resume",
+        content=content,
+        is_main=not TailoredResume.objects.filter(candidate=user, is_main=True).exists(),
+    )
 
 
 def _profile_initial(request, profile):
@@ -66,6 +91,10 @@ def profile(request):
         profile.save(update_fields=["profile_data"])
     initial = _profile_initial(request, profile)
     form = CandidateProfileForm(request.POST or None, request.FILES or None, initial=initial)
+    save_action = request.POST.get("action") if request.method == "POST" else ""
+    is_autosave = save_action == "autosave"
+    is_auto_upload = save_action == "auto_upload"
+    is_async_save = is_autosave or is_auto_upload
     if request.method == "POST" and form.is_valid():
         action = request.POST.get("action", "save")
         if action == "autofill":
@@ -86,6 +115,7 @@ def profile(request):
                     profile.profile_data = data
                     profile.save(update_fields=["profile_data"])
                     sync_candidate_profile(request.user, data)
+                    _sync_main_resume(request.user)
                     notify(request.user, "Profile auto-filled", f"Sandy auto-filled {len(updates)} profile field(s) from your resume.", "profile")
                 else:
                     messages.error(request, reason)
@@ -95,12 +125,12 @@ def profile(request):
         for field in form.fields:
             value = form.cleaned_data.get(field)
             if field == "resume":
-                if value:
+                if value and not is_autosave:
                     profile.resume = value
                     changed_fields.append("resume")
                     data["resume"] = profile.resume.name
             elif field == "profile_photo":
-                if value:
+                if value and not is_autosave:
                     profile.profile_photo = value
                     changed_fields.append("profile_photo")
             elif field == "email":
@@ -114,9 +144,19 @@ def profile(request):
         profile.profile_data = data
         profile.save(update_fields=changed_fields)
         sync_candidate_profile(request.user, data)
+        _sync_main_resume(request.user)
+        if is_async_save:
+            message = "File uploaded and all changes saved" if is_auto_upload else "All changes saved automatically"
+            return JsonResponse({"ok": True, "message": message})
         notify(request.user, "Profile updated", "Your SkillBridge profile has been updated successfully.", "profile")
         profile.refresh_from_db()
         form = CandidateProfileForm(initial=_profile_initial(request, profile))
+    elif is_async_save:
+        return JsonResponse({
+            "ok": False,
+            "message": "Some changes could not be saved. Check the highlighted fields.",
+            "errors": form.errors.get_json_data(),
+        }, status=400)
     career_choice_map = {
         career_area: {
             "label": dict(CAREER_CHOICES).get(career_area, career_area.title()),

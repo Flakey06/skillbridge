@@ -93,6 +93,31 @@ class AccountOnboardingTests(TestCase):
         self.assertContains(response, "data-sandy-question")
         self.assertContains(response, "data-question-text")
 
+    def test_recruiter_company_lookup_prefills_and_skips_duplicate_company_question(self):
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "username": "shopee_recruiter",
+                "email": "recruiter@example.com",
+                "password1": "A secure password 123!",
+                "password2": "A secure password 123!",
+                "role": "recruiter",
+                "company_name": "Shopee",
+                "company_website": "https://shopee.sg/",
+                "company_logo_url": "https://example.com/shopee.png",
+            },
+        )
+
+        self.assertRedirects(response, reverse("onboarding"))
+        response = self.client.get(reverse("onboarding"))
+        self.assertContains(response, "Which industry does your company operate in?")
+        self.assertNotContains(response, "What is your company called?")
+
+        profile = UserProfile.objects.get(user__username="shopee_recruiter")
+        self.assertEqual(profile.profile_data["company"], "Shopee")
+        self.assertEqual(profile.profile_data["website"], "https://shopee.sg/")
+        self.assertEqual(profile.user.recruiter_profile.company.logo_url, "https://example.com/shopee.png")
+
     def test_candidate_can_choose_guided_resume_builder(self):
         user = self._create_user("guided_candidate")
         UserProfile.objects.create(user=user, role="candidate")
@@ -135,6 +160,31 @@ class AccountOnboardingTests(TestCase):
         self.assertTrue(user.profile.resume)
         self.assertEqual(user.profile.profile_data["experience_entries"][0]["skills"], "Python, Django, SQL, Git")
         self.assertIn("Built Django services", user.profile.profile_data["experience_entries"][0]["achievements"])
+
+    def test_existing_resume_has_visible_autofill_action(self):
+        user = self._create_user("existing_resume_candidate")
+        profile = UserProfile.objects.create(
+            user=user,
+            role="candidate",
+            resume=SimpleUploadedFile(
+                "resume.txt",
+                b"Alex Tan\nalex@example.com\n+65 9123 4567\nEducation\nBachelor of Computing, National University of Singapore, 2022\nExperience\nSoftware Engineer Intern, 2023\nBuilt Django services and SQL reporting tools for clients. Collaborated with developers and analysts to deliver production projects.\nSkills\nPython, Django, SQL, Git",
+                content_type="text/plain",
+            ),
+        )
+        self.client.force_login(user)
+        session = self.client.session
+        session["onboarding_step"] = 0
+        session.save()
+
+        response = self.client.get(reverse("onboarding"))
+        self.assertContains(response, "Auto-fill from current resume")
+        self.assertContains(response, "guided-resume.js?v=guided-builder-2")
+
+        response = self.client.post(reverse("onboarding"), {"action": "extract_existing_resume"})
+        self.assertRedirects(response, reverse("onboarding"))
+        profile.refresh_from_db()
+        self.assertIn("Python", profile.profile_data["skills"])
 
     def test_non_resume_upload_is_rejected(self):
         user = self._create_user("bad_resume")
@@ -516,7 +566,7 @@ class AccountOnboardingTests(TestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.profile_data["career_stage"], "intermediate")
 
-    def test_business_onboarding_only_shows_business_directions(self):
+    def test_business_onboarding_shows_optional_cross_discipline_directions(self):
         user = self._create_user("business_candidate")
         UserProfile.objects.create(user=user, role="candidate", profile_data={"career": "business"})
         self.client.force_login(user)
@@ -530,8 +580,11 @@ class AccountOnboardingTests(TestCase):
         self.assertContains(response, "Marketing")
         self.assertContains(response, "Human resources")
         self.assertContains(response, "Real estate")
-        self.assertNotContains(response, "AI engineering")
-        self.assertNotContains(response, "Machine learning")
+        self.assertContains(response, "Would you like to learn something cross-disciplinary?")
+        self.assertContains(response, 'data-cross-disciplines')
+        self.assertNotContains(response, "Yes, show cross-discipline choices")
+        self.assertContains(response, "AI engineering")
+        self.assertContains(response, "Machine learning")
 
     def test_technology_onboarding_only_shows_technology_specialisations(self):
         user = self._create_user("technology_candidate")
