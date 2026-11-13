@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 
-from .models import Interview, JobApplication
+from .models import ApplicantEvaluation, Interview, JobApplication
 
 
 class ApplicationForm(forms.ModelForm):
@@ -29,6 +29,36 @@ class ApplicationStatusForm(forms.ModelForm):
     class Meta:
         model = JobApplication
         fields = ["status"]
+
+
+class ApplicantEvaluationForm(forms.ModelForm):
+    score_choices = [(value, f"{value} — {label}") for value, label in (
+        (1, "Insufficient evidence"),
+        (2, "Below requirements"),
+        (3, "Meets requirements"),
+        (4, "Above requirements"),
+        (5, "Exceptional evidence"),
+    )]
+    skills_score = forms.TypedChoiceField(
+        label="Role-specific skills", choices=score_choices, coerce=int
+    )
+    experience_score = forms.TypedChoiceField(
+        label="Relevant experience", choices=score_choices, coerce=int
+    )
+    evidence_score = forms.TypedChoiceField(
+        label="Quality of supporting evidence", choices=score_choices, coerce=int
+    )
+    role_readiness_score = forms.TypedChoiceField(
+        label="Readiness for this role", choices=score_choices, coerce=int
+    )
+
+    class Meta:
+        model = ApplicantEvaluation
+        fields = [
+            "skills_score", "experience_score", "evidence_score",
+            "role_readiness_score", "recommendation", "notes",
+        ]
+        widgets = {"notes": forms.Textarea(attrs={"rows": 4})}
 
 
 class InterviewForm(forms.ModelForm):

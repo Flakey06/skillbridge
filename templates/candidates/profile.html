@@ -6,9 +6,11 @@
 <div class="page-head">
     <div>
         <h1>My profile</h1>
-        <p class="sub">Your chatbot answers appear here. Update them whenever you need.</p>
     </div>
-    <a class="account-settings-link" href="{% url 'account_settings' %}" aria-label="Account Settings" title="Account Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2v3l3 1 1 3h5l1-3 3-1v-3l2-2-2-4-3-1-1-3z"/><circle cx="11.5" cy="11.5" r="3"/></svg></a>
+    <div class="static-page-actions">
+        <a class="button" href="{% url 'security_question_settings' %}">Set security questions</a>
+        <a class="account-settings-link" href="{% url 'account_settings' %}" aria-label="Account Settings" title="Account Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2v3l3 1 1 3h5l1-3 3-1v-3l2-2-2-4-3-1-1-3z"/><circle cx="11.5" cy="11.5" r="3"/></svg></a>
+    </div>
 </div>
 
 {% if guided_resume %}
@@ -23,6 +25,7 @@
     <a href="#profile-career">Career path</a>
     <a href="#profile-skills">Certifications &amp; skills</a>
     <a href="#profile-connections">Connections</a>
+    <a href="{% url 'candidate_resume' %}">Review resume</a>
 </nav>
 
 <section class="content-columns profile-layout">
@@ -38,7 +41,11 @@
             <section class="profile-form-section" id="profile-details">
                 <div class="profile-form-section-heading">
                     <div><p class="eyebrow">Profile completeness</p><h2>{{ completion_percent }}% complete</h2></div>
-                    <div><h3>Details</h3><p>Keep your contact and resume information up to date.</p></div>
+                    <div class="profile-autosave-box" aria-live="polite">
+                        <strong>Changes save automatically</strong>
+                        <p data-profile-autosave-status>All changes saved</p>
+                        <small>Profile fields, experience, and certifications save continuously as you edit. Resume and profile-photo files upload automatically when selected.</small>
+                    </div>
                 </div>
                 <div class="form-grid">
                     <label class="field span2 profile-photo-field">
@@ -51,7 +58,16 @@
                         {{ form.profile_photo.errors }}
                     </label>
                     <label class="field">{% include "components/field_label.html" with field=form.name %}{{ form.name }}{{ form.name.errors }}</label>
-                    <label class="field span2">{% include "components/field_label.html" with field=form.resume %}{{ form.resume }}{% if profile.resume %}<small class="muted">Current file: {{ profile.resume.name }}</small>{% endif %}<small class="muted">Upload a resume, then choose “Auto-fill from resume” to fill blank profile fields. Review the extracted details before saving.</small>{{ form.resume.errors }}</label>
+                    <div class="field span2">
+                        {% include "components/field_label.html" with field=form.resume %}
+                        <div class="profile-resume-upload-row">
+                            {{ form.resume }}
+                            <button class="button" type="submit" name="action" value="autofill" data-resume-autofill{% if not profile.resume %} hidden{% endif %}>Auto-fill from resume</button>
+                        </div>
+                        {% if profile.resume %}<small class="muted">Current file: {{ profile.resume.name }}</small>{% endif %}
+                        <small class="muted">Your resume uploads automatically when selected. Then use “Auto-fill from resume” to fill your profile fields and review the extracted details.</small>
+                        {{ form.resume.errors }}
+                    </div>
                     <label class="field">{% include "components/field_label.html" with field=form.email %}{{ form.email }}{{ form.email.errors }}</label>
                     <div class="phone-input-group span2">
                         <label class="field">{% include "components/field_label.html" with field=form.phone_country_code %}{{ form.phone_country_code }}{{ form.phone_country_code.errors }}</label>
@@ -67,16 +83,23 @@
                     <label class="field span2">{% include "components/field_label.html" with field=form.career_stage %}{{ form.career_stage }}{{ form.career_stage.errors }}<small class="muted">This helps us order your pathway. You can change it anytime.</small></label>
                     <fieldset class="field span2 choice-fieldset">
                         <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>
+                        <div class="profile-message" data-career-area-required hidden>
+                            <strong>Choose your career path first</strong>
+                            <p>Tell us the career area or field of study you are pursuing above. Your main-interest and cross-faculty checkboxes will appear after you make a selection.</p>
+                        </div>
                         <p class="muted">Choose your main faculty interests first. Add interests from another faculty when you want to explore a cross-faculty path.</p>
                         <div class="career-interest-picker" data-interest-picker>
-                            <div class="career-interest-group">
+                            <div class="career-interest-group" data-primary-interest-group>
                                 <div class="career-interest-group-heading">
                                     <strong data-primary-interest-label>Current faculty</strong>
                                 </div>
                                 <div class="career-interest-options" data-primary-interest-options></div>
                             </div>
-                            <button class="button small career-interest-add" type="button" data-add-cross-faculty>+ Add cross-faculty interest</button>
-                            <div class="career-interest-group career-interest-cross-faculty" data-cross-interest-group hidden>
+                            <div class="career-interest-cross-prompt" data-cross-interest-prompt>
+                                <strong>Would you like to learn something cross-disciplinary?</strong>
+                                <span class="muted">Add a direction outside your main career area.</span>
+                            </div>
+                            <div class="career-interest-group career-interest-cross-faculty" data-cross-interest-group>
                                 <div class="career-interest-group-heading">
                                     <strong>Cross-faculty interests</strong>
                                     <span class="muted">Explore another field and its roadmap and certificates.</span>
@@ -107,7 +130,7 @@
                 </div>
             </section>
             <section class="profile-form-section" id="profile-skills">
-                <div class="profile-form-section-heading"><h3>Certifications &amp; skills</h3><p>Highlight the capabilities and achievements you want recruiters to notice.</p></div>
+                <div class="profile-form-section-heading"><h3>Certifications &amp; skills</h3></div>
                 <div class="form-grid">
                     <div class="field span2 experience-builder" data-certification-builder>
                         <div class="row between">
@@ -139,10 +162,7 @@
         </div>
 
         <div class="static-page-actions">
-            <button class="primary" type="submit">{% if guided_resume %}Save resume profile{% else %}Save profile{% endif %}</button>
-            <button class="button" type="submit" name="action" value="autofill" {% if not profile.resume %}disabled{% endif %}>Auto-fill from resume</button>
             {% if profile.resume %}<a class="button" href="{% url 'candidate_resume' %}">Review resume</a>{% endif %}
-            <a class="button" href="{% url 'onboarding' %}">Resume profile questions</a>
         </div>
     </form>
 </section>
@@ -151,8 +171,58 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const profileForm = document.querySelector(".profile-form");
+    const autosaveStatus = document.querySelector("[data-profile-autosave-status]");
+    const resumeField = profileForm.querySelector('#id_resume');
+    const resumeAutofill = profileForm.querySelector('[data-resume-autofill]');
+    const fileFields = new Set(["resume", "profile_photo"]);
+    let autosaveTimer;
+    let autosaveController;
+
+    const setAutosaveStatus = (message) => {
+        autosaveStatus.textContent = message;
+    };
+    const saveProfile = async ({uploadFiles = false} = {}) => {
+        autosaveController?.abort();
+        autosaveController = new AbortController();
+        const formData = new FormData(profileForm);
+        formData.set("action", uploadFiles ? "auto_upload" : "autosave");
+        if (!uploadFiles) fileFields.forEach((name) => formData.delete(name));
+        setAutosaveStatus(uploadFiles ? "Uploading selected file…" : "Saving changes…");
+        try {
+            const response = await fetch(profileForm.action || window.location.href, {
+                method: "POST",
+                body: formData,
+                headers: {"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"},
+                signal: autosaveController.signal
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "Changes could not be saved.");
+            setAutosaveStatus(result.message || "All changes saved automatically");
+        } catch (error) {
+            if (error.name !== "AbortError") setAutosaveStatus(error.message || "Changes could not be saved. Please try again.");
+        }
+    };
+    const queueAutosave = (event) => {
+        if (event.target.type === "file" || fileFields.has(event.target.name)) {
+            window.clearTimeout(autosaveTimer);
+            setAutosaveStatus("Uploading selected file…");
+            autosaveTimer = window.setTimeout(() => saveProfile({uploadFiles: true}), 100);
+            return;
+        }
+        window.clearTimeout(autosaveTimer);
+        setAutosaveStatus("Waiting to save…");
+        autosaveTimer = window.setTimeout(saveProfile, 800);
+    };
+    profileForm.addEventListener("input", queueAutosave);
+    profileForm.addEventListener("change", queueAutosave);
+    resumeField?.addEventListener("change", () => {
+        resumeAutofill.hidden = !(resumeField.files?.length || {{ profile.resume|yesno:"true,false" }});
+    });
+
     const entrySections = () => [...profileForm.querySelectorAll("details[data-experience-entry], details[data-certification-entry]")];
     profileForm.addEventListener("submit", () => {
+        window.clearTimeout(autosaveTimer);
+        autosaveController?.abort();
         profileForm.elements.profile_scroll_y.value = String(window.scrollY);
         profileForm.elements.profile_open_sections.value = JSON.stringify(entrySections().map((section) => section.open));
     });
@@ -175,9 +245,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const interestPicker = document.querySelector("[data-interest-picker]");
     const primaryInterestLabel = interestPicker.querySelector("[data-primary-interest-label]");
     const primaryInterestOptions = interestPicker.querySelector("[data-primary-interest-options]");
+    const primaryInterestGroup = interestPicker.querySelector("[data-primary-interest-group]");
     const crossInterestGroup = interestPicker.querySelector("[data-cross-interest-group]");
     const crossInterestOptions = interestPicker.querySelector("[data-cross-interest-options]");
-    const addCrossFacultyButton = interestPicker.querySelector("[data-add-cross-faculty]");
+    const crossInterestPrompt = interestPicker.querySelector("[data-cross-interest-prompt]");
+    const careerAreaRequired = document.querySelector("[data-career-area-required]");
 
     const renderInterestOption = ([value, label], index) => {
         const wrapper = document.createElement("label");
@@ -198,7 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let initialCareerRefresh = true;
     const refreshCareerChoices = () => {
-        const options = careerMap[careerField.value] || {label: "Selected faculty", interests: []};
+        const hasCareerArea = Boolean(careerField.value);
+        const options = careerMap[careerField.value] || {label: "Selected faculty", interests: [], specialisations: []};
 
         const selectedSpecialisation = specialisationField.value;
         const selectedSpecialisationLabel = specialisationField.selectedOptions[0]?.textContent;
@@ -212,6 +285,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         initialCareerRefresh = false;
 
+        careerAreaRequired.hidden = hasCareerArea;
+        primaryInterestGroup.hidden = !hasCareerArea;
+        crossInterestPrompt.hidden = !hasCareerArea;
+        crossInterestGroup.hidden = !hasCareerArea;
+        if (!hasCareerArea) {
+            primaryInterestOptions.replaceChildren();
+            crossInterestOptions.replaceChildren();
+            return;
+        }
+
         primaryInterestLabel.textContent = options.label;
         primaryInterestOptions.replaceChildren(...options.interests.map(renderInterestOption));
 
@@ -221,14 +304,8 @@ document.addEventListener("DOMContentLoaded", () => {
             .flatMap(([, areaOptions]) => areaOptions.interests)
             .filter(([value], index, all) => !primaryValues.has(value) && all.findIndex(([candidate]) => candidate === value) === index);
         crossInterestOptions.replaceChildren(...crossOptions.map(renderInterestOption));
-        const hasCrossFacultySelection = [...selectedInterests].some((value) => !primaryValues.has(value));
-        crossInterestGroup.hidden = !hasCrossFacultySelection;
     };
     careerField.addEventListener("change", refreshCareerChoices);
-    addCrossFacultyButton.addEventListener("click", () => {
-        crossInterestGroup.hidden = false;
-        addCrossFacultyButton.hidden = true;
-    });
     refreshCareerChoices();
 
     const builder = document.querySelector("[data-experience-builder]");
@@ -317,6 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
         syncEntries();
         entries.push({position: "", company: "", start_date: "", end_date: "", current: false, skills: "", achievements: ""});
         render(entries.length - 1);
+        jsonField.dispatchEvent(new Event("change", {bubbles: true}));
         list.lastElementChild?.scrollIntoView({behavior: "smooth", block: "center"});
     });
     list.addEventListener("click", (event) => {
@@ -325,6 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
         syncEntries();
         entries.splice(Number(button.dataset.removeExperience), 1);
         render();
+        jsonField.dispatchEvent(new Event("change", {bubbles: true}));
     });
     list.addEventListener("change", (event) => {
         if (event.target.dataset.key === "current") {
@@ -403,6 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
         syncCertifications();
         certifications.push({name: "", issuer: "", issue_date: "", expiry_date: "", no_expiry: false, credential_id: "", skills: ""});
         renderCertifications(certifications.length - 1);
+        certificationJson.dispatchEvent(new Event("change", {bubbles: true}));
         certificationList.lastElementChild?.scrollIntoView({behavior: "smooth", block: "center"});
     });
     certificationList.addEventListener("click", (event) => {
@@ -411,6 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
         syncCertifications();
         certifications.splice(Number(button.dataset.removeCertification), 1);
         renderCertifications();
+        certificationJson.dispatchEvent(new Event("change", {bubbles: true}));
     });
     certificationList.addEventListener("change", (event) => {
         if (event.target.dataset.key === "no_expiry") {

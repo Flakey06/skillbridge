@@ -72,7 +72,7 @@
                             <span class="sandy-animated-mouth" aria-hidden="true"></span>
                         </span>
                         <div class="onboard-bubble bot sandy-welcome-bubble" aria-label="Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.">
-                            <span data-sandy-text data-message="Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started." aria-hidden="true">Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.</span>
+                            <span data-sandy-text data-message="Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started." aria-hidden="true">Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.</span><span class="sandy-cursor" aria-hidden="true"></span>
                             <noscript>Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.</noscript>
                         </div>
                     </div>
@@ -108,6 +108,7 @@
                             </div>
                             <div class="current-resume-card" data-current-resume{% if not profile.resume %} hidden{% endif %}>
                                 <div><small>Current document</small><b data-current-resume-name>{% if profile.resume %}{{ profile.resume.name }}{% endif %}</b></div>
+                                <button class="button small" type="submit" name="action" value="extract_existing_resume">Auto-fill from current resume</button>
                                 <button class="button small" type="button" data-delete-resume>Delete current document</button>
                             </div>
                         </section>
@@ -123,7 +124,47 @@
                     <p class="resume-autosave-status" data-resume-autosave-status aria-live="polite">Changes save automatically</p>
                     <div class="auth-error">{{ resume_form.non_field_errors }}</div>
                 {% else %}
-                    <div class="onboard-fields">{{ form }}</div>
+                    {% if step.id == "career_interests" %}
+                        <div class="onboard-fields career-interest-picker" data-onboarding-interest-picker>
+                            {% if not answers.career %}
+                            <div class="profile-message">
+                                <strong>Choose your career area first</strong>
+                                <p>Go back to the guided resume fields and select a career area before choosing skill interests or cross-disciplinary directions.</p>
+                            </div>
+                            {% else %}
+                            <fieldset class="field choice-fieldset">
+                                <legend>{{ form.career_interests.label }}</legend>
+                                <p class="muted">Choose the directions related to your main career area.</p>
+                                <div class="career-interest-options">
+                                    {% for value, label in primary_interest_choices %}
+                                        <label class="career-interest-option"><input type="checkbox" name="career_interests" value="{{ value }}"{% if value in selected_career_interests %} checked{% endif %}>{{ label }}</label>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                            <div class="career-interest-group">
+                                <p><strong>Would you like to learn something cross-disciplinary?</strong></p>
+                                <p class="muted">Optional — add directions outside your main career area and SkillBridge will include their roadmaps and certifications.</p>
+                            </div>
+                            <div class="career-interest-cross-faculty" data-cross-disciplines>
+                                {% for group in cross_interest_groups %}
+                                    {% if group.choices %}
+                                        <fieldset class="field choice-fieldset">
+                                            <legend>{{ group.label }}</legend>
+                                            <div class="career-interest-options">
+                                                {% for value, label in group.choices %}
+                                                    <label class="career-interest-option"><input type="checkbox" name="career_interests" value="{{ value }}"{% if value in selected_career_interests %} checked{% endif %}>{{ label }}</label>
+                                                {% endfor %}
+                                            </div>
+                                        </fieldset>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {{ form.career_interests.errors }}
+                        </div>
+                    {% else %}
+                        <div class="onboard-fields">{{ form }}</div>
+                    {% endif %}
                     <div class="auth-error">{{ form.errors }}</div>
                 {% endif %}
 
@@ -165,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const question = document.querySelector("[data-sandy-question]");
     const questionText = question?.querySelector("[data-question-text]");
     const compose = document.querySelector("[data-onboard-compose]");
-
     const finishQuestion = () => {
         question?.classList.remove("sandy-question-speaking");
         question?.querySelector(".sandy-question-cursor")?.remove();
@@ -175,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const speakQuestion = () => {
         question?.classList.remove("sandy-question-waiting");
         if (!questionText) return finishQuestion();
-        const message = questionText.dataset.message;
+        const message = questionText.dataset.message || "";
         if (reduceMotion) {
             questionText.textContent = message;
             return finishQuestion();
@@ -196,12 +236,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    intro.classList.remove("is-speaking");
-    window.setTimeout(speakQuestion, reduceMotion ? 0 : 150);
+    const finishIntro = () => {
+        intro.classList.remove("is-speaking");
+        intro.querySelector(".sandy-cursor")?.remove();
+        scrollToLatest();
+        window.setTimeout(speakQuestion, reduceMotion ? 0 : 250);
+    };
+    const message = textTarget.dataset.message || "";
+    if (reduceMotion) {
+        textTarget.textContent = message;
+        finishIntro();
+        return;
+    }
+
+    textTarget.textContent = "";
+    intro.classList.add("is-speaking");
+    let introIndex = 0;
+    const introTimer = window.setInterval(() => {
+        textTarget.textContent += message[introIndex++];
+        if (introIndex >= message.length) {
+            window.clearInterval(introTimer);
+            window.setTimeout(finishIntro, 250);
+        }
+    }, 20);
 });
 </script>
 {% if step.id == "resume" %}
     {{ career_choice_map|json_script:"onboarding-career-choice-map" }}
-    <script src="{% static 'skillbridge/js/guided-resume.js' %}"></script>
+    <script src="{% static 'skillbridge/js/guided-resume.js' %}?v=guided-builder-2"></script>
 {% endif %}
 {% endblock %}

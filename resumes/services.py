@@ -175,6 +175,31 @@ def _section(title, content):
     return f"{title}\n{content}" if content else ""
 
 
+def build_profile_resume(candidate):
+    """Build an editable general resume from the candidate's saved profile."""
+    profile = UserProfile.objects.filter(user=candidate).first()
+    data = merge_completed_certifications(
+        candidate,
+        profile.profile_data if profile else {},
+    )
+    name = data.get("name") or candidate.get_full_name() or candidate.username
+    contact = _dedupe([data.get("email") or candidate.email, data.get("phone"), data.get("linkedin")])
+    direction = ", ".join(_dedupe([data.get("career"), data.get("specialisation")]))
+    sections = [
+        name,
+        " | ".join(contact),
+        _section("PROFESSIONAL SUMMARY", f"Career direction: {direction}." if direction else ""),
+        _section("CORE SKILLS", data.get("skills")),
+        _section("EDUCATION", "\n".join(_dedupe([data.get("education"), data.get("institution")]))),
+        _section("EXPERIENCE", data.get("experience")),
+        _section("PROJECTS & PORTFOLIO", data.get("portfolio")),
+        _section("CERTIFICATIONS", data.get("certifications")),
+        _section("AWARDS & ACHIEVEMENTS", data.get("awards")),
+        _section("WORK AUTHORISATION", data.get("visa")),
+    ]
+    return "\n\n".join(section for section in sections if section.strip())
+
+
 def build_tailored_resume(candidate, job):
     """Build a truthful, job-aware resume draft from both sides of the marketplace.
 

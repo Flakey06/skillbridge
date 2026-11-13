@@ -10,7 +10,7 @@ from jobs.models import Job
 from .models import TailoredResume
 from .review import review_draft, without_legacy_notes
 from .services import build_tailored_resume
-from .content import clean_resume_content
+from .content import auto_format_resume, clean_resume_content
 
 
 class ResumeReviewTests(TestCase):
@@ -26,6 +26,19 @@ class ResumeReviewTests(TestCase):
         result = review_draft("PROFESSIONAL SUMMARY\nMotivated team player.\nEXPERIENCE\n- Helped with various tasks in 2025", self.job)
         self.assertEqual(result["issue_count"], 2)
         self.assertEqual(len(result["lines"][-1]["suggestions"]), 2)
+
+    def test_my_resume_always_has_edit_action_and_creates_main_draft(self):
+        response = self.client.get(reverse("candidate_resume"))
+        self.assertContains(response, "Edit resume")
+
+        response = self.client.post(reverse("candidate_resume"), {"action": "edit_resume"})
+        draft = TailoredResume.objects.get(candidate=self.user, is_main=True)
+        self.assertRedirects(response, reverse("resume_detail", args=[draft.pk]))
+        self.assertIn("Candidate", draft.content)
+        self.assertIn("Python", draft.content)
+
+        response = self.client.get(reverse("candidate_resume"))
+        self.assertContains(response, "Edit resume")
 
     def test_quantified_specific_bullet_has_no_writing_warning(self):
         result = review_draft("EXPERIENCE\n- Built Python scripts to process 200 records for customers.", self.job)
@@ -90,3 +103,19 @@ class ResumeReviewTests(TestCase):
         result = review_draft("SUMMARY\nMotivated team player.")
         self.assertFalse(result["has_job"])
         self.assertEqual(result["issue_count"], 1)
+
+    def test_auto_format_normalises_headings_bullets_and_spacing_without_rewriting(self):
+        content = "Candidate   Name\n\n\nexperience:\n* Built   Python reports for 20 customers.\n• Reduced review time by 10%."
+        self.assertEqual(
+            auto_format_resume(content),
+            "Candidate Name\n\nEXPERIENCE\n- Built Python reports for 20 customers.\n- Reduced review time by 10%.",
+        )
+
+        draft = TailoredResume.objects.create(candidate=self.user, content=content)
+        response = self.client.post(reverse("resume_detail", args=[draft.pk]), {
+            "action": "auto_format",
+            "content": content,
+        })
+        self.assertRedirects(response, reverse("resume_detail", args=[draft.pk]))
+        draft.refresh_from_db()
+        self.assertIn("EXPERIENCE\n- Built Python reports for 20 customers.", draft.content)

@@ -8,6 +8,7 @@
         <h1>{{ tailored_resume.title }}</h1>
         <p class="sub">{% if tailored_resume.job %}Draft created for {{ tailored_resume.job.title }} at {{ tailored_resume.job.company.name }}.{% else %}Review and edit your career-direction resume.{% endif %}</p>
     </div>
+    <a class="button" href="{% url 'candidate_resume_select' %}?resume_id={{ tailored_resume.id }}">← Back to resume selection</a>
 </div>
 
 {% for message in messages %}<p class="card profile-message" role="status">{{ message }}</p>{% endfor %}
@@ -23,6 +24,7 @@
             <textarea id="resume-content" name="content" rows="32" required>{{ editor_content }}</textarea>
         </label>
         <p class="muted">Edit this draft, then save it. The saved version is used for applications and resume-fit scoring when selected as your main resume.</p>
+        <p class="muted">Only an approved draft can be submitted with a job application.</p>
     </form>
     <div class="resume-editor-actions">
     <button class="primary button" type="submit" form="resume-edit-form">Save and review</button>
@@ -33,6 +35,11 @@
     </form>
     {% endif %}
     </div>
+    <div class="resume-editor-actions">
+        <button class="button" type="submit" form="resume-edit-form" name="action" value="auto_format">Auto-format resume</button>
+        <button class="button" type="submit" form="resume-edit-form" name="action" value="approve">Approve resume</button>
+    </div>
+    <small class="muted">Auto-format improves headings, bullets, spacing, and consistency. It does not invent or rewrite your experience.</small>
 </article>
 <aside class="resume-review-sidebar">
     <section class="card">

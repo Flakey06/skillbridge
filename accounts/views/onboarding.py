@@ -34,6 +34,26 @@ def onboarding(request):
     answers = dict(profile.profile_data or {})
     answers.update(request.session.get("onboarding_answers", {}))
     step_number = int(request.session.get("onboarding_step", _next_step(profile, steps)))
+    linked_company_fields = set()
+    if role == "recruiter":
+        recruiter_profile = getattr(request.user, "recruiter_profile", None)
+        company = getattr(recruiter_profile, "company", None)
+        if company:
+            answers["company"] = company.name
+            linked_company_fields.add("company")
+            if company.website:
+                answers["website"] = company.website
+                linked_company_fields.add("website")
+            if company.industry:
+                answers["industry"] = company.industry
+                linked_company_fields.add("industry")
+            if answers != (profile.profile_data or {}):
+                profile.profile_data = answers
+                profile.save(update_fields=["profile_data"])
+            request.session["onboarding_answers"] = answers
+            if step_number < len(steps) and answers.get(steps[step_number]["id"]):
+                step_number = _next_step(profile, steps)
+                request.session["onboarding_step"] = step_number
     if step_number >= len(steps):
         return _finish_onboarding(request)
     step = dict(steps[step_number])
@@ -42,7 +62,9 @@ def onboarding(request):
         request.session["sandy_intro_seen"] = True
     career_area = answers.get("career", "")
     if step["id"] == "career_interests":
-        step["choices"] = choices_for_career(CAREER_INTEREST_CHOICES, CAREER_INTERESTS_BY_AREA, career_area)
+        # Validate every available direction. The template presents the main
+        # career-area choices first and keeps cross-discipline choices optional.
+        step["choices"] = CAREER_INTEREST_CHOICES
     elif step["id"] == "specialisation":
         step["choices"] = choices_for_career(SPECIALISATION_CHOICES, SPECIALISATIONS_BY_AREA, career_area)
     initial = {} if step.get("type") == "file" else {
@@ -76,19 +98,30 @@ def onboarding(request):
     if request.method == "POST" and step["id"] == "resume" and resume_form and resume_form.is_valid():
         action = request.POST.get("action", "save_resume")
         uploaded_resume = resume_form.cleaned_data.get("resume")
-        if action == "extract_resume":
-            if profile.resume:
+        if action in {"extract_resume", "extract_existing_resume"}:
+            using_existing_resume = action == "extract_existing_resume"
+            source_resume = profile.resume if using_existing_resume else uploaded_resume
+            if using_existing_resume and not profile.resume:
+                resume_form.add_error("resume", "Upload a resume before using auto-fill.")
+            elif not using_existing_resume and profile.resume:
                 resume_form.add_error("resume", "Delete the current resume before uploading another one.")
-            elif not uploaded_resume:
+            elif not source_resume:
                 resume_form.add_error("resume", "Choose a resume file to upload first.")
             else:
                 from candidates.services import autofill_from_resume, sync_candidate_profile
                 from candidates.resume_parser import assess_resume_suitability
-                updates, extracted_text = autofill_from_resume(uploaded_resume, answers)
+                if using_existing_resume:
+                    profile.resume.open("rb")
+                try:
+                    updates, extracted_text = autofill_from_resume(source_resume, answers)
+                finally:
+                    if using_existing_resume:
+                        profile.resume.close()
                 is_suitable, rejection_reason = assess_resume_suitability(extracted_text)
                 if is_suitable:
-                    profile.resume = uploaded_resume
-                    profile.save(update_fields=["resume"])
+                    if not using_existing_resume:
+                        profile.resume = uploaded_resume
+                        profile.save(update_fields=["resume"])
                     answers.update(updates)
                     answers["resume"] = profile.resume.name
                     profile.profile_data = answers
@@ -97,7 +130,7 @@ def onboarding(request):
                     request.session["onboarding_answers"] = answers
                     request.session["onboarding_step"] = step_number
                     request.session["sandy_intro_seen"] = True
-                    notify(request.user, "Resume submitted", "Sandy auto-filled your guided profile fields. Review and edit them before continuing.", "profile")
+                    notify(request.user, "Resume auto-filled", "Sandy auto-filled your guided profile fields. Review and edit them before continuing.", "profile")
                     return redirect("onboarding")
                 resume_form.add_error("resume", rejection_reason)
         else:
@@ -133,6 +166,8 @@ def onboarding(request):
         return redirect("onboarding")
     completed_steps = []
     for item in steps[:step_number]:
+        if item["id"] in linked_company_fields:
+            continue
         answer = _step_value(profile, answers, item) or ""
         if item["id"] == "resume" and hasattr(answer, "name"):
             answer = answer.name
@@ -153,8 +188,30 @@ def onboarding(request):
         }
         for area, _label in CAREER_CHOICES
     }
+    primary_interest_choices = choices_for_career(
+        CAREER_INTEREST_CHOICES, CAREER_INTERESTS_BY_AREA, career_area
+    )
+    seen_interest_values = {value for value, _label in primary_interest_choices}
+    cross_interest_groups = []
+    for area, area_label in CAREER_CHOICES:
+        if area == career_area:
+            continue
+        choices = [
+            choice
+            for choice in choices_for_career(
+                CAREER_INTEREST_CHOICES, CAREER_INTERESTS_BY_AREA, area
+            )
+            if choice[0] not in seen_interest_values
+        ]
+        seen_interest_values.update(value for value, _label in choices)
+        cross_interest_groups.append({"label": area_label, "choices": choices})
+    selected_career_interests = (
+        request.POST.getlist("career_interests")
+        if request.method == "POST"
+        else answers.get("career_interests", [])
+    )
     display_steps = steps
-    return render(request, "accounts/onboarding.html", {"role": role, "profile": profile, "steps": display_steps, "step": step, "step_number": step_number, "answers": answers, "completed_steps": completed_steps, "form": form, "resume_form": resume_form, "show_sandy_intro": show_sandy_intro, "career_choice_map": career_choice_map, "total_steps": len(display_steps)})
+    return render(request, "accounts/onboarding.html", {"role": role, "profile": profile, "steps": display_steps, "step": step, "step_number": step_number, "answers": answers, "completed_steps": completed_steps, "form": form, "resume_form": resume_form, "show_sandy_intro": show_sandy_intro, "career_choice_map": career_choice_map, "primary_interest_choices": primary_interest_choices, "cross_interest_groups": cross_interest_groups, "selected_career_interests": selected_career_interests, "total_steps": len(display_steps)})
 
 
 @login_required

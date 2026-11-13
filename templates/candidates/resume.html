@@ -9,6 +9,13 @@
         <p class="sub">Review your generated resume and feedback from the uploaded source file.</p>
         {% if main_resume %}<a class="text-link" href="#resume-fit">Change resume type ↓</a>{% endif %}
     </div>
+    <a class="primary button" href="{% url 'candidate_resume_select' %}">Edit resume</a>
+</div>
+
+<div class="profile-autosave-box resume-profile-sync-note" role="status">
+    <strong>Automatically updated from My Profile</strong>
+    <p>All saved profile details appear in this resume automatically.</p>
+    <small>Update your contact details, education, experience, certifications, skills, portfolio, or achievements in My Profile and they will be reflected here.</small>
 </div>
 
 <div class="content-columns">

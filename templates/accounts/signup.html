@@ -16,8 +16,18 @@
     {{ form.company_name }}{{ form.company_website }}{{ form.company_logo_url }}
     <div class="signup-company-selected" data-company-selected hidden></div>
 </section>
-<label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<a class="forgot-password-link" href="{% url 'password_reset' %}">Forgot Password?</a><span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
+<label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<a class="forgot-password-link" href="{% url 'security_question_recovery' %}">Forgot Password?</a><span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <label class="field signup-password-field">{% include "components/field_label.html" with field=form.password2 %}{{ form.password2 }}<span class="signup-field-errors" id="id_password2_error">{% for error in form.password2.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
+<details class="signup-recovery-questions">
+    <summary>Set up recovery questions (optional)</summary>
+    <p class="sub">Choose three different questions from the ten available options and set a password hint. After all three answers are correct, SkillBridge will show your hint. Answers are stored securely.</p>
+    {% for field in form %}
+        {% if 'security_question_' in field.name or 'security_answer_' in field.name %}
+            <label class="field" for="{{ field.id_for_label }}">{% if 'security_question_' in field.name %}Recovery question{% else %}Your answer{% endif %}{{ field }}{{ field.errors }}</label>
+        {% endif %}
+    {% endfor %}
+    <label class="field" for="{{ form.password_hint.id_for_label }}">{% include "components/field_label.html" with field=form.password_hint %}{{ form.password_hint }}{{ form.password_hint.errors }}<small class="muted">{{ form.password_hint.help_text }}</small></label>
+</details>
 <button class="primary full" type="submit">Create account →</button></form><p class="sub auth-existing-account">Already registered? <a href="{% url 'login' %}">Sign in</a></p></div><p class="auth-footer">Find work. Build your team.</p></section></div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {

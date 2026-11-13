@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 
-from .models import Payment, Referral, UserProfile
+from .models import Payment, Referral, SecurityQuestionAnswer, UserProfile
 from .referral_services import award_referral
 from .payment_services import set_stripe_entitlement
 
@@ -54,6 +54,13 @@ class UserProfileAdmin(admin.ModelAdmin):
     def revoke_pro_access(self, request, queryset):
         updated = queryset.update(plan="free", plan_expires_at=None)
         self.message_user(request, f"Revoked Pro access for {updated} user(s).", messages.SUCCESS)
+
+
+@admin.register(SecurityQuestionAnswer)
+class SecurityQuestionAnswerAdmin(admin.ModelAdmin):
+    list_display = ("user", "position", "question")
+    search_fields = ("user__username", "user__email")
+    readonly_fields = ("answer_hash",)
 
 
 @admin.register(Payment)

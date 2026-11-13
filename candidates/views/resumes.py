@@ -17,7 +17,7 @@ from ..career_paths import (
 from ..resume_parser import extract_resume_text, review_resume
 from resumes.models import TailoredResume
 from resumes.presentation import resume_document
-from resumes.services import build_interest_tailored_resume
+from resumes.services import build_interest_tailored_resume, build_profile_resume
 from .common import _current_profile, _selected_career_interests, _career_interest_labels, _context
 
 
@@ -45,6 +45,27 @@ def _resume_timeline(user):
 @candidate_required
 def resume(request):
     profile = _current_profile(request)
+    main_resume = TailoredResume.objects.filter(candidate=request.user, is_main=True).first()
+    if main_resume and not main_resume.job_id and main_resume.title == "My resume":
+        profile_content = build_profile_resume(request.user)
+        if main_resume.content != profile_content:
+            main_resume.content = profile_content
+            main_resume.save(update_fields=["content", "updated_at"])
+    if request.method == "POST" and request.POST.get("action") == "edit_resume":
+        selected_resume = TailoredResume.objects.filter(
+            candidate=request.user,
+            pk=request.POST.get("resume_id"),
+        ).first()
+        if not selected_resume:
+            selected_resume = main_resume
+        if not selected_resume:
+            selected_resume = TailoredResume.objects.create(
+                candidate=request.user,
+                title="My resume",
+                content=build_profile_resume(request.user),
+                is_main=True,
+            )
+        return redirect("resume_detail", resume_id=selected_resume.id)
     data = merge_completed_certifications(
         request.user,
         profile.profile_data if profile else {},
@@ -92,7 +113,7 @@ def resume(request):
         draft.title: draft
         for draft in TailoredResume.objects.filter(candidate=request.user)
     }
-    main_resume = TailoredResume.objects.filter(candidate=request.user, is_main=True).first()
+    resume_timeline = _resume_timeline(request.user)
     for fit in fit_matrix:
         draft = tailored_drafts.get(f"Resume for {fit['label']}")
         fit["tailored_resume_id"] = draft.id if draft else ""
@@ -110,6 +131,36 @@ def resume(request):
         main_resume_document=resume_document(main_resume.clean_content, profile.display_name if profile else request.user.username) if main_resume else None,
         resume_timeline=resume_timeline,
         resume_timeline_rows=[resume_timeline[index:index + 4] for index in range(0, len(resume_timeline), 4)],
+    ))
+
+
+@candidate_required
+def choose_resume_to_edit(request):
+    main_resume = TailoredResume.objects.filter(candidate=request.user, is_main=True).first()
+    if not TailoredResume.objects.filter(candidate=request.user).exists():
+        main_resume = TailoredResume.objects.create(
+            candidate=request.user,
+            title="My resume",
+            content=build_profile_resume(request.user),
+            is_main=True,
+        )
+    timeline = _resume_timeline(request.user)
+    selected_id = request.GET.get("resume_id")
+    selected_resume = TailoredResume.objects.filter(
+        candidate=request.user,
+        pk=selected_id,
+    ).first()
+    if not selected_resume:
+        selected_resume = main_resume or timeline[0]["resume"]
+    selected_item = next(
+        (item for item in timeline if item["resume"].pk == selected_resume.pk),
+        None,
+    )
+    return render(request, "candidates/resume_select.html", _context(
+        request,
+        resume_timeline=timeline,
+        selected_resume=selected_resume,
+        selected_item=selected_item,
     ))
 
 

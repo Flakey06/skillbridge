@@ -44,7 +44,12 @@ def signup_view(request):
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
-        UserProfile.objects.create(user=user, role=form.cleaned_data["role"])
+        form.save_security_answers(user)
+        profile = UserProfile.objects.create(
+            user=user,
+            role=form.cleaned_data["role"],
+            password_hint=form.cleaned_data.get("password_hint", "").strip(),
+        )
         if form.cleaned_data["role"] == "recruiter" and form.cleaned_data.get("company_name"):
             from employers.models import Company, RecruiterProfile
 
@@ -54,9 +59,15 @@ def signup_view(request):
                 logo_url=form.cleaned_data.get("company_logo_url", ""),
             )
             RecruiterProfile.objects.create(user=user, company=company)
+            profile.profile_data = {
+                "company": company.name,
+                "website": company.website,
+            }
+            profile.save(update_fields=["profile_data"])
         login(request, user)
-        request.session["onboarding_step"] = 0
-        request.session["onboarding_answers"] = {}
+        steps = RECRUITER_STEPS if profile.role == "recruiter" else CANDIDATE_STEPS
+        request.session["onboarding_step"] = _next_step(profile, steps)
+        request.session["onboarding_answers"] = profile.profile_data or {}
         request.session["onboarding_complete"] = False
         request.session["sandy_intro_seen"] = False
         requested_next = _safe_next_url(request, request.POST.get("next") or request.GET.get("next"))

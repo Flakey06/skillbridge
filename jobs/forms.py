@@ -33,13 +33,6 @@ class JobForm(forms.ModelForm):
         widget=forms.SelectMultiple(attrs={"size": 8}),
         help_text="Select the skills candidates should have. Add custom skills below if needed.",
     )
-    preferred_skill_choices = FreeChoiceMultipleField(
-        required=False,
-        label="Preferred skills",
-        choices=skill_choices,
-        widget=forms.SelectMultiple(attrs={"size": 8}),
-        help_text="Search and select skills that would be a bonus for this role.",
-    )
     evidence_rank_order = forms.CharField(
         required=False,
         label="Rank evidence",
@@ -60,26 +53,27 @@ class JobForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            # Older listings may have preferred skills. Present them in the
+            # single skills picker so editing does not silently lose them.
+            existing = list(dict.fromkeys([
+                *self.instance.required_skill_list,
+                *self.instance.preferred_skill_list,
+            ]))
+            field = self.fields["required_skill_choices"]
+            known = {value.casefold() for value, _ in field.choices}
+            field.choices = [
+                *field.choices,
+                *((value, value) for value in existing if value.casefold() not in known),
+            ]
         if self.instance and self.instance.pk and not self.is_bound:
-            for field_name, model_name in (
-                ("required_skill_choices", "required_skills"),
-                ("preferred_skill_choices", "preferred_skills"),
-            ):
-                existing = self.instance.split_skills(getattr(self.instance, model_name, ""))
-                field = self.fields[field_name]
-                known = {value.casefold() for value, _ in field.choices}
-                field.choices = [
-                    *field.choices,
-                    *((value, value) for value in existing if value.casefold() not in known),
-                ]
             existing_order = sorted(
                 self.instance.evidence_weights or {},
                 key=(self.instance.evidence_weights or {}).get,
                 reverse=True,
             )
             self.initial["evidence_rank_order"] = ",".join(existing_order or self.evidence_types)
-            self.initial["required_skill_choices"] = self.instance.required_skill_list
-            self.initial["preferred_skill_choices"] = self.instance.preferred_skill_list
+            self.initial["required_skill_choices"] = existing
     class Meta:
         model = Job
         fields = [
@@ -96,18 +90,17 @@ class JobForm(forms.ModelForm):
             "salary_period",
             "stipend",
             "required_skills",
-            "preferred_skills",
             "status",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 6}),
             "required_skills": forms.Textarea(attrs={"rows": 3}),
-            "preferred_skills": forms.Textarea(attrs={"rows": 3}),
         }
 
     def save(self, commit=True):
         job = super().save(commit=False)
         job.evidence_weights = self.cleaned_data["evidence_weights"]
+        job.preferred_skills = ""
         if commit:
             job.save()
             self.save_m2m()
@@ -134,10 +127,7 @@ class JobForm(forms.ModelForm):
             for item, value in zip(order, rank_values)
         }
         canonical = {skill.casefold(): skill for skill in self.skill_catalog}
-        for field_name, model_name in (
-            ("required_skill_choices", "required_skills"),
-            ("preferred_skill_choices", "preferred_skills"),
-        ):
+        for field_name, model_name in (("required_skill_choices", "required_skills"),):
             selected_skills = cleaned.get(field_name) or []
             custom_skills = Job.split_skills(cleaned.get(model_name, ""))
             merged = []

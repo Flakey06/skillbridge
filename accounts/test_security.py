@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from .models import UserProfile
+from .models import SecurityQuestionAnswer, UserProfile
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
@@ -24,9 +24,111 @@ class AccountSecurityTests(TestCase):
     def details(self, **extra):
         return {"name": "James Updated", "email": self.user.email, "phone_country_code": "+65", "phone": "9123 4567", **extra}
 
+    def configure_security_questions(self):
+        values = [
+            (1, "favorite_color", "Ultramarine"),
+            (2, "first_school", "River Valley"),
+            (3, "favorite_book", "The Hobbit"),
+        ]
+        for position, question, answer in values:
+            record = SecurityQuestionAnswer(user=self.user, position=position, question=question)
+            record.set_answer(answer)
+            record.save()
+        return values
+
     def test_recovery_links_present_on_login_and_signup(self):
         for route in ('login', 'signup'):
-            self.assertContains(self.client.get(reverse(route)), reverse('password_reset'))
+            response = self.client.get(reverse(route))
+            self.assertContains(response, reverse('security_question_recovery'))
+
+    def test_signup_hashes_three_optional_security_answers(self):
+        response = self.client.post(reverse("signup"), {
+            "username": "question-user",
+            "email": "questions@example.com",
+            "password1": "A secure password 123!",
+            "password2": "A secure password 123!",
+            "role": "candidate",
+            "security_question_1": "favorite_color",
+            "security_answer_1": "Ultramarine",
+            "security_question_2": "first_school",
+            "security_answer_2": "River Valley",
+            "security_question_3": "favorite_book",
+            "security_answer_3": "The Hobbit",
+            "password_hint": "The place where bridges begin",
+        })
+
+        self.assertRedirects(response, reverse("onboarding"))
+        user = User.objects.get(username="question-user")
+        records = list(user.security_question_answers.all())
+        self.assertEqual(len(records), 3)
+        self.assertNotIn("Ultramarine", records[0].answer_hash)
+        self.assertTrue(records[0].answer_matches("  ultramarine "))
+        self.assertEqual(user.profile.password_hint, "The place where bridges begin")
+
+    def test_three_correct_answers_show_user_password_hint(self):
+        self.configure_security_questions()
+        self.profile.password_hint = "A reminder only James knows"
+        self.profile.save(update_fields=["password_hint"])
+        response = self.client.post(reverse("security_question_recovery"), {"identifier": self.user.email})
+        self.assertRedirects(response, reverse("security_question_recovery"))
+        response = self.client.post(reverse("security_question_recovery"), {
+            "answer_1": "ultramarine",
+            "answer_2": "River Valley",
+            "answer_3": "The Hobbit",
+        })
+        self.assertRedirects(response, reverse("security_question_password_hint"))
+        response = self.client.get(reverse("security_question_password_hint"))
+        self.assertContains(response, "A reminder only James knows")
+        self.assertNotContains(response, self.password)
+
+    def test_signup_email_is_optional_and_ten_recovery_questions_are_available(self):
+        response = self.client.get(reverse("signup"))
+        self.assertEqual(len(response.context["form"].fields["security_question_1"].choices), 11)
+        signup = self.client.post(reverse("signup"), {
+            "username": "no-email-user",
+            "email": "",
+            "password1": "A secure password 123!",
+            "password2": "A secure password 123!",
+            "role": "candidate",
+        })
+        self.assertRedirects(signup, reverse("onboarding"))
+        self.assertEqual(User.objects.get(username="no-email-user").email, "")
+
+    def test_current_password_is_required_to_change_security_questions(self):
+        self.configure_security_questions()
+        self.client.force_login(self.user)
+        values = {
+            "current_password": "wrong password",
+            "security_question_1": "first_pet",
+            "security_answer_1": "Milo",
+            "security_question_2": "childhood_street",
+            "security_answer_2": "Bridge Road",
+            "security_question_3": "first_job",
+            "security_answer_3": "Library assistant",
+            "password_hint": "Think of the bridge",
+        }
+        response = self.client.post(reverse("security_question_settings"), values)
+        self.assertContains(response, "current password is incorrect")
+        self.assertFalse(self.user.security_question_answers.filter(question="first_pet").exists())
+
+        values["current_password"] = self.password
+        response = self.client.post(reverse("security_question_settings"), values)
+        self.assertRedirects(response, reverse("security_question_settings"))
+        self.assertEqual(self.user.security_question_answers.count(), 3)
+        self.assertTrue(self.user.security_question_answers.filter(question="first_pet").exists())
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.password_hint, "Think of the bridge")
+
+    def test_five_wrong_security_answer_attempts_are_locked(self):
+        self.configure_security_questions()
+        self.client.post(reverse("security_question_recovery"), {"identifier": self.user.username})
+        for _ in range(5):
+            response = self.client.post(reverse("security_question_recovery"), {
+                "answer_1": "wrong", "answer_2": "wrong", "answer_3": "wrong",
+            })
+        self.assertEqual(response.status_code, 302)
+        response = self.client.get(reverse("security_question_recovery"))
+        self.assertContains(response, "Too many incorrect attempts")
 
     def test_reset_email_and_single_use_token(self):
         response = self.client.post(reverse('password_reset'), {'email': self.user.email})

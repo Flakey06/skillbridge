@@ -53,7 +53,14 @@
 
     <aside class="aside dashboard-aside">
         <div class="card">
-            <div class="section-heading"><h2>Next interview</h2><span class="pill progress-green">Confirmed</span></div>
+            <div class="section-heading">
+                <h2>Next interview</h2>
+                {% if upcoming_interviews %}
+                    <span class="pill progress-green">Confirmed</span>
+                {% else %}
+                    <span class="pill">None scheduled</span>
+                {% endif %}
+            </div>
             {% for interview in upcoming_interviews %}
                 <h3>{{ interview.application.job.title }}</h3>
                 <p class="section-description">{{ interview.application.job.company.name }} · {{ interview.scheduled_start|date:"d M Y, H:i" }}</p>
