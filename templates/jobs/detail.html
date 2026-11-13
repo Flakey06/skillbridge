@@ -32,26 +32,26 @@
         <div class="job-compatibility-caption">
             <p class="eyebrow">Your Readiness</p>
             <h2>Compatibility</h2>
-            {% if recommended_resume %}
-                <span class="pill" data-resume-readiness>{{ recommended_resume.assessment }}</span>
-                <p class="sub"><span data-resume-compatibility-prefix>For your highest-scoring resume:</span> <strong data-resume-compatibility-title>{{ recommended_resume.resume.title }}</strong> · <span data-resume-compatibility-version>{{ recommended_resume.version }}</span></p>
+            {% if comparison_resume %}
+                <span class="pill" data-resume-readiness>{{ comparison_resume.assessment }}</span>
+                <p class="sub"><span>{% if comparison_resume.resume.id == recommended_resume.resume.id %}For your highest-scoring resume:{% else %}Comparing resume:{% endif %}</span> <strong data-resume-compatibility-title>{{ comparison_resume.resume.title }}</strong> · <span data-resume-compatibility-version>{{ comparison_resume.version }}</span></p>
 
             {% elif match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}
         </div>
         <div class="compatibility-scores job-header-scores" aria-label="Compatibility scores">
-            {% if recommended_resume %}
-                <div data-resume-evidence-score>{% include "components/compatibility_score.html" with label="Skill Compatibility" score=recommended_resume.fit_score %}</div>
-                <div data-resume-ai-score>{% include "components/compatibility_score.html" with label="Predicted Job Fit" score=recommended_resume.ai_compatibility %}</div>
+            {% if comparison_resume %}
+                <div data-resume-evidence-score>{% include "components/compatibility_score.html" with label="Skill Compatibility" score=comparison_resume.fit_score %}</div>
+                <div data-resume-ai-score>{% include "components/compatibility_score.html" with label="Predicted Job Fit" score=comparison_resume.ai_compatibility %}</div>
             {% else %}
                 {% include "components/compatibility_score.html" with label="Skill Compatibility" score=match.score %}
                 {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.ai_match.earned %}
             {% endif %}
         </div>
-        {% if recommended_resume %}
-                <div class="job-resume-comparison">
+        {% if comparison_resume %}
+                <form method="get" class="job-resume-comparison">
                 <label class="field" for="compatibility-resume-version">
                     Compare Resumes
-                    <select id="compatibility-resume-version" data-compatibility-resume>
+                    <select id="compatibility-resume-version" name="compare_resume">
                         {% for item in available_resumes %}
                         <option value="{{ item.resume.id }}"
                             data-title="{{ item.resume.title }}"
@@ -60,11 +60,11 @@
                             data-ai="{{ item.ai_compatibility }}"
                             data-combined="{{ item.recommendation_score }}"
                             data-assessment="{{ item.assessment }}"
-                            {% if item.resume.id == recommended_resume.resume.id %}selected{% endif %}>{{ item.resume.title }} · {{ item.version }}{% if item.resume.id == recommended_resume.resume.id %} — Best Match{% endif %}</option>
+                            {% if item.resume.id == comparison_resume.resume.id %}selected{% endif %}>{{ item.resume.title }} · {{ item.version }}{% if item.resume.id == recommended_resume.resume.id %} — Best Match{% endif %}</option>
                         {% endfor %}
                     </select>
-                </label>
-                </div>
+                </label><button class="button small" type="submit">Compare</button>
+                </form>
         {% endif %}
     </section>
     {% endif %}
@@ -219,27 +219,6 @@
 </article>
 
 {% if has_pro and recommended_resume %}
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const selector = document.querySelector("[data-compatibility-resume]");
-    if (!selector) return;
-    const setScore = (container, score) => {
-        const box = container?.querySelector(".compatibility-box");
-        if (!box) return;
-        box.querySelector("strong").textContent = `${score}%`;
-        box.classList.remove("compatibility-red", "compatibility-orange", "compatibility-yellow", "compatibility-unavailable");
-        box.classList.add(score < 40 ? "compatibility-red" : score < 60 ? "compatibility-orange" : "compatibility-yellow");
-    };
-    selector.addEventListener("change", () => {
-        const option = selector.selectedOptions[0];
-        document.querySelector("[data-resume-compatibility-title]").textContent = option.dataset.title;
-        document.querySelector("[data-resume-compatibility-version]").textContent = option.dataset.version;
-        document.querySelector("[data-resume-compatibility-prefix]").textContent = "Comparing resume:";
-        document.querySelector("[data-resume-readiness]").textContent = option.dataset.assessment;
-        setScore(document.querySelector("[data-resume-evidence-score]"), Number(option.dataset.evidence));
-        setScore(document.querySelector("[data-resume-ai-score]"), Number(option.dataset.ai));
-    });
-});
-</script>
+
 {% endif %}
 {% endblock %}

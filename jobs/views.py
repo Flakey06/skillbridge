@@ -136,6 +136,9 @@ def detail(request, job_id):
         else main_resume.id if main_resume
         else ""
     )
+    comparison_resume = recommended_resume
+    if has_pro and request.GET.get("compare_resume"):
+        comparison_resume = next((item for item in available_resumes if str(item["resume"].pk) == request.GET["compare_resume"]), recommended_resume)
     selected_resume_id = request.POST.get("resume_id", default_resume_id)
     profile_missing_fields = [
         field
@@ -247,6 +250,7 @@ def detail(request, job_id):
             "available_resumes": available_resumes,
             "selected_resume_id": selected_resume_id,
             "recommended_resume": recommended_resume,
+            "comparison_resume": comparison_resume,
             "is_blacklisted": is_blacklisted,
         },
     )

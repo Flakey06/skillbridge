@@ -7,7 +7,7 @@
     <title>{% block title %}SkillBridge — Jobs, applications & hiring{% endblock %}</title>
     {% include "components/stylesheets.html" %}
 </head>
-<body>
+<body{% if request.session.sidebar_expanded != False %} class="sidebar-expanded"{% endif %}>
     {% block page %}
     {% include "components/sidebar.html" %}
     <div class="shell">
@@ -18,14 +18,14 @@
     {% if messages %}
     <div class="toast-container" aria-live="polite" aria-atomic="true">
         {% for message in messages %}
-            <div class="toast toast-{{ message.tags|default:'info' }}">{{ message }}</div>
+            <details class="toast toast-{{ message.tags|default:'info' }}" open><summary aria-label="Dismiss notification">×</summary><p>{{ message }}</p></details>
         {% endfor %}
     </div>
     {% endif %}
     {% block extra_scripts %}{% endblock %}
-    <script src="{% static 'skillbridge/js/navigation.js' %}"></script>
-    <script src="{% static 'skillbridge/js/skill-preview.js' %}?v=skill-overflow-2"></script>
-    <script src="{% static 'skillbridge/js/saved-jobs.js' %}?v=form-action-fix-2"></script>
-    <script src="{% static 'skillbridge/js/toasts.js' %}"></script>
+
+
+
+
 </body>
 </html>

@@ -13,26 +13,12 @@
         <div class="form-grid">
             <label class="field">{% include "components/field_label.html" with field=resume_form.education %}{{ resume_form.education }}{{ resume_form.education.errors }}</label>
             <label class="field">{% include "components/field_label.html" with field=resume_form.institution %}{{ resume_form.institution }}{{ resume_form.institution.errors }}</label>
-            <label class="field">{% include "components/field_label.html" with field=resume_form.career %}{{ resume_form.career }}{{ resume_form.career.errors }}</label>
+            <label class="field">{% include "components/field_label.html" with field=resume_form.career %}{{ resume_form.career }}{{ resume_form.career.errors }}<button class="button small" type="submit" name="entry_action" value="preview" formnovalidate>Update Specialisations</button></label>
             <label class="field">{% include "components/field_label.html" with field=resume_form.specialisation %}{{ resume_form.specialisation }}{{ resume_form.specialisation.errors }}</label>
         </div>
     </section>
-    <section class="guided-resume-section">
-        <div class="experience-builder" data-experience-builder>
-            <div class="row between"><div><h3>Work experience</h3><small>Add each job or placement separately.</small></div><button class="button small" type="button" data-add-experience>+ Add experience</button></div>
-            <div class="experience-entry-list" data-experience-list></div>
-            <aside class="experience-cv-preview"><p class="eyebrow">Formatted preview</p><div data-experience-preview></div></aside>
-            {{ resume_form.experience }}{{ resume_form.experience_entries }}{{ resume_form.experience_entries.errors }}
-        </div>
-    </section>
-    <section class="guided-resume-section">
-        <div class="experience-builder" data-certification-builder>
-            <div class="row between"><div><h3>Certifications</h3><small>Add each certification separately.</small></div><button class="button small" type="button" data-add-certification>+ Add certification</button></div>
-            <div class="experience-entry-list" data-certification-list></div>
-            <aside class="experience-cv-preview"><p class="eyebrow">Formatted preview</p><div data-certification-preview></div></aside>
-            {{ resume_form.certifications }}{{ resume_form.certification_entries }}{{ resume_form.certification_entries.errors }}
-        </div>
-    </section>
+    <section class="guided-resume-section">{% include "candidates/_native_entries.html" with entry_form=resume_form kind="experience" %}</section>
+    <section class="guided-resume-section">{% include "candidates/_native_entries.html" with entry_form=resume_form kind="certification" %}</section>
     <section class="guided-resume-section"><h3>Skills, work and achievements</h3><div class="form-grid">
         <label class="field span2">{% include "components/field_label.html" with field=resume_form.skills %}{{ resume_form.skills }}{{ resume_form.skills.errors }}</label>
         <label class="field span2">{% include "components/field_label.html" with field=resume_form.portfolio %}{{ resume_form.portfolio }}{{ resume_form.portfolio.errors }}</label>

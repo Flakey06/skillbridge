@@ -10,44 +10,45 @@
     <aside class="administration-section-nav" aria-label="Administration sections">
         <p class="eyebrow">Manage</p>
         <nav>
-            <a href="#overview" data-admin-nav="overview">Overview</a>
-            <a href="#analytics" data-admin-nav="analytics">Analytics</a>
-            <a href="#certifications" data-admin-nav="certifications">Certifications{% if certificate_submissions %}<span>{{ certificate_submissions|length }}</span>{% endif %}</a>
-            <a href="#users" data-admin-nav="users">Users</a>
-            <a href="#employers" data-admin-nav="employers">Employers{% if companies_for_review %}<span>{{ companies_for_review|length }}</span>{% endif %}</a>
-            <a href="#reports" data-admin-nav="reports">Reports</a>
-            <a href="#payments" data-admin-nav="payments">Payments</a>
-            <a href="#audit" data-admin-nav="audit">Audit & staff</a>
+            <a href="?section=overview" data-admin-nav="overview"{% if active_section == "overview" %} class="active" aria-current="page"{% endif %}>Overview</a>
+            <a href="?section=analytics" data-admin-nav="analytics"{% if active_section == "analytics" %} class="active" aria-current="page"{% endif %}>Analytics</a>
+            <a href="?section=certifications" data-admin-nav="certifications"{% if active_section == "certifications" %} class="active" aria-current="page"{% endif %}>Certifications{% if certificate_submissions %}<span>{{ certificate_submissions|length }}</span>{% endif %}</a>
+            <a href="?section=users" data-admin-nav="users"{% if active_section == "users" %} class="active" aria-current="page"{% endif %}>Users</a>
+            <a href="?section=employers" data-admin-nav="employers"{% if active_section == "employers" %} class="active" aria-current="page"{% endif %}>Employers{% if companies_for_review %}<span>{{ companies_for_review|length }}</span>{% endif %}</a>
+            <a href="?section=reports" data-admin-nav="reports"{% if active_section == "reports" %} class="active" aria-current="page"{% endif %}>Reports</a>
+            <a href="?section=payments" data-admin-nav="payments"{% if active_section == "payments" %} class="active" aria-current="page"{% endif %}>Payments</a>
+            <a href="?section=audit" data-admin-nav="audit"{% if active_section == "audit" %} class="active" aria-current="page"{% endif %}>Audit & staff</a>
         </nav>
     </aside>
     <div class="administration-section-content">
-    <section class="administration-metrics" aria-label="Platform overview" data-admin-section="overview">
+    <section class="administration-metrics" aria-label="Platform overview" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}>
         {% for label, value in metrics %}<article class="card"><h2>{{ label }}</h2><strong>{{ value }}</strong></article>{% endfor %}
     </section>
-    <section class="card administration-statistics-board" data-statistics-board data-admin-section="analytics">
+    <section class="card administration-statistics-board" data-statistics-board data-admin-section="analytics"{% if active_section != "analytics" %} hidden{% endif %}>
         <header class="statistics-board-header">
             <div><p class="eyebrow">Live data</p><h2>Member Statistics</h2><p class="sub">Explore account growth and member interests.</p></div>
-            <div class="statistics-filters">
-                <label>Account type<select data-stat-role><option value="all">All members</option><option value="candidate">Candidates</option><option value="recruiter">Recruiters</option></select></label>
-                <label>From<input type="date" data-stat-from></label>
-                <label>To<input type="date" data-stat-to></label>
-                <button class="button" type="button" data-stat-reset>Reset</button>
-            </div>
+            <form method="get" class="statistics-filters">
+                <input type="hidden" name="section" value="analytics">
+                <label>Account Type<select name="stat_role"><option value="all">All Members</option><option value="candidate"{% if member_charts.role == 'candidate' %} selected{% endif %}>Candidates</option><option value="recruiter"{% if member_charts.role == 'recruiter' %} selected{% endif %}>Recruiters</option></select></label>
+                <label>From<input type="date" name="from" value="{{ member_charts.from }}"></label>
+                <label>To<input type="date" name="to" value="{{ member_charts.to }}"></label>
+                <button class="button" type="submit">Apply</button><a class="button" href="?section=analytics">Reset</a>
+            </form>
         </header>
         <div class="statistics-grid">
             <article class="statistics-panel">
                 <div class="statistics-panel-heading"><div><h3>Industry and Career Breakdown</h3><p class="sub" data-breakdown-caption></p></div><span class="statistics-chip">Donut chart</span></div>
-                <div class="donut-layout"><div class="donut-chart" data-donut-chart role="img" aria-label="Member category breakdown"><div class="donut-centre"><strong data-donut-total>0</strong><span>Total</span></div></div><div class="chart-legend" data-chart-legend></div></div>
+                <div class="donut-layout"><div class="donut-chart" style="background: {{ member_charts.gradient }}" data-donut-chart role="img" aria-label="Member category breakdown"><div class="donut-centre"><strong>{{ member_charts.total }}</strong><span>Total</span></div></div><div class="chart-legend">{% for category in member_charts.categories %}<a href="?section=analytics&amp;stat_role={{ member_charts.role }}&amp;from={{ member_charts.from }}&amp;to={{ member_charts.to }}&amp;category={% if member_charts.selected != category.name %}{{ category.name|urlencode }}{% endif %}"><i style="background: {{ category.colour }}"></i>{{ category.name }} <strong>{{ category.count }} · {{ category.percent }}%</strong></a>{% endfor %}</div></div>
             </article>
             <article class="statistics-panel">
                 <div class="statistics-panel-heading"><div><h3>Member Growth</h3><p class="sub" data-growth-caption></p></div><span class="statistics-chip">Cumulative</span></div>
-                <div class="growth-chart-wrap"><svg class="growth-chart" data-growth-chart viewBox="0 0 760 360" role="img" aria-label="Cumulative member registrations"></svg><div class="chart-tooltip" data-chart-tooltip hidden></div></div>
+                <div class="growth-chart-wrap"><svg class="growth-chart" data-growth-chart viewBox="0 0 760 360" role="img" aria-label="Cumulative member registrations"><path d="M50 30V300H710" fill="none" stroke="#cfd8e6"/><polyline points="{{ member_charts.points }}" fill="none" stroke="#233f78" stroke-width="3"/>{% for point in member_charts.growth %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="5" fill="#233f78"><title>{{ point.day }}: {{ point.count }} members</title></circle>{% endfor %}</svg><div class="chart-tooltip" data-chart-tooltip hidden></div></div>
             </article>
         </div>
-        <p class="statistics-empty" data-stat-empty hidden>No member records match these filters.</p>
+        <p class="statistics-empty"{% if member_charts.total %} hidden{% endif %}>No member records match these filters.</p>
     </section>
-    {{ member_statistics|json_script:"member-statistics-data" }}
-    <section class="administration-highlights" data-admin-section="overview">
+
+    <section class="administration-highlights" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}>
         <article class="card">
             <h2>Most Popular Job</h2>
             {% if most_popular_job %}<h3>{{ most_popular_job.title }}</h3><p>{{ most_popular_job.company.name }}</p><strong>{{ most_popular_job.application_total }} applicant{{ most_popular_job.application_total|pluralize }}</strong>{% else %}<p class="sub">No job applications recorded yet.</p>{% endif %}
@@ -59,14 +60,14 @@
             <p class="sub">Reached Shortlisted or Interview at least once, including candidates who progressed to Offer. Each candidate counts once. Recorded review and interview history is included.</p>
         </article>
     </section>
-    <section class="card administration-onboarding" data-admin-section="overview">
+    <section class="card administration-onboarding" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}>
         <h2>Onboarding Statistics</h2>
         <p class="sub">Completion is recorded when a user finishes onboarding. Earlier completions without a saved record cannot be confirmed.</p>
         <div class="table-wrap"><table><thead><tr><th>Account Type</th><th>Registered</th><th>Recorded Complete</th><th>Completion Not Recorded</th><th>Recorded Completion Rate</th></tr></thead><tbody>
             {% for item in onboarding_statistics %}<tr><th>{{ item.label }}</th><td>{{ item.total }}</td><td>{{ item.completed }}</td><td>{{ item.not_recorded }}</td><td>{{ item.percent }}%</td></tr>{% endfor %}
         </tbody></table></div>
     </section>
-    <div class="administration-panels" data-admin-section="overview">
+    <div class="administration-panels" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}>
         <section class="card"><h2>Application Progress</h2><p class="sub">Current status of all applications.</p>
             {% for item in statuses %}<div class="administration-status"><div><span>{{ item.label }}</span><strong>{{ item.count }}</strong></div><progress value="{{ item.percentage }}" max="100" aria-label="{{ item.label }}: {{ item.count }} applications"></progress></div>{% endfor %}
         </section>
@@ -75,7 +76,7 @@
             {% for item in payments %}<p>{{ item.currency }} {{ item.total|floatformat:2 }} · {{ item.count }} paid payment{{ item.count|pluralize }}</p>{% empty %}<p class="sub">No paid payments recorded.</p>{% endfor %}
         </section>
     </div>
-    <section class="card administration-payment-details" data-admin-section="certifications">
+    <section class="card administration-payment-details" data-admin-section="certifications"{% if active_section != "certifications" %} hidden{% endif %}>
         <h2>Certification Verification</h2>
         <p class="sub">Review the certificate ID, official verification page, and uploaded evidence before making a decision.</p>
         <div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Certification</th><th>Certificate ID</th><th>Evidence</th><th>Submitted</th><th>Decision</th></tr></thead><tbody>
@@ -90,34 +91,34 @@
         </tbody></table></div>
         <details class="moderation-history"><summary>Certification review history ({{ certificate_history|length }})</summary><div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Certification</th><th>Decision</th><th>Reviewer</th><th>Comment</th><th>Reviewed</th></tr></thead><tbody>{% for item in certificate_history %}<tr><td>{{ item.candidate.username }}</td><td>{{ item.certification.title }}</td><td>{{ item.get_status_display }}</td><td>{{ item.reviewed_by.username|default:"Deleted staff" }}</td><td>{{ item.review_comment|default:item.verification_details|default:"—" }}</td><td>{{ item.reviewed_at|date:"j M Y, g:i A" }}</td></tr>{% empty %}<tr><td colspan="6">No reviews recorded yet.</td></tr>{% endfor %}</tbody></table></div></details>
     </section>
-    <section class="card administration-payment-details" data-admin-section="users">
+    <section class="card administration-payment-details" data-admin-section="users"{% if active_section != "users" %} hidden{% endif %}>
         <h2>User Management</h2><p class="sub">Search non-staff accounts and temporarily suspend or restore access.</p>
         <form method="get" action="{% url 'administration_dashboard' %}#users" class="administration-search"><input type="search" name="user_q" value="{{ user_query }}" placeholder="Search username, name, or email"><button class="button" type="submit">Search</button></form>
         <div class="table-wrap"><table><thead><tr><th>User</th><th>Role</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead><tbody>{% for managed_user in managed_users %}<tr><td><strong>{{ managed_user.username }}</strong><br><span class="sub">{{ managed_user.email|default:"No email" }}</span></td><td>{{ managed_user.profile.get_role_display|default:"No profile" }}</td><td>{{ managed_user.date_joined|date:"j M Y" }}</td><td>{% if managed_user.is_active %}Active{% else %}Suspended{% endif %}</td><td><form method="post" action="{% url 'administration_manage_user' managed_user.pk %}">{% csrf_token %}<input type="hidden" name="action" value="{% if managed_user.is_active %}suspend{% else %}restore{% endif %}"><button class="button{% if managed_user.is_active %} button-danger{% endif %}" type="submit">{% if managed_user.is_active %}Suspend{% else %}Restore{% endif %}</button></form></td></tr>{% empty %}<tr><td colspan="5">No users match this search.</td></tr>{% endfor %}</tbody></table></div>
     </section>
-    <section class="card administration-payment-details" data-admin-section="employers">
+    <section class="card administration-payment-details" data-admin-section="employers"{% if active_section != "employers" %} hidden{% endif %}>
         <h2>Employer Approval</h2><p class="sub">Verify company identity before treating it as an approved employer.</p>
         <div class="table-wrap"><table><thead><tr><th>Company</th><th>Industry</th><th>Website</th><th>Decision</th></tr></thead><tbody>{% for company in companies_for_review %}<tr><td>{{ company.name }}</td><td>{{ company.get_industry_display|default:"Not set" }}</td><td>{% if company.website %}<a href="{{ company.website }}" target="_blank" rel="noopener">Open website</a>{% else %}—{% endif %}</td><td><form method="post" action="{% url 'administration_review_company' company.pk %}" class="moderation-action-form">{% csrf_token %}<input name="comment" maxlength="500" placeholder="Comment or required rejection reason"><span><button class="button" name="decision" value="approve">Approve</button><button class="button button-danger" name="decision" value="reject">Reject</button></span></form></td></tr>{% empty %}<tr><td colspan="4">No employers await approval.</td></tr>{% endfor %}</tbody></table></div>
         <details class="moderation-history"><summary>Employer review history</summary><div class="table-wrap"><table><thead><tr><th>Company</th><th>Decision</th><th>Reviewer</th><th>Comment</th></tr></thead><tbody>{% for company in company_history %}<tr><td>{{ company.name }}</td><td>{{ company.verification_status|title }}</td><td>{{ company.reviewed_by.username|default:"Deleted staff" }}</td><td>{{ company.verification_comment|default:"—" }}</td></tr>{% empty %}<tr><td colspan="4">No employer reviews yet.</td></tr>{% endfor %}</tbody></table></div></details>
     </section>
-    <section class="card administration-payment-details" data-admin-section="reports">
+    <section class="card administration-payment-details" data-admin-section="reports"{% if active_section != "reports" %} hidden{% endif %}>
         <h2>Reports and Moderation</h2><p class="sub">Review reports submitted by users and record the outcome.</p>
         <div class="table-wrap"><table><thead><tr><th>Reported item</th><th>Reporter</th><th>Reason</th><th>Status</th><th>Resolution</th></tr></thead><tbody>{% for report in moderation_reports %}<tr><td>{{ report.subject_label }}<br><span class="sub">{{ report.subject_type|title }} #{{ report.subject_id }}</span></td><td>{{ report.reporter.username|default:"Deleted user" }}</td><td>{{ report.reason }}{% if report.details %}<br><span class="sub">{{ report.details }}</span>{% endif %}</td><td>{{ report.get_status_display }}</td><td>{% if report.status == 'open' %}<form method="post" action="{% url 'administration_review_report' report.pk %}" class="moderation-action-form">{% csrf_token %}<input name="comment" maxlength="500" placeholder="Resolution note"><span><button class="button" name="decision" value="resolve">Resolve</button><button class="button" name="decision" value="dismiss">Dismiss</button></span></form>{% else %}{{ report.resolution_note|default:"—" }}<br><span class="sub">{{ report.moderator.username|default:"Deleted staff" }}</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="5">No reports submitted.</td></tr>{% endfor %}</tbody></table></div>
     </section>
-    <section class="card administration-payment-details" data-admin-section="audit">
+    <section class="card administration-payment-details" data-admin-section="audit"{% if active_section != "audit" %} hidden{% endif %}>
         <h2>Administrator Audit Log</h2><p class="sub">Permanent record of moderation and account-management decisions.</p>
         <div class="table-wrap"><table><thead><tr><th>Time</th><th>Administrator</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>{% for log in audit_logs %}<tr><td>{{ log.created_at|date:"j M Y, g:i A" }}</td><td>{{ log.actor.username|default:"Deleted staff" }}</td><td>{{ log.action|title }}</td><td>{{ log.target_label }}</td><td>{{ log.details|default:"—" }}</td></tr>{% empty %}<tr><td colspan="5">No administrative actions recorded yet.</td></tr>{% endfor %}</tbody></table></div>
     </section>
-    <section class="card administration-payment-details" data-admin-section="payments">
+    <section class="card administration-payment-details" data-admin-section="payments"{% if active_section != "payments" %} hidden{% endif %}>
         <h2>Payment Details</h2><p class="sub">Users who made payments to SkillBridge. Test transactions are included; pending unpaid attempts are excluded.</p>
         <div class="table-wrap"><table><thead><tr><th>Paying User</th><th>Email</th><th>Amount</th><th>Provider</th><th>Payment Date</th><th>Current Record Status</th></tr></thead><tbody>
             {% for payment in payment_records %}<tr><td>{{ payment.user.profile.display_name|default:payment.user.username }}</td><td>{{ payment.user.email|default:"Not provided" }}</td><td>{{ payment.currency }} {{ payment.amount|floatformat:2 }}</td><td>{{ payment.get_provider_display }}</td><td>{{ payment.paid_at|default:payment.created_at|date:"j M Y, g:i A" }} SGT</td><td>{{ payment.get_status_display }}</td></tr>{% empty %}<tr><td colspan="6">No completed payments recorded.</td></tr>{% endfor %}
         </tbody></table></div>
     </section>
-    <section class="card administration-staff-details" data-admin-section="audit"><h2>Active Staff Accounts</h2><p class="sub">Includes existing Django superusers and SkillBridge staff accounts.</p>{% for staff in staff_accounts %}<p><strong>{{ staff.username }}</strong> · {% if staff.is_superuser %}Superuser{% else %}Staff{% endif %}</p>{% endfor %}</section>
-    <section class="card administration-popular-jobs" data-admin-section="overview"><h2>Jobs By Applicant Count</h2><div class="table-wrap"><table><thead><tr><th>Job</th><th>Company</th><th>Applicants</th></tr></thead><tbody>{% for job in popular_jobs %}<tr><td>{{ job.title }}</td><td>{{ job.company.name }}</td><td>{{ job.application_total }}</td></tr>{% empty %}<tr><td colspan="3">No listings yet.</td></tr>{% endfor %}</tbody></table></div></section>
+    <section class="card administration-staff-details" data-admin-section="audit"{% if active_section != "audit" %} hidden{% endif %}><h2>Active Staff Accounts</h2><p class="sub">Includes existing Django superusers and SkillBridge staff accounts.</p>{% for staff in staff_accounts %}<p><strong>{{ staff.username }}</strong> · {% if staff.is_superuser %}Superuser{% else %}Staff{% endif %}</p>{% endfor %}</section>
+    <section class="card administration-popular-jobs" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}><h2>Jobs By Applicant Count</h2><div class="table-wrap"><table><thead><tr><th>Job</th><th>Company</th><th>Applicants</th></tr></thead><tbody>{% for job in popular_jobs %}<tr><td>{{ job.title }}</td><td>{{ job.company.name }}</td><td>{{ job.application_total }}</td></tr>{% empty %}<tr><td colspan="3">No listings yet.</td></tr>{% endfor %}</tbody></table></div></section>
     </div>
     </div>
 </main>
 {% endblock %}
-{% block extra_scripts %}{% load static %}<script src="{% static 'skillbridge/js/administration-sections.js' %}?v=1"></script><script src="{% static 'skillbridge/js/administration-statistics.js' %}?v=1"></script>{% endblock %}
+{% block extra_scripts %}{% load static %}{% endblock %}

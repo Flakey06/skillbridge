@@ -115,7 +115,7 @@ class AdministrationTests(TestCase):
             reverse('administration_review_certificate', args=[submission.pk]),
             {'decision': 'approve'},
         )
-        self.assertRedirects(response, reverse('administration_dashboard') + '#certifications')
+        self.assertRedirects(response, reverse('administration_dashboard') + '?section=certifications')
         submission.refresh_from_db()
         self.assertEqual(submission.status, 'completed')
         self.assertEqual(submission.verification_method, 'admin_review')

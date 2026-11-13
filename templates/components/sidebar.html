@@ -24,10 +24,10 @@
         <a class="{% if request.resolver_match.url_name == 'plans' %}active{% endif %}" href="{% url 'plans' %}" aria-label="My plans" data-label="My plans" title="My plans"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m17.5 6.5 2-2"/></svg></span><span class="nav-label">My plans</span></a>
     </nav>
     <div class="sidebar-bottom">
-        <button class="sidebar-collapse" type="button" data-sidebar-toggle aria-expanded="true" aria-controls="skillbridge-sidebar" aria-label="Collapse navigation" title="Collapse navigation">
+        <form method="post" action="{% url 'toggle_navigation' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="sidebar-collapse" type="submit" aria-label="Toggle navigation">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6M5 4v16"/></svg>
-            <span>Collapse</span>
-        </button>
+            <span>{% if request.session.sidebar_expanded == False %}Expand{% else %}Collapse{% endif %}</span>
+        </button></form>
         <a class="row ghost sidebar-profile" href="{% if role == 'recruiter' %}{% url 'recruiter_company' %}{% else %}{% url 'candidate_profile' %}{% endif %}" aria-label="{{ request.user.profile.display_name }} — {{ role|title }} account" title="{{ request.user.profile.display_name }} — {{ role|title }} account"><span class="person">{% if request.user.profile.profile_photo %}<img src="{{ request.user.profile.profile_photo.url }}" alt="">{% else %}{{ request.user.profile.initials }}{% endif %}</span><span class="sidebar-profile-copy"><b style="font-size:12px">{{ request.user.profile.display_name }}</b><span class="muted" style="display:block;font-size:10px;margin-top:4px">{{ role|title }} account</span></span></a>
     </div>
 </aside>

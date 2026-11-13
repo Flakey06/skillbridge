@@ -35,7 +35,7 @@
         </select>
     </label>
     <div class="field applicant-ats-filter">
-        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum ATS Score</label><button class="applicant-ats-info" type="button" data-ats-help-toggle aria-label="About the minimum ATS score" title="About the minimum ATS score" aria-expanded="false" aria-controls="ats-scoring-help"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v2"/></svg></button></span>
+        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum ATS Score</label><a class="applicant-ats-info" href="#ats-scoring-help" aria-label="About the minimum ATS score">ⓘ</a></span>
         <select id="applicant-ats-score" name="min_ats_score">
             <option value="">Any score</option>
             <option value="50"{% if minimum_ats_score == '50' %} selected{% endif %}>50+</option>
@@ -49,10 +49,10 @@
     <button class="primary applicant-filter-submit" type="submit" aria-label="Filter Applicants" title="Filter Applicants"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
 </form>
 
-<aside class="card stack ats-help-dropdown" id="ats-scoring-help" data-ats-help tabindex="-1" hidden>
+<aside class="card stack ats-help-dropdown native-target-panel" id="ats-scoring-help" tabindex="-1">
     <div class="section-heading">
         <div><p class="eyebrow">Automatic screening</p><h2>How the ATS score works</h2></div>
-        <button class="button small" type="button" data-ats-help-close>Close</button>
+        <a class="button small" href="#">Close</a>
     </div>
     <p>The ATS score is calculated automatically when the candidate applies. It compares evidence saved in the candidate profile and résumé with the requirements of that specific job.</p>
     <ol>
@@ -68,30 +68,5 @@
 <div class="card table-wrap applicant-score-table-wrap">
     {% include "components/applicant_table.html" with applications=applications show_update=True show_company_history=True %}
 </div>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const panel = document.querySelector("[data-ats-help]");
-    const toggle = document.querySelector("[data-ats-help-toggle]");
-    const close = document.querySelector("[data-ats-help-close]");
-    if (!panel || !toggle) return;
-    panel.hidden = true;
-    toggle.setAttribute("aria-expanded", "false");
-    const setOpen = (open) => {
-        panel.hidden = !open;
-        toggle.setAttribute("aria-expanded", String(open));
-        if (open) {
-            panel.focus({preventScroll: true});
-            requestAnimationFrame(() => panel.scrollIntoView({behavior: "smooth", block: "nearest"}));
-        } else {
-            toggle.focus({preventScroll: true});
-            requestAnimationFrame(() => toggle.scrollIntoView({behavior: "smooth", block: "nearest"}));
-        }
-    };
-    toggle?.addEventListener("click", () => setOpen(panel.hidden));
-    close?.addEventListener("click", () => setOpen(false));
-    panel.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setOpen(false);
-    });
-});
-</script>
+
 {% endblock %}

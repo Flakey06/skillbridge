@@ -75,8 +75,6 @@ class Job(models.Model):
     stipend = models.CharField(max_length=120, blank=True)
     required_skills = models.TextField(blank=True)
     preferred_skills = models.TextField(blank=True)
-    skill_weights = models.JSONField(default=dict, blank=True)
-    evidence_weights = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
     skill_weights = models.JSONField(default=dict, blank=True)
     evidence_weights = models.JSONField(default=dict, blank=True)

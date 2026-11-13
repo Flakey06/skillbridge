@@ -15,13 +15,13 @@
     <form method="get" class="resume-version-picker">
         <label class="field" for="resume-to-edit">
             Resume type and version
-            <select id="resume-to-edit" name="resume_id" onchange="this.form.submit()">
+            <select id="resume-to-edit" name="resume_id">
                 {% for item in resume_timeline %}
                     <option value="{{ item.resume.id }}"{% if item.resume.id == selected_resume.id %} selected{% endif %}>{{ item.resume.title }} — {{ item.category }} — {{ item.version }}</option>
                 {% endfor %}
             </select>
         </label>
-        <noscript><button class="button" type="submit">Show resume</button></noscript>
+        <button class="button" type="submit">Show Resume</button>
     </form>
 </section>
 

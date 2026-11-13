@@ -29,7 +29,7 @@
 </nav>
 
 <section class="content-columns profile-layout">
-    <form class="profile-form" method="post" action="{% url 'candidate_profile' %}" data-autosave-url="{% url 'candidate_profile_autosave' %}" enctype="multipart/form-data"{% if form.errors %} data-restore-scroll="{{ request.POST.profile_scroll_y }}" data-restore-sections="{{ request.POST.profile_open_sections }}"{% endif %}>
+    <form class="profile-form" method="post" action="{% url 'candidate_profile' %}" enctype="multipart/form-data"{% if form.errors %} data-restore-scroll="{{ request.POST.profile_scroll_y }}" data-restore-sections="{{ request.POST.profile_open_sections }}"{% endif %}>
         {% csrf_token %}
         <input type="hidden" name="profile_scroll_y" value="0">
         <input type="hidden" name="profile_open_sections" value="[]">
@@ -41,11 +41,7 @@
             <section class="profile-form-section" id="profile-details">
                 <div class="profile-form-section-heading">
                     <div><p class="eyebrow">Profile completeness</p><h2>{{ completion_percent }}% complete</h2></div>
-                    <div class="profile-autosave-box profile-autosave-floating" data-profile-autosave-bar data-state="saved" role="status" aria-live="polite" aria-atomic="true">
-                        <strong>Changes save automatically</strong>
-                        <p data-profile-autosave-status>All changes saved</p>
-                        <small>Profile fields, experience, and certifications save continuously as you edit. Resume and profile-photo files upload automatically when selected.</small>
-                    </div>
+                    <p class="muted">Use Save Profile to save your changes and update the preview.</p>
                 </div>
                 <div class="form-grid">
                     <label class="field span2 profile-photo-field">
@@ -62,10 +58,10 @@
                         {% include "components/field_label.html" with field=form.resume %}
                         <div class="profile-resume-upload-row">
                             {{ form.resume }}
-                            <button class="button" type="submit" name="action" value="autofill" data-resume-autofill{% if not profile.resume %} hidden{% endif %}>Auto-fill from resume</button>
+                            <button class="button" type="submit" name="action" value="autofill" data-resume-autofill>Auto-fill from resume</button>
                         </div>
                         {% if profile.resume %}<small class="muted">Current file: {{ profile.resume.name }}</small>{% endif %}
-                        <small class="muted">Your resume uploads automatically when selected. Then use “Auto-fill from resume” to fill your profile fields and review the extracted details.</small>
+                        <small class="muted">Select a file and save your profile, or use “Auto-fill from resume” to fill your profile fields and review the extracted details.</small>
                         {{ form.resume.errors }}
                     </div>
                     <label class="field">{% include "components/field_label.html" with field=form.email %}{{ form.email }}{{ form.email.errors }}</label>
@@ -78,75 +74,24 @@
             <section class="profile-form-section" id="profile-career">
                 <div class="profile-form-section-heading"><h3>Career path</h3><p>Shape the career directions and experience shown in your profile.</p></div>
                 <div class="form-grid">
-                    <label class="field">{% include "components/field_label.html" with field=form.career %}{{ form.career }}{{ form.career.errors }}</label>
+                    <label class="field">{% include "components/field_label.html" with field=form.career %}{{ form.career }}{{ form.career.errors }}<button class="button small" type="submit" name="entry_action" value="preview" formnovalidate>Update Specialisations</button></label>
                     <label class="field">{% include "components/field_label.html" with field=form.specialisation %}{{ form.specialisation }}{{ form.specialisation.errors }}</label>
                     <label class="field span2">{% include "components/field_label.html" with field=form.career_stage %}{{ form.career_stage }}{{ form.career_stage.errors }}<small class="muted">This helps us order your pathway. You can change it anytime.</small></label>
                     <fieldset class="field span2 choice-fieldset">
-                        <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>
-                        <div class="profile-message" data-career-area-required hidden>
-                            <strong>Choose your career path first</strong>
-                            <p>Tell us the career area or field of study you are pursuing above. Your main-interest and cross-faculty checkboxes will appear after you make a selection.</p>
-                        </div>
+                        <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>{{ form.career_interests }}
                         <p class="muted">Choose your main faculty interests first. Add interests from another faculty when you want to explore a cross-faculty path.</p>
-                        <div class="career-interest-picker" data-interest-picker>
-                            <div class="career-interest-group" data-primary-interest-group>
-                                <div class="career-interest-group-heading">
-                                    <strong data-primary-interest-label>Current faculty</strong>
-                                </div>
-                                <div class="career-interest-options" data-primary-interest-options></div>
-                            </div>
-                            <div class="career-interest-cross-prompt" data-cross-interest-prompt>
-                                <strong>Would you like to learn something cross-disciplinary?</strong>
-                                <span class="muted">Add a direction outside your main career area.</span>
-                            </div>
-                            <div class="career-interest-group career-interest-cross-faculty" data-cross-interest-group>
-                                <div class="career-interest-group-heading">
-                                    <strong>Cross-faculty interests</strong>
-                                    <span class="muted">Explore another field and its roadmap and certificates.</span>
-                                </div>
-                                <div class="career-interest-options" data-cross-interest-options></div>
-                            </div>
-                        </div>
                         {% if form.career_interests.help_text %}<small class="muted">{{ form.career_interests.help_text }}</small>{% endif %}
                         {{ form.career_interests.errors }}
                     </fieldset>
                     <label class="field">{% include "components/field_label.html" with field=form.education %}{{ form.education }}{{ form.education.errors }}</label>
                     <label class="field span2">{% include "components/field_label.html" with field=form.institution %}{{ form.institution }}{{ form.institution.errors }}</label>
-                    <div class="field span2 experience-builder" data-experience-builder>
-                        <div class="row between">
-                            <div><b>Work experience</b><small class="muted">Add a separate entry for each job or placement.</small></div>
-                            <button class="button small" type="button" data-add-experience>+ Add experience</button>
-                        </div>
-                        <div class="experience-entry-list" data-experience-list></div>
-                        <aside class="experience-cv-preview" aria-live="polite">
-                            <p class="eyebrow">CV preview</p>
-                            <div data-experience-preview></div>
-                        </aside>
-                        {{ form.experience }}
-                        {{ form.experience_entries }}
-                        {{ form.experience.errors }}
-                        {{ form.experience_entries.errors }}
-                    </div>
+{% include "candidates/_native_entries.html" with entry_form=form kind="experience" %}
                 </div>
             </section>
             <section class="profile-form-section" id="profile-skills">
                 <div class="profile-form-section-heading"><h3>Certifications &amp; skills</h3></div>
                 <div class="form-grid">
-                    <div class="field span2 experience-builder" data-certification-builder>
-                        <div class="row between">
-                            <div><b>Certifications</b><small class="muted">Add a separate entry for each certification.</small></div>
-                            <button class="button small" type="button" data-add-certification>+ Add certification</button>
-                        </div>
-                        <div class="experience-entry-list" data-certification-list></div>
-                        <aside class="experience-cv-preview" aria-live="polite">
-                            <p class="eyebrow">CV preview</p>
-                            <div data-certification-preview></div>
-                        </aside>
-                        {{ form.certifications }}
-                        {{ form.certification_entries }}
-                        {{ form.certifications.errors }}
-                        {{ form.certification_entries.errors }}
-                    </div>
+{% include "candidates/_native_entries.html" with entry_form=form kind="certification" %}
                     <label class="field span2">{% include "components/field_label.html" with field=form.skills %}{{ form.skills }}{{ form.skills.errors }}</label>
                 </div>
             </section>
@@ -162,402 +107,13 @@
         </div>
 
         <div class="static-page-actions">
+            <button class="primary" type="submit" name="action" value="save">Save Profile</button>
+            <button class="button" type="submit" name="entry_action" value="preview" formnovalidate>Update Preview</button>
             {% if profile.resume %}<a class="button" href="{% url 'candidate_resume' %}">Review resume</a>{% endif %}
         </div>
     </form>
 </section>
-{{ career_choice_map|json_script:"career-choice-map" }}
-{{ selected_interests|json_script:"selected-interests" }}
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const profileForm = document.querySelector(".profile-form");
-    const autosaveStatus = document.querySelector("[data-profile-autosave-status]");
-    const autosaveBar = document.querySelector("[data-profile-autosave-bar]");
-    const resumeField = profileForm.querySelector('#id_resume');
-    const resumeAutofill = profileForm.querySelector('[data-resume-autofill]');
-    const fileFields = new Set(["resume", "profile_photo"]);
-    let autosaveTimer;
-    let autosaveController;
-    let changeRevision = 0;
-    let savedRevision = 0;
-    let activeSave = null;
 
-    const setAutosaveStatus = (message) => {
-        autosaveStatus.textContent = message;
-        const normalised = String(message).toLowerCase();
-        autosaveBar.dataset.state = normalised.includes("error") || normalised.includes("could not") || normalised.includes("expired") || normalised.includes("instead of data")
-            ? "error"
-            : normalised.includes("saving") || normalised.includes("uploading") || normalised.includes("waiting")
-                ? "saving"
-                : "saved";
-    };
-    const saveProfile = async ({uploadFiles = false} = {}) => {
-        const revision = changeRevision;
-        autosaveController?.abort();
-        autosaveController = new AbortController();
-        const formData = new FormData(profileForm);
-        formData.set("action", uploadFiles ? "auto_upload" : "autosave");
-        if (!uploadFiles) fileFields.forEach((name) => formData.delete(name));
-        setAutosaveStatus(uploadFiles ? "Uploading selected file…" : "Saving changes…");
-        activeSave = (async () => { try {
-            const response = await fetch(profileForm.dataset.autosaveUrl, {
-                method: "POST",
-                body: formData,
-                headers: {"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"},
-                signal: autosaveController.signal,
-                credentials: "same-origin"
-            });
-            const contentType = response.headers.get("content-type") || "";
-            if (response.redirected || response.url.includes("/login/")) {
-                throw new Error("Your session expired. Refresh the page and sign in again.");
-            }
-            if (!contentType.includes("application/json")) {
-                throw new Error(`Autosave received a server page instead of data (${response.status}). Refresh the page; if it continues, check the Django terminal for the error.`);
-            }
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || "Changes could not be saved.");
-            savedRevision = Math.max(savedRevision, revision);
-            if (revision === changeRevision) {
-                const readiness = result.application_ready
-                    ? " Profile ready for job applications."
-                    : result.missing_required?.length
-                        ? ` Still needed to apply: ${result.missing_required.map((field) => field.replaceAll("_", " ")).join(", ")}.`
-                        : "";
-                setAutosaveStatus(`${result.message || "All changes saved automatically"}.${readiness}`.replace("automatically..", "automatically."));
-            }
-            return true;
-        } catch (error) {
-            if (error.name !== "AbortError") setAutosaveStatus(error.message || "Changes could not be saved. Please try again.");
-            return false;
-        } })();
-        return activeSave;
-    };
-    const queueAutosave = (event) => {
-        changeRevision += 1;
-        if (event.target.type === "file" || fileFields.has(event.target.name)) {
-            window.clearTimeout(autosaveTimer);
-            setAutosaveStatus("Uploading selected file…");
-            autosaveTimer = window.setTimeout(() => saveProfile({uploadFiles: true}), 100);
-            return;
-        }
-        window.clearTimeout(autosaveTimer);
-        setAutosaveStatus("Waiting to save…");
-        autosaveTimer = window.setTimeout(saveProfile, 800);
-    };
-    profileForm.addEventListener("input", queueAutosave);
-    profileForm.addEventListener("change", queueAutosave);
-    profileForm.addEventListener("focusout", (event) => {
-        if (event.target.type === "file" || savedRevision >= changeRevision) return;
-        window.clearTimeout(autosaveTimer);
-        autosaveTimer = window.setTimeout(saveProfile, 50);
-    });
-    resumeField?.addEventListener("change", () => {
-        resumeAutofill.hidden = !(resumeField.files?.length || {{ profile.resume|yesno:"true,false" }});
-    });
 
-    const entrySections = () => [...profileForm.querySelectorAll("details[data-experience-entry], details[data-certification-entry]")];
-    profileForm.addEventListener("submit", () => {
-        window.clearTimeout(autosaveTimer);
-        autosaveController?.abort();
-        profileForm.elements.profile_scroll_y.value = String(window.scrollY);
-        profileForm.elements.profile_open_sections.value = JSON.stringify(entrySections().map((section) => section.open));
-    });
-    document.addEventListener("click", async (event) => {
-        const link = event.target.closest("a[href]");
-        if (!link || link.target === "_blank" || link.hasAttribute("download") || savedRevision >= changeRevision) return;
-        const destination = new URL(link.href, window.location.href);
-        if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
-        event.preventDefault();
-        window.clearTimeout(autosaveTimer);
-        setAutosaveStatus("Saving before leaving…");
-        const saved = await saveProfile();
-        if (saved) window.location.assign(destination.href);
-    });
-    window.addEventListener("pagehide", () => {
-        if (savedRevision >= changeRevision || !navigator.sendBeacon) return;
-        const formData = new FormData(profileForm);
-        formData.set("action", "autosave");
-        fileFields.forEach((name) => formData.delete(name));
-        navigator.sendBeacon(profileForm.dataset.autosaveUrl, formData);
-    });
-    if (profileForm.dataset.restoreScroll) {
-        window.addEventListener("load", async () => {
-            if (document.fonts) await document.fonts.ready;
-            try {
-                const opened = JSON.parse(profileForm.dataset.restoreSections || "[]");
-                entrySections().forEach((section, index) => { section.open = Boolean(opened[index]); });
-            } catch { /* Keep the default sections if no valid state was submitted. */ }
-            const y = Number(profileForm.dataset.restoreScroll);
-            if (Number.isFinite(y) && y >= 0) requestAnimationFrame(() => window.scrollTo({top: y, behavior: "instant"}));
-        }, {once: true});
-    }
 
-    const careerMap = JSON.parse(document.querySelector("#career-choice-map").textContent);
-    const selectedInterests = new Set(JSON.parse(document.querySelector("#selected-interests").textContent));
-    const careerField = document.querySelector("#id_career");
-    const specialisationField = document.querySelector("#id_specialisation");
-    const interestPicker = document.querySelector("[data-interest-picker]");
-    const primaryInterestLabel = interestPicker.querySelector("[data-primary-interest-label]");
-    const primaryInterestOptions = interestPicker.querySelector("[data-primary-interest-options]");
-    const primaryInterestGroup = interestPicker.querySelector("[data-primary-interest-group]");
-    const crossInterestGroup = interestPicker.querySelector("[data-cross-interest-group]");
-    const crossInterestOptions = interestPicker.querySelector("[data-cross-interest-options]");
-    const crossInterestPrompt = interestPicker.querySelector("[data-cross-interest-prompt]");
-    const careerAreaRequired = document.querySelector("[data-career-area-required]");
-
-    const renderInterestOption = ([value, label], index) => {
-        const wrapper = document.createElement("label");
-        wrapper.className = "career-interest-option";
-        const input = document.createElement("input");
-        input.type = "checkbox";
-        input.name = "career_interests";
-        input.value = value;
-        input.id = `id_career_interests_${index}`;
-        input.checked = selectedInterests.has(value);
-        input.addEventListener("change", () => {
-            if (input.checked) selectedInterests.add(value);
-            else selectedInterests.delete(value);
-        });
-        wrapper.append(input, document.createTextNode(label));
-        return wrapper;
-    };
-
-    let initialCareerRefresh = true;
-    const refreshCareerChoices = () => {
-        const hasCareerArea = Boolean(careerField.value);
-        const options = careerMap[careerField.value] || {label: "Selected faculty", interests: [], specialisations: []};
-
-        const selectedSpecialisation = specialisationField.value;
-        const selectedSpecialisationLabel = specialisationField.selectedOptions[0]?.textContent;
-        specialisationField.replaceChildren(new Option("Choose an option", ""));
-        options.specialisations.forEach(([value, label]) => {
-            specialisationField.add(new Option(label, value, false, value === selectedSpecialisation));
-        });
-
-        if (initialCareerRefresh && selectedSpecialisation && !options.specialisations.some(([value]) => value === selectedSpecialisation)) {
-            specialisationField.add(new Option(selectedSpecialisationLabel || selectedSpecialisation, selectedSpecialisation, true, true));
-        }
-        initialCareerRefresh = false;
-
-        careerAreaRequired.hidden = hasCareerArea;
-        primaryInterestGroup.hidden = !hasCareerArea;
-        crossInterestPrompt.hidden = !hasCareerArea;
-        crossInterestGroup.hidden = !hasCareerArea;
-        if (!hasCareerArea) {
-            primaryInterestOptions.replaceChildren();
-            crossInterestOptions.replaceChildren();
-            return;
-        }
-
-        primaryInterestLabel.textContent = options.label;
-        primaryInterestOptions.replaceChildren(...options.interests.map(renderInterestOption));
-
-        const primaryValues = new Set(options.interests.map(([value]) => value));
-        const crossOptions = Object.entries(careerMap)
-            .filter(([area]) => area !== careerField.value)
-            .flatMap(([, areaOptions]) => areaOptions.interests)
-            .filter(([value], index, all) => !primaryValues.has(value) && all.findIndex(([candidate]) => candidate === value) === index);
-        crossInterestOptions.replaceChildren(...crossOptions.map(renderInterestOption));
-    };
-    careerField.addEventListener("change", refreshCareerChoices);
-    refreshCareerChoices();
-
-    const builder = document.querySelector("[data-experience-builder]");
-    if (!builder) return;
-
-    const list = builder.querySelector("[data-experience-list]");
-    const jsonField = document.querySelector("#id_experience_entries");
-    const experienceField = document.querySelector("#id_experience");
-    const preview = builder.querySelector("[data-experience-preview]");
-    const legacyExperience = experienceField?.value || "";
-    let entries = [];
-    try {
-        entries = JSON.parse(jsonField.value || "[]");
-    } catch (error) {
-        entries = [];
-    }
-    if (!entries.length) {
-        entries = [{position: "", company: "", start_date: "", end_date: "", current: false, skills: "", achievements: legacyExperience}];
-    }
-
-    const escapeHtml = (value) => {
-        const element = document.createElement("div");
-        element.textContent = value || "";
-        return element.innerHTML;
-    };
-
-    const formatMonth = (value) => {
-        if (!value) return "";
-        // An incomplete month (for example "2026") must not stop Add/Remove.
-        const match = /^(\d{4,})-(0[1-9]|1[0-2])$/.exec(value);
-        if (!match) return value;
-        const [, year, month] = match;
-        const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
-        if (Number.isNaN(date.getTime())) return value;
-        return new Intl.DateTimeFormat("en", {month: "short", year: "numeric", timeZone: "UTC"})
-            .format(date);
-    };
-
-    const buildSummary = (items) => items.map((entry) => {
-        const lines = [];
-        const heading = [entry.position, entry.company].filter(Boolean).join(" — ");
-        const dates = [formatMonth(entry.start_date), entry.current ? "Present" : formatMonth(entry.end_date)].filter(Boolean).join(" – ");
-        if (heading) lines.push(heading);
-        if (dates) lines.push(dates);
-        if (entry.skills) lines.push(`Skills: ${entry.skills}`);
-        String(entry.achievements || "").split(/\r?\n/).map((line) => line.trim().replace(/^(?:•|-|\*)\s*/, "")).filter(Boolean)
-            .forEach((line) => lines.push(`• ${line}`));
-        return lines.join("\n");
-    }).filter(Boolean).join("\n\n");
-
-    const syncEntries = () => {
-        entries = [...list.querySelectorAll("[data-experience-entry]")].map((card) => ({
-            position: card.querySelector('[data-key="position"]').value.trim(),
-            company: card.querySelector('[data-key="company"]').value.trim(),
-            start_date: card.querySelector('[data-key="start_date"]').value,
-            end_date: card.querySelector('[data-key="end_date"]').value,
-            current: card.querySelector('[data-key="current"]').checked,
-            skills: card.querySelector('[data-key="skills"]').value.trim(),
-            achievements: card.querySelector('[data-key="achievements"]').value.trim()
-        }));
-        jsonField.value = JSON.stringify(entries);
-        const summary = buildSummary(entries);
-        if (experienceField) experienceField.value = summary;
-        preview.textContent = summary || "Your formatted work experience will appear here as you complete the fields.";
-    };
-
-    const render = (openIndex = 0) => {
-        list.innerHTML = entries.map((entry, index) => `
-            <details class="experience-entry" data-experience-entry ${index === openIndex ? "open" : ""}>
-                <summary class="experience-entry-summary"><span>Experience ${index + 1}${entry.position || entry.company ? " — " + escapeHtml([entry.position, entry.company].filter(Boolean).join(" at ")) : ""}</span><button class="button small" type="button" data-remove-experience="${index}">Remove</button></summary>
-                <div class="form-grid experience-entry-grid">
-                    <label class="field">Position / role<input data-key="position" value="${escapeHtml(entry.position)}" placeholder="e.g. Software Engineering Intern"></label>
-                    <label class="field">Company / placement<input data-key="company" value="${escapeHtml(entry.company)}" placeholder="e.g. ABC Technologies"></label>
-                    <label class="field">Start date<input type="month" data-key="start_date" value="${escapeHtml(entry.start_date)}"></label>
-                    <label class="field">End date<input type="month" data-key="end_date" value="${escapeHtml(entry.end_date)}" ${entry.current ? "disabled" : ""}></label>
-                    <label class="experience-current"><input type="checkbox" data-key="current" ${entry.current ? "checked" : ""}> I currently work here</label>
-                    <label class="field span2">Skills learned<input data-key="skills" value="${escapeHtml(entry.skills)}" placeholder="e.g. Django, teamwork, stakeholder communication"></label>
-                    <label class="field span2">Achievements and responsibilities<textarea rows="4" data-key="achievements" placeholder="One achievement or responsibility per line">${escapeHtml(entry.achievements)}</textarea></label>
-                </div>
-            </details>
-        `).join("");
-        syncEntries();
-    };
-
-    builder.querySelector("[data-add-experience]").addEventListener("click", () => {
-        syncEntries();
-        entries.push({position: "", company: "", start_date: "", end_date: "", current: false, skills: "", achievements: ""});
-        render(entries.length - 1);
-        jsonField.dispatchEvent(new Event("change", {bubbles: true}));
-        list.lastElementChild?.scrollIntoView({behavior: "smooth", block: "center"});
-    });
-    list.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-remove-experience]");
-        if (!button) return;
-        syncEntries();
-        entries.splice(Number(button.dataset.removeExperience), 1);
-        render();
-        jsonField.dispatchEvent(new Event("change", {bubbles: true}));
-    });
-    list.addEventListener("change", (event) => {
-        if (event.target.dataset.key === "current") {
-            const endDate = event.target.closest("[data-experience-entry]").querySelector('[data-key="end_date"]');
-            endDate.disabled = event.target.checked;
-            if (event.target.checked) endDate.value = "";
-        }
-        syncEntries();
-    });
-    list.addEventListener("input", syncEntries);
-    document.querySelector(".profile-form")?.addEventListener("submit", syncEntries);
-    render();
-
-    const certificationBuilder = document.querySelector("[data-certification-builder]");
-    const certificationList = certificationBuilder.querySelector("[data-certification-list]");
-    const certificationJson = document.querySelector("#id_certification_entries");
-    const certificationText = document.querySelector("#id_certifications");
-    const legacyCertifications = certificationText?.value || "";
-    const certificationPreview = certificationBuilder.querySelector("[data-certification-preview]");
-    let certifications = [];
-    try {
-        certifications = JSON.parse(certificationJson.value || "[]");
-    } catch (error) {
-        certifications = [];
-    }
-    if (!certifications.length) {
-        certifications = [{name: legacyCertifications, issuer: "", issue_date: "", expiry_date: "", no_expiry: false, credential_id: "", skills: ""}];
-    }
-
-    const buildCertificationSummary = (items) => items.map((entry) => {
-        const lines = [];
-        const heading = [entry.name, entry.issuer].filter(Boolean).join(" — ");
-        const dates = [formatMonth(entry.issue_date), entry.no_expiry ? "No expiry" : formatMonth(entry.expiry_date)].filter(Boolean).join(" – ");
-        if (heading) lines.push(heading);
-        if (dates) lines.push(dates);
-        if (entry.credential_id) lines.push(`Credential ID: ${entry.credential_id}`);
-        if (entry.skills) lines.push(`Skills: ${entry.skills}`);
-        return lines.join("\n");
-    }).filter(Boolean).join("\n\n");
-
-    const syncCertifications = () => {
-        certifications = [...certificationList.querySelectorAll("[data-certification-entry]")].map((card) => ({
-            name: card.querySelector('[data-key="name"]').value.trim(),
-            issuer: card.querySelector('[data-key="issuer"]').value.trim(),
-            issue_date: card.querySelector('[data-key="issue_date"]').value,
-            expiry_date: card.querySelector('[data-key="expiry_date"]').value,
-            no_expiry: card.querySelector('[data-key="no_expiry"]').checked,
-            credential_id: card.querySelector('[data-key="credential_id"]').value.trim(),
-            skills: card.querySelector('[data-key="certification_skills"]').value.trim()
-        }));
-        certificationJson.value = JSON.stringify(certifications);
-        const summary = buildCertificationSummary(certifications);
-        certificationText.value = summary;
-        certificationPreview.textContent = summary || "Your formatted certifications will appear here as you complete the fields.";
-    };
-
-    const renderCertifications = (openIndex = 0) => {
-        certificationList.innerHTML = certifications.map((entry, index) => `
-            <details class="experience-entry" data-certification-entry ${index === openIndex ? "open" : ""}>
-                <summary class="experience-entry-summary"><span>Certification ${index + 1}${entry.name ? " — " + escapeHtml(entry.name) : ""}</span><button class="button small" type="button" data-remove-certification="${index}">Remove</button></summary>
-                <div class="form-grid experience-entry-grid">
-                    <label class="field">Certification name<input data-key="name" value="${escapeHtml(entry.name)}" placeholder="e.g. AWS Cloud Practitioner"></label>
-                    <label class="field">Issuing organisation<input data-key="issuer" value="${escapeHtml(entry.issuer)}" placeholder="e.g. Amazon Web Services"></label>
-                    <label class="field">Issue date<input type="month" data-key="issue_date" value="${escapeHtml(entry.issue_date)}"></label>
-                    <label class="field">Expiry date<input type="month" data-key="expiry_date" value="${escapeHtml(entry.expiry_date)}" ${entry.no_expiry ? "disabled" : ""}></label>
-                    <label class="experience-current"><input type="checkbox" data-key="no_expiry" ${entry.no_expiry ? "checked" : ""}> This certification does not expire</label>
-                    <label class="field">Credential ID<input data-key="credential_id" value="${escapeHtml(entry.credential_id)}" placeholder="Optional"></label>
-                    <label class="field span2">Skills covered<input data-key="certification_skills" value="${escapeHtml(entry.skills)}" placeholder="e.g. cloud computing, IAM, networking"></label>
-                </div>
-            </details>
-        `).join("");
-        syncCertifications();
-    };
-
-    certificationBuilder.querySelector("[data-add-certification]").addEventListener("click", () => {
-        syncCertifications();
-        certifications.push({name: "", issuer: "", issue_date: "", expiry_date: "", no_expiry: false, credential_id: "", skills: ""});
-        renderCertifications(certifications.length - 1);
-        certificationJson.dispatchEvent(new Event("change", {bubbles: true}));
-        certificationList.lastElementChild?.scrollIntoView({behavior: "smooth", block: "center"});
-    });
-    certificationList.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-remove-certification]");
-        if (!button) return;
-        syncCertifications();
-        certifications.splice(Number(button.dataset.removeCertification), 1);
-        renderCertifications();
-        certificationJson.dispatchEvent(new Event("change", {bubbles: true}));
-    });
-    certificationList.addEventListener("change", (event) => {
-        if (event.target.dataset.key === "no_expiry") {
-            const expiry = event.target.closest("[data-certification-entry]").querySelector('[data-key="expiry_date"]');
-            expiry.disabled = event.target.checked;
-            if (event.target.checked) expiry.value = "";
-        }
-        syncCertifications();
-    });
-    certificationList.addEventListener("input", syncCertifications);
-    document.querySelector(".profile-form")?.addEventListener("submit", syncCertifications);
-    renderCertifications();
-});
-</script>
 {% endblock %}

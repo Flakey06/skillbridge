@@ -19,6 +19,7 @@ from employers.models import Company
 from jobs.models import Job
 from accounts.notification_helpers import notify
 from ..models import AdminAuditLog, ModerationReport, Payment, UserProfile
+from ..statistics_presentation import member_charts
 from ..administration_stats import onboarding_statistics, successful_match_statistics
 
 
@@ -43,7 +44,7 @@ def _audit(request, action, target, details=''):
 
 
 def _dashboard_section(name, query=''):
-    return redirect(f"{reverse_lazy('administration_dashboard')}{query}#{name}")
+    return redirect(f"{reverse_lazy('administration_dashboard')}?section={name}{query.replace(chr(63), chr(38), 1)}")
 
 
 @never_cache
@@ -109,6 +110,8 @@ def administration_dashboard(request):
         })
     return render(request, 'accounts/administration_dashboard.html', {
         'metrics': metrics, 'statuses': statuses, 'updated_at': now,
+        'member_charts': member_charts(member_statistics, request.GET),
+        'active_section': request.GET.get('section') if request.GET.get('section') in {'overview', 'analytics', 'certifications', 'users', 'employers', 'reports', 'payments', 'audit'} else 'overview',
         'job_statuses': Job.objects.values('status').annotate(total=Count('pk')).order_by('status'),
         'popular_jobs': popular_jobs,
         'most_popular_job': popular_jobs[0] if popular_jobs and popular_jobs[0].application_total else None,

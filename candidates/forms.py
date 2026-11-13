@@ -109,15 +109,18 @@ class CandidateProfileForm(forms.Form):
     visa = forms.ChoiceField(label="Visa / work authorisation", required=False, choices=[("", "Choose an option")] + VISA_CHOICES)
 
     def __init__(self, *args, **kwargs):
+        from .native_entries import prepare_entries
+        if args and args[0] is not None:
+            args = (prepare_entries(args[0]), *args[1:])
+        elif kwargs.get("data") is not None:
+            kwargs["data"] = prepare_entries(kwargs["data"])
         super().__init__(*args, **kwargs)
         career_area = self.data.get("career") if self.is_bound else self.initial.get("career", "")
         # Keep skill interests cross-faculty. A technology candidate may also
         # choose healthcare, finance, or any other available direction.
         self.fields["career_interests"].choices = CAREER_INTEREST_CHOICES
         self.fields["specialisation"].choices = [("", "Choose an option")] + choices_for_career(
-            SPECIALISATION_CHOICES,
-            SPECIALISATIONS_BY_AREA,
-            career_area,
+            SPECIALISATION_CHOICES, SPECIALISATIONS_BY_AREA, career_area,
         )
 
         # Keep an existing legacy/cross-faculty choice editable on a name-only save.
@@ -128,6 +131,11 @@ class CandidateProfileForm(forms.Form):
                 *choices,
                 (stored_specialisation, dict(SPECIALISATION_CHOICES).get(stored_specialisation, stored_specialisation)),
             ]
+
+    @property
+    def entry_builders(self):
+        from .native_entries import entry_builders
+        return entry_builders(self)
 
     def clean_experience_entries(self):
         raw_entries = self.cleaned_data.get("experience_entries") or []

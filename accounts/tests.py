@@ -84,7 +84,7 @@ class AccountOnboardingTests(TestCase):
         self.assertContains(response, "Save resume &amp; continue")
         self.assertContains(response, "Work experience")
         self.assertContains(response, "Resume preview")
-        self.assertContains(response, 'id="onboarding-career-choice-map"')
+        self.assertContains(response, "Update Specialisations")
         self.assertContains(response, "Software engineering")
         self.assertContains(response, "Human resources")
 
@@ -179,7 +179,7 @@ class AccountOnboardingTests(TestCase):
 
         response = self.client.get(reverse("onboarding"))
         self.assertContains(response, "Auto-fill from current resume")
-        self.assertContains(response, "guided-resume.js?v=guided-builder-2")
+        self.assertNotContains(response, "<script")
 
         response = self.client.post(reverse("onboarding"), {"action": "extract_existing_resume"})
         self.assertRedirects(response, reverse("onboarding"))

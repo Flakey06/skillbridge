@@ -61,10 +61,10 @@ class RequestedWorkflowTests(TestCase):
         self.assertEqual(_completion_percent(self.profile), before)
         self.assertContains(self.client.get(reverse("home")), '<span class="preserve-case">james</span>')
 
-    def test_profile_fields_autosave_and_page_explains_file_uploads(self, predictor):
+    def test_manual_profile_controls_and_legacy_autosave_endpoint(self, predictor):
         page = self.client.get(reverse("candidate_profile"))
-        self.assertContains(page, "Changes save automatically")
-        self.assertContains(page, "files upload automatically when selected")
+        self.assertContains(page, "Save Profile")
+        self.assertNotContains(page, "<script")
         self.assertNotContains(page, "Upload selected files")
         self.assertNotContains(page, ">Save profile<")
 

@@ -56,7 +56,7 @@ def calendar(request):
     selected_application = None
     if request.method == "GET" and request.GET.get("application"):
         selected_application = get_object_or_404(applications, pk=request.GET["application"], status="shortlisted")
-    interview_id = request.POST.get("interview_id")
+    interview_id = request.POST.get("interview_id") or request.GET.get("edit")
     interview = None
     if interview_id:
         interview = get_object_or_404(interviews, pk=interview_id)
@@ -170,6 +170,8 @@ def calendar(request):
         applications=applications.filter(status="shortlisted"),
         selected_application=selected_application,
         form=form,
+        editing_interview=interview,
+        editor_open=bool(interview_id or request.GET.get("create") or request.GET.get("application") or request.method == "POST"),
         calendar=calendar_data,
         calendar_changed=calendar_changed,
         schedule_conflicts=schedule_conflicts,
