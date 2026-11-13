@@ -24,9 +24,9 @@ from accounts.views import security
 from accounts.views.payments import manage_payment_method
 
 urlpatterns = [
-    path('adminstration/', administration.administration_dashboard, name='administration_dashboard'),
-    path('adminstration/login/', administration.administration_login, name='administration_login'),
-    path('adminstration/logout/', administration.administration_logout, name='administration_logout'),
+    path('administration/', administration.administration_dashboard, name='administration_dashboard'),
+    path('administration/login/', administration.administration_login, name='administration_login'),
+    path('administration/logout/', administration.administration_logout, name='administration_logout'),
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('account/payment-method/', manage_payment_method, name='manage_payment_method'),
