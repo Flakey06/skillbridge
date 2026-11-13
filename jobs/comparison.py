@@ -6,7 +6,7 @@ from .models import Job
 
 @candidate_required
 def compare_jobs(request, job_id):
-    visible = Job.objects.filter(moderation_status="approved").select_related("company")
+    visible = Job.objects.filter().select_related("company")
     current_job = get_object_or_404(visible, pk=job_id)
     choices = visible.filter(status="open").exclude(pk=job_id).order_by("title", "pk")
     selected_id = request.GET.get("compare", "")

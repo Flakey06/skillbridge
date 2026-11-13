@@ -41,7 +41,7 @@ def save_job(request, job_id):
 
 @candidate_required
 def detail(request, job_id):
-    job = get_object_or_404(Job.objects.select_related("company"), pk=job_id, moderation_status="approved")
+    job = get_object_or_404(Job.objects.select_related("company"), pk=job_id)
     application = JobApplication.objects.filter(candidate=request.user, job=job).first()
     is_blacklisted = CandidateCompanyBlacklist.objects.filter(
         candidate=request.user, company=job.company
@@ -255,7 +255,7 @@ def detail(request, job_id):
 @candidate_required
 @require_POST
 def report_job(request, job_id):
-    job = get_object_or_404(Job, pk=job_id, moderation_status="approved")
+    job = get_object_or_404(Job, pk=job_id)
     reason = request.POST.get("reason", "").strip()
     if not reason:
         messages.error(request, "Select a reason for the report.")
