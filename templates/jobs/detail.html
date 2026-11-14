@@ -31,7 +31,7 @@
     <section class="job-header-compatibility" aria-label="Compatibility overview">
         <div class="job-compatibility-caption">
             <p class="eyebrow">Your Readiness</p>
-            <h2>Compatibility</h2>
+            <h2>Resume Assessment <span class="assessment-info"><button type="button" class="assessment-info-button" aria-label="About resume assessment scores" aria-describedby="assessment-score-help">ⓘ</button><span class="assessment-info-tooltip" role="tooltip" id="assessment-score-help"><span class="assessment-info-paragraph">Skill compatibility is the percentage of this job’s skills found in the selected resume.</span><span class="assessment-info-paragraph">Predicted job fit is a separate ML estimate of how the resume text relates to this job. It is not your chance of being hired.</span></span></span></h2>
             {% if comparison_resume %}
                 <span class="pill" data-resume-readiness>{{ comparison_resume.assessment }}</span>
                 <p class="sub"><span>{% if comparison_resume.resume.id == recommended_resume.resume.id %}For your highest-scoring resume:{% else %}Comparing resume:{% endif %}</span> <strong data-resume-compatibility-title>{{ comparison_resume.resume.title }}</strong> · <span data-resume-compatibility-version>{{ comparison_resume.version }}</span></p>
@@ -40,11 +40,11 @@
         </div>
         <div class="compatibility-scores job-header-scores" aria-label="Compatibility scores">
             {% if comparison_resume %}
-                <div data-resume-evidence-score>{% include "components/compatibility_score.html" with label="Skill Compatibility" score=comparison_resume.fit_score %}</div>
-                <div data-resume-ai-score>{% include "components/compatibility_score.html" with label="Predicted Job Fit" score=comparison_resume.ai_compatibility %}</div>
+                <div data-resume-evidence-score>{% include "components/compatibility_score.html" with label="Skill Compatibility" score=comparison_resume.skill_score %}</div>
+                <div data-resume-ai-score>{% include "components/compatibility_score.html" with label="Predicted Job Fit" score=comparison_resume.relevance_score %}</div>
             {% else %}
                 {% include "components/compatibility_score.html" with label="Skill Compatibility" score=match.score %}
-                {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.ai_match.earned %}
+                {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.resume_relevance.earned %}
             {% endif %}
         </div>
         {% if comparison_resume %}
@@ -54,12 +54,6 @@
                     <select id="compatibility-resume-version" name="compare_resume">
                         {% for item in available_resumes %}
                         <option value="{{ item.resume.id }}"
-                            data-title="{{ item.resume.title }}"
-                            data-version="{{ item.version }}"
-                            data-evidence="{{ item.fit_score }}"
-                            data-ai="{{ item.ai_compatibility }}"
-                            data-combined="{{ item.recommendation_score }}"
-                            data-assessment="{{ item.assessment }}"
                             {% if item.resume.id == comparison_resume.resume.id %}selected{% endif %}>{{ item.resume.title }} · {{ item.version }}{% if item.resume.id == recommended_resume.resume.id %} — Best Match{% endif %}</option>
                         {% endfor %}
                     </select>
@@ -94,45 +88,37 @@
             Resume to submit
             <select name="resume_id" form="job-application-form" required>
                 {% for item in available_resumes %}
-                    <option value="{{ item.resume.id }}"{% if item.resume.id|stringformat:"s" == selected_resume_id|stringformat:"s" %} selected{% endif %}>{{ item.resume.title }} — {{ item.type }} — {{ item.version }}{% if has_pro %} — {{ item.fit_score }}% evidence fit — {{ item.ai_compatibility }}% AI compatibility{% if item.resume.id == recommended_resume.resume.id %} — Recommended{% endif %}{% endif %}{% if item.resume.approved_at %} — Reviewed{% else %} — Confirm before applying{% endif %}</option>
+                    <option value="{{ item.resume.id }}"{% if item.resume.id|stringformat:"s" == selected_resume_id|stringformat:"s" %} selected{% endif %}>{{ item.resume.title }} — {{ item.type }} — {{ item.version }}{% if has_pro %} — {{ item.skill_score }}% Skill Compatibility{% if item.resume.id == recommended_resume.resume.id %} — Recommended{% endif %}{% endif %}{% if item.resume.approved_at %} — Reviewed{% else %} — Confirm before applying{% endif %}</option>
                 {% endfor %}
             </select>
-            <small class="muted">Choose the exact resume version to attach. Pro combines transparent evidence fit (70%) with the dataset-trained AI compatibility signal (30%). This is guidance, not a hiring score.</small>
+            <small class="muted">Choose the exact resume version to attach. Skill Compatibility and Predicted Job Fit are separate assessments.</small>
         </label>
     </section>
     {% endif %}
     {% endif %}
 
     {% if has_pro %}
+    {% with match=detail_match %}
     <div class="card match-summary">
-        <div class="section-heading">
-            <div>
-                <p class="eyebrow">YOUR READINESS</p>
-                <h2><span class="match-badge match-badge-with-help {% if overall_score <= 40 %}match-badge-low{% elif overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">Overall suitability: {{ overall_score }}%<span class="match-help" role="tooltip">70% comes from your explainable Skill Match and 30% from the historical ML suitability signal.</span></span></h2>
-            </div>
-            <div>{% if match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}</div>
-        </div>
+        <h2>Skills And Evidence Breakdown</h2>
+        <p class="sub">For {% if comparison_resume %}<strong>{{ comparison_resume.resume.title }}</strong> · {{ comparison_resume.version }}{% else %}your current profile and main or uploaded resume{% endif %}. These details explain the Skill Compatibility score above.</p>
         <div class="skill-match-explanation">
             <p><strong>Matched skills:</strong> {{ match.matched_skills|join:", "|default:"None yet" }}</p>
             <p><strong>Missing skills:</strong> {{ match.missing_skills|join:", "|default:"None" }}</p>
             <p><strong>Readiness:</strong> {{ match.assessment }}{% if match.assessment == "Early-stage fit" %} — you are still building the evidence or skills needed for this role.{% endif %}</p>
         </div>
         {% if match.missing_skills %}<a class="button small" href="{% url 'candidate_learning' %}?job={{ job.id }}">See certifications to bridge this gap →</a>{% endif %}
-        <h3>How your overall suitability is assessed</h3>
-        <p class="muted">Skill Match contributes 70%; the historical ML suitability signal contributes 30%. This is guidance, not an automatic hiring decision.</p>
+        <h3>How Skill Compatibility Is Assessed</h3>
+        <p class="muted">Skill Compatibility shows the percentage of job skills found in the selected resume. Predicted Job Fit is calculated separately by the ML model; it is not added to the skill percentage.</p>
         <div class="score-breakdown">
             {% for label, component in match.score_breakdown.items %}
-                <div class="score-breakdown-item">
-                    <span>{% if label == "required_skills" %}Required Skills{% elif label == "preferred_skills" %}Preferred Skills{% elif label == "career_alignment" %}Career Alignment{% elif label == "experience_level" %}Experience Level{% elif label == "profile_evidence" %}Profile Evidence{% else %}{{ label|title }}{% endif %}</span>
-                    <strong>{{ component.earned }}/{{ component.max }} points</strong>
-                </div>
+                {% if label != 'resume_relevance' and label != 'ai_match' %}
+                <div class="score-breakdown-item"><span>{{ label|title }}</span><strong>{{ component.earned }}/{{ component.max }} points</strong></div>
+                {% endif %}
             {% endfor %}
         </div>
-        <div class="score-breakdown">
-            <div class="score-breakdown-item"><span>Skill Match (70%)</span><strong>{{ match.score }}%</strong></div>
-            <div class="score-breakdown-item"><span>ML suitability signal (30%)</span><strong>{{ ml_prediction.score }}%</strong></div>
-        </div>
     </div>
+    {% endwith %}
     {% else %}
     <div class="card match-summary">
         <div class="section-heading">

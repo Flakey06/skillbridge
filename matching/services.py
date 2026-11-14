@@ -1,9 +1,4 @@
-"""Explainable resume-to-job scoring for the MVP.
-
-The score is deliberately deterministic so candidates and recruiters can see
-why it changed. A TensorFlow model can replace the component calculators later
-without changing the views or stored match shape.
-"""
+"""Deterministic skill/evidence scoring and the existing ML score integration."""
 
 import re
 
@@ -11,21 +6,6 @@ from candidates.resume_parser import KNOWN_SKILLS, extract_resume_text
 
 from .models import JobMatch
 from .ml import predict_ai_compatibility
-
-
-SKILL_MATCH_WEIGHT = 0.70
-ML_SUITABILITY_WEIGHT = 0.30
-
-
-def calculate_overall_suitability(skill_match_score, ml_suitability_score):
-    """Blend direct job alignment with the historical ML signal."""
-    if skill_match_score is None or ml_suitability_score is None:
-        return None
-    blended_score = (
-        (float(skill_match_score) * SKILL_MATCH_WEIGHT)
-        + (float(ml_suitability_score) * ML_SUITABILITY_WEIGHT)
-    )
-    return int(blended_score + 0.5)
 
 
 def _normalise(value):
@@ -49,6 +29,11 @@ def _profile_data(candidate):
 
 
 def _resume_text(candidate):
+    from resumes.models import TailoredResume
+    if getattr(candidate, "pk", None):
+        main = TailoredResume.objects.filter(candidate=candidate, is_main=True).first()
+        if main:
+            return _normalise(main.clean_content)
     profile = getattr(candidate, "profile", None)
     resume = getattr(profile, "resume", None) if profile else None
     if not resume:
@@ -58,17 +43,6 @@ def _resume_text(candidate):
             return _normalise(extract_resume_text(resume_file))
     except (OSError, ValueError):
         return ""
-
-
-def _coverage(profile_skills, skill_names, resume_text=""):
-    normalised = {_normalise(skill): skill for skill in skill_names}
-    matched_keys = {
-        key
-        for key in normalised
-        if key in profile_skills
-        or re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", resume_text)
-    }
-    return normalised, matched_keys
 
 
 def _contains_skill(text, skill):
@@ -129,108 +103,6 @@ def _job_skill_sets(job):
     return required, preferred
 
 
-def _experience_points(data, job):
-    raw = " ".join(str(data.get(key, "")) for key in ("experience", "certifications", "education")).casefold()
-    level = job.experience_level
-    if level == "entry":
-        return 10 if not raw or any(word in raw for word in ("intern", "student", "entry", "graduate")) else 8
-    if level == "junior":
-        return 10 if any(word in raw for word in ("junior", "intern", "1 year", "2 years", "associate")) else 5
-    if level == "mid":
-        return 10 if any(word in raw for word in ("mid", "3 years", "4 years", "5 years")) else 4
-    return 10 if any(word in raw for word in ("senior", "lead", "manager", "6 years", "7 years", "8 years")) else 3
-
-
-def _alignment_points(data, job):
-    job_text = _normalise(" ".join((job.industry, job.title, job.description)))
-    profile_terms = [data.get("career", ""), data.get("specialisation", "")]
-    return 10 if any(_normalise(term).replace("-", " ") in job_text for term in profile_terms if term) else 0
-
-
-def _evidence_points(candidate, data):
-    evidence = [
-        data.get("skills"),
-        data.get("experience"),
-        data.get("certifications"),
-        data.get("portfolio"),
-        _resume_text(candidate),
-    ]
-    return round(5 * sum(bool(item) for item in evidence) / len(evidence))
-
-
-def _weighted_skill_match(candidate, data, job, resume_text):
-    skill_weights = job.skill_weights or {}
-    if not skill_weights:
-        return None
-    evidence_weights = job.evidence_weights or {
-        "Projects": 40,
-        "Internship": 50,
-        "Self-proclaimed skills": 10,
-    }
-    profile_skills = _profile_skills(candidate)
-    evidence_text = {
-        "projects": _normalise(" ".join((data.get("portfolio", ""), resume_text))),
-        "internship": _normalise(" ".join((data.get("experience", ""), resume_text))),
-        "self-proclaimed skills": _normalise(data.get("skills", "")),
-    }
-    aliases = {
-        "project": "projects",
-        "projects": "projects",
-        "internship": "internship",
-        "internships": "internship",
-        "work experience": "internship",
-        "experience": "internship",
-        "self-proclaimed skills": "self-proclaimed skills",
-        "self proclaimed skills": "self-proclaimed skills",
-        "profile skills": "self-proclaimed skills",
-    }
-    normalised_evidence_weights = {
-        aliases.get(_normalise(source), _normalise(source)): float(weight)
-        for source, weight in evidence_weights.items()
-    }
-    total_evidence_weight = sum(normalised_evidence_weights.values()) or 100
-    details = []
-    weighted_score = 0
-    matched = []
-    missing = []
-    for skill, raw_weight in skill_weights.items():
-        skill_weight = float(raw_weight)
-        skill_key = _normalise(skill)
-        source_scores = {}
-        for source, source_weight in normalised_evidence_weights.items():
-            text = evidence_text.get(source, "")
-            present = (
-                skill_key in profile_skills
-                if source == "self-proclaimed skills"
-                else _contains_skill(text, skill)
-            )
-            source_scores[source] = {
-                "matched": present,
-                "weight": source_weight,
-            }
-        evidence_score = sum(
-            item["weight"] for item in source_scores.values() if item["matched"]
-        ) / total_evidence_weight
-        weighted_score += skill_weight * evidence_score
-        if evidence_score:
-            matched.append(skill)
-        else:
-            missing.append(skill)
-        details.append({
-            "skill": skill,
-            "skill_weight": skill_weight,
-            "evidence_score": round(evidence_score * 100),
-            "sources": source_scores,
-        })
-    return {
-        "score": round(weighted_score),
-        "matched": matched,
-        "missing": missing,
-        "details": details,
-        "evidence_weights": normalised_evidence_weights,
-    }
-
-
 def _assessment(score):
     if score >= 80:
         return "Strong fit"
@@ -242,12 +114,19 @@ def _assessment(score):
 
 
 def _configured_weights(values, fallback):
-    cleaned = {
-        _normalise(label): float(weight)
-        for label, weight in (values or {}).items()
-        if str(label).strip() and float(weight) >= 0
-    }
-    return cleaned or fallback
+    """Normalise valid configured weights to a single 100-point scale."""
+    import math
+    cleaned = {}
+    for label, weight in (values or {}).items():
+        try:
+            number = float(weight)
+        except (TypeError, ValueError):
+            continue
+        if str(label).strip() and math.isfinite(number) and number > 0:
+            cleaned[_normalise(label)] = number
+    cleaned = cleaned or fallback
+    total = sum(cleaned.values())
+    return {label: weight * 100 / total for label, weight in cleaned.items()} if total else {}
 
 
 def _evidence_score(data, resume_text, configured):
@@ -255,7 +134,7 @@ def _evidence_score(data, resume_text, configured):
         configured,
         {"projects": 40.0, "internship": 50.0, "self-proclaimed skills": 10.0},
     )
-    combined = " ".join(str(data.get(key, "")) for key in ("experience", "portfolio", "skills", "certifications"))
+    combined = " ".join([resume_text, *(str(data.get(key, "")) for key in ("experience", "portfolio", "skills", "certifications"))])
     evidence = {
         "projects": bool(re.search(r"\b(project|built|developed|implemented|portfolio)\b", combined, re.I)),
         "internship": bool(re.search(r"\b(intern|internship)\b", combined, re.I)),
@@ -272,16 +151,15 @@ def _evidence_score(data, resume_text, configured):
     }
 
 
-def calculate_match(candidate, job):
+def calculate_match(candidate, job, resume_text=None):
     data = _profile_data(candidate)
     candidate_skills = _profile_skills(candidate)
-    resume_text = _resume_text(candidate)
+    resume_text = _resume_text(candidate) if resume_text is None else _normalise(resume_text)
     required_skills, preferred_skills = _job_skill_sets(job)
-    weighted_skill_match = _weighted_skill_match(candidate, data, job, resume_text)
 
     # Do not imply a candidate is compatible when the recruiter has not
     # provided enough job information to compare against anything.
-    if not weighted_skill_match and not required_skills and not preferred_skills:
+    if not job.skill_weights and not required_skills and not preferred_skills:
         breakdown = {
             "required_skills": {"earned": 0, "max": 0},
             "preferred_skills": {"earned": 0, "max": 0},
@@ -289,7 +167,7 @@ def calculate_match(candidate, job):
         }
         return 0, [], [], breakdown, "Insufficient job data"
 
-    all_skills = _dedupe_skills(required_skills + preferred_skills)
+    all_skills = _dedupe_skills(required_skills + preferred_skills + list((job.skill_weights or {}).keys()))
     skill_weights = _configured_weights(
         job.skill_weights,
         {_normalise(skill): 100 / len(all_skills) for skill in all_skills} if all_skills else {},
@@ -318,7 +196,7 @@ def calculate_match(candidate, job):
         (job.title, job.description, job.required_skills, job.preferred_skills)
     )
     ai_score, ai_reason = predict_ai_compatibility(resume_text, job_text, score)
-    breakdown["ai_match"] = {"earned": ai_score, "max": 100, **ai_reason}
+    breakdown["resume_relevance"] = {"earned": ai_score, "max": 100, **ai_reason}
     matched = sorted(skill_lookup[key] for key in matched_keys)
     missing = sorted(skill_lookup[key] for key in skill_lookup if key not in matched_keys)
     return score, matched, missing, breakdown, _assessment(score)

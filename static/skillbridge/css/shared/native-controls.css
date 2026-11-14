@@ -1,0 +1,30 @@
+/* SkillBridge: shared/native-controls.css. Loaded in the order declared by skillbridge.css. */
+[hidden] { display: none !important; }
+
+.sidebar-collapse { cursor: pointer; }
+
+.native-entry { padding: 16px; margin: 16px 0; }
+.native-entry summary { cursor: pointer; font-weight: 600; }
+.native-entry .form-grid { margin: 16px 0; }
+.native-entry-preview + .native-entry-preview { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 16px; }
+.native-entry input[type=checkbox] { width: 18px; height: 18px; }
+.profile-form input[type=checkbox] { width: 18px; height: 18px; }
+.profile-form #id_career_interests { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.native-target-panel { display: none; }
+.native-target-panel:target { display: block; }
+.native-dialog-overlay { position: fixed; inset: 0; z-index: 1000; background: #17264166; display: grid; place-items: center; padding: 20px; overflow: auto; }
+.native-interview-dialog { position: relative; margin: auto; max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; }
+.native-interview-dialog form.stack { display: grid; gap: 20px; }
+.job-resume-comparison { display: flex; align-items: end; gap: 8px; }
+.job-resume-comparison .field { flex: 1; }
+.sandy-question-row, .onboard-compose { visibility: visible; opacity: 1; }
+.sandy-cursor, .sandy-question-cursor { display: none; }
+.toast-container details summary { cursor: pointer; }
+@media (max-width: 600px) { .profile-form #id_career_interests { grid-template-columns: 1fr; } }
+
+.toast-container details.toast:not([open]) { display: none; }
+.toast-container details.toast summary { float: right; list-style: none; padding-left: 12px; cursor: pointer; }
+.toast-container details.toast summary::-webkit-details-marker { display: none; }
+.toast-container details.toast p { margin: 0; }
+.chart-legend > a { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 8px; color: inherit; text-decoration: none; border-radius: 8px; }
+.chart-legend > a i { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }

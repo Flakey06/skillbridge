@@ -38,11 +38,33 @@
         <div class="statistics-grid">
             <article class="statistics-panel">
                 <div class="statistics-panel-heading"><div><h3>Industry and Career Breakdown</h3><p class="sub" data-breakdown-caption></p></div><span class="statistics-chip">Donut chart</span></div>
-                <div class="donut-layout"><div class="donut-chart" style="background: {{ member_charts.gradient }}" data-donut-chart role="img" aria-label="Member category breakdown"><div class="donut-centre"><strong>{{ member_charts.total }}</strong><span>Total</span></div></div><div class="chart-legend">{% for category in member_charts.categories %}<a href="?section=analytics&amp;stat_role={{ member_charts.role }}&amp;from={{ member_charts.from }}&amp;to={{ member_charts.to }}&amp;category={% if member_charts.selected != category.name %}{{ category.name|urlencode }}{% endif %}"><i style="background: {{ category.colour }}"></i>{{ category.name }} <strong>{{ category.count }} · {{ category.percent }}%</strong></a>{% endfor %}</div></div>
+                <div class="donut-layout"><div class="donut-chart" style="background: {{ member_charts.gradient }}" data-donut-chart role="img" aria-label="Member category breakdown"><div class="donut-centre"><strong>{{ member_charts.total }}</strong><span>Total</span></div></div><div class="chart-legend">{% for category in member_charts.categories %}<a href="?section=analytics&amp;stat_role={{ member_charts.role }}&amp;from={{ member_charts.from }}&amp;to={{ member_charts.to }}&amp;category={% if member_charts.selected != category.name %}{{ category.name|urlencode }}{% endif %}"><i style="background: {{ category.colour }}"></i><span>{{ category.name|title }}</span><strong>{{ category.count }} · {{ category.percent }}%</strong></a>{% endfor %}</div></div>
             </article>
             <article class="statistics-panel">
                 <div class="statistics-panel-heading"><div><h3>Member Growth</h3><p class="sub" data-growth-caption></p></div><span class="statistics-chip">Cumulative</span></div>
-                <div class="growth-chart-wrap"><svg class="growth-chart" data-growth-chart viewBox="0 0 760 360" role="img" aria-label="Cumulative member registrations"><path d="M50 30V300H710" fill="none" stroke="#cfd8e6"/><polyline points="{{ member_charts.points }}" fill="none" stroke="#233f78" stroke-width="3"/>{% for point in member_charts.growth %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="5" fill="#233f78"><title>{{ point.day }}: {{ point.count }} members</title></circle>{% endfor %}</svg><div class="chart-tooltip" data-chart-tooltip hidden></div></div>
+                <div class="growth-chart-wrap">
+                    <svg class="growth-chart" viewBox="0 0 760 360" role="group" aria-label="Cumulative member registrations. Focus a point for details.">
+                        {% for tick in member_charts.ticks %}<line x1="50" x2="710" y1="{{ tick.y }}" y2="{{ tick.y }}" class="grid-line"/><text x="38" y="{{ tick.y }}" text-anchor="end" dominant-baseline="middle" class="axis-label">{{ tick.value }}</text>{% endfor %}
+                        <path d="M50 50V300H710" fill="none" stroke="#cfd8e6"/>
+                        <polyline points="{{ member_charts.points }}" class="growth-line"/>
+                        <g class="growth-visible-points" aria-hidden="true">
+                            {% for point in member_charts.growth %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="5" class="growth-point"/>{% endfor %}
+                        </g>
+                        {% for point in member_charts.growth %}
+                        <g class="growth-point-group" tabindex="0" role="img" aria-label="{{ point.label }}: {{ point.count }} members total, {{ point.new }} new">
+                            <circle cx="{{ point.x }}" cy="{{ point.y }}" r="17" fill="transparent" class="growth-hit-area"/>
+                            <circle cx="{{ point.x }}" cy="{{ point.y }}" r="5" class="growth-point growth-active-point"/>
+                            <g class="growth-point-popup" transform="translate({{ point.tooltip_x }} {{ point.tooltip_y }})" aria-hidden="true">
+                                <rect width="220" height="82" rx="10" fill="#233f78"/>
+                                <text x="16" y="30">{{ point.label }}</text>
+                                <text x="16" y="59">{{ point.count }} total · {{ point.new }} new</text>
+                            </g>
+                        </g>
+                        {% endfor %}
+                        {% for point in member_charts.growth %}{% if forloop.first or forloop.last %}<text x="{{ point.x }}" y="328" text-anchor="middle" class="axis-label">{{ point.label }}</text>{% endif %}{% endfor %}
+                    </svg>
+                </div>
+                <p class="statistics-chart-hint">Hover over or focus a point to see its date and member count.</p>
             </article>
         </div>
         <p class="statistics-empty"{% if member_charts.total %} hidden{% endif %}>No member records match these filters.</p>

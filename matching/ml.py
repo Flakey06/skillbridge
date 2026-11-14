@@ -1,4 +1,4 @@
-"""Dataset-trained AI compatibility scoring."""
+"""Resume–job text relevance predicted by TF-IDF and Ridge regression."""
 
 import csv
 from functools import lru_cache
@@ -48,17 +48,17 @@ def _trained_model(dataset_mtime):
    return model, len(texts)
 
 
-def predict_ai_compatibility(resume_text, job_text, fallback_score):
-   """Predict the dataset-trained AI score, falling back to the skill score."""
+def predict_ai_compatibility(resume_text, job_text, fallback_score=None):
+   """Predict text relevance. The legacy fallback argument is intentionally ignored."""
    try:
        dataset_mtime = DATASET_PATH.stat().st_mtime_ns
    except OSError:
        dataset_mtime = 0
    trained = _trained_model(dataset_mtime)
    if trained is None:
-       return fallback_score, {
-           "mode": "skill_fallback",
-           "reason": "The dataset-trained AI model is unavailable, so the transparent skill score is shown.",
+       return None, {
+           "mode": "unavailable",
+           "reason": "Resume–Job Relevance is unavailable because its model could not be loaded or trained.",
        }
    model, example_count = trained
    prediction = max(

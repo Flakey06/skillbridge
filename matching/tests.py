@@ -2,7 +2,7 @@ from django.test import TestCase
 from types import SimpleNamespace
 
 from .ml_model import _model_path, evaluate_model, initialise_model
-from .services import calculate_match, calculate_overall_suitability
+from .services import calculate_match
 
 
 class MlModelEvaluationTests(TestCase):
@@ -14,10 +14,6 @@ class MlModelEvaluationTests(TestCase):
         self.assertLessEqual(results["accuracy"], 1)
         self.assertIn("AI Score (0-100)", results["excluded_fields"])
         self.assertNotIn("AI Score (0-100)", results.keys())
-
-    def test_overall_suitability_uses_seventy_thirty_weighting(self):
-        self.assertEqual(calculate_overall_suitability(80, 35), 67)
-        self.assertIsNone(calculate_overall_suitability(None, 35))
 
     def test_persisted_joblib_model_can_be_loaded(self):
         model = initialise_model()
@@ -51,7 +47,8 @@ class MlModelEvaluationTests(TestCase):
 
         score, matched, missing, breakdown, _assessment = calculate_match(candidate, job)
 
-        self.assertEqual(score, 53)
+        self.assertEqual(score, 100)
         self.assertEqual(sorted(matched), ["Creativity", "UI/UX"])
         self.assertEqual(missing, [])
-        self.assertEqual(breakdown["weighted_skills"]["max"], 75)
+        self.assertEqual(breakdown["skill_match"]["earned"], 70)
+        self.assertEqual(breakdown["evidence_match"]["earned"], 30)

@@ -35,7 +35,7 @@
         </select>
     </label>
     <div class="field applicant-ats-filter">
-        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum ATS Score</label><a class="applicant-ats-info" href="#ats-scoring-help" aria-label="About the minimum ATS score">ⓘ</a></span>
+        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum Skill Compatibility</label><a class="applicant-ats-info" href="#ats-scoring-help" aria-label="About the minimum Skill Compatibility">ⓘ</a></span>
         <select id="applicant-ats-score" name="min_ats_score">
             <option value="">Any score</option>
             <option value="50"{% if minimum_ats_score == '50' %} selected{% endif %}>50+</option>
@@ -51,18 +51,16 @@
 
 <aside class="card stack ats-help-dropdown native-target-panel" id="ats-scoring-help" tabindex="-1">
     <div class="section-heading">
-        <div><p class="eyebrow">Automatic screening</p><h2>How the ATS score works</h2></div>
+        <div><p class="eyebrow">Automatic screening</p><h2>How Skill Compatibility Works</h2></div>
         <a class="button small" href="#">Close</a>
     </div>
-    <p>The ATS score is calculated automatically when the candidate applies. It compares evidence saved in the candidate profile and résumé with the requirements of that specific job.</p>
+    <p>Skill Compatibility is calculated automatically when the candidate applies. It compares evidence saved in the candidate profile and résumé with the requirements of that specific job.</p>
     <ol>
-        <li><strong>Required skills:</strong> skills found in the candidate profile or résumé.</li>
-        <li><strong>Preferred skills:</strong> additional matching skills requested by the recruiter.</li>
-        <li><strong>Experience and evidence:</strong> relevant work, education, certifications, projects, and résumé content.</li>
-        <li><strong>Career alignment:</strong> how closely the candidate’s direction matches the role.</li>
+        <li><strong>Skill coverage (70 points):</strong> recruiter-weighted skills found in the profile or selected résumé.</li>
+        <li><strong>Evidence (30 points):</strong> projects, internships, and self-declared skills, using the recruiter’s evidence priorities.</li>
     </ol>
     <p>The result is saved with the application on a scale of <strong>0–100</strong>, so recruiters see the same submission-time assessment even if the candidate later edits their profile.</p>
-    <p class="sub">The minimum ATS filter now uses this automatic score. Recruiters can still complete a separate structured evaluation from the candidate detail page.</p>
+    <p class="sub">The minimum compatibility filter now uses this automatic score. Recruiters can still complete a separate structured evaluation from the candidate detail page.</p>
 </aside>
 
 <div class="card table-wrap applicant-score-table-wrap">

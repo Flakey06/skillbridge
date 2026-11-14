@@ -1,7 +1,6 @@
 """Applicant review and application status updates."""
 
 from matching.ml_model import predict_suitability
-from matching.services import calculate_overall_suitability
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
@@ -113,10 +112,6 @@ def applicants(request):
     if has_pro:
         for application in applications:
             application.ml_prediction = predict_suitability(application.candidate, application.job)
-            application.overall_score = calculate_overall_suitability(
-                application.match_score,
-                application.ml_prediction["score"],
-            )
     return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro, history_filter=candidate_history, minimum_ats_score=minimum_ats_score))
 
 
@@ -151,10 +146,6 @@ def applicant_detail(request, application_id):
     candidate_profile = getattr(application.candidate, "candidate_profile", None)
     profile = getattr(application.candidate, "profile", None)
     ml_prediction = predict_suitability(application.candidate, application.job) if has_pro else None
-    overall_score = calculate_overall_suitability(
-        application.match_score,
-        ml_prediction["score"] if ml_prediction else None,
-    )
     if request.method == "POST" and request.POST.get("action") == "blacklist":
         reason = request.POST.get("blacklist_reason", "").strip()
         if blacklist_entry:
@@ -217,7 +208,6 @@ def applicant_detail(request, application_id):
             status_form=status_form,
             has_pro=has_pro,
             ml_prediction=ml_prediction,
-            overall_score=overall_score,
             company_applications=company_applications,
             company_application_count=company_application_count,
             company_rejection_count=company_rejection_count,

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Interview Workspace · SkillBridge{% endblock %}
+{% block content %}
+<section class="interview-workspace-page" aria-labelledby="interview-review-title">
+    <header class="interview-workspace-header">
+        <div><a class="interview-workspace-back" href="{% url 'recruiter_interviews' %}">← Back To Interviews</a>
+        <h1 id="interview-review-title">Interview Workspace</h1>
+        <p>{{ interview.application.candidate.username }} · {{ interview.application.job.title }} · {{ interview.scheduled_start|date:"d M Y, H:i" }}</p></div>
+        <button class="primary button" form="interview-workspace-form" name="action" value="save" type="submit">Save Workspace</button>
+    </header>
+    {% for message in messages %}<p class="interview-workspace-message" role="status">{{ message }}</p>{% endfor %}
+    <form id="interview-workspace-form" method="post" enctype="multipart/form-data" class="interview-workspace-form">
+        {% csrf_token %}{{ form.non_field_errors }}
+        <div class="interview-workspace-columns">
+            <section class="interview-workspace-column interview-workspace-notes" aria-label="Live notes and transcript" tabindex="0">
+        <section class="card stack">
+            <h2>Preparation And Live Notes</h2>
+            <label class="field">{{ form.loose_notes.label }}{{ form.loose_notes }}{{ form.loose_notes.errors }}</label>
+            <p>Keep working notes here. To add question ideas to the questions column, write one question per line and select Add Notes As Questions. Your notes remain here.</p>
+            <button class="button" name="action" value="notes_to_questions" type="submit">Add Notes As Questions</button>
+        </section>
+        <section class="card stack">
+            <h2>Transcript And Speaker</h2>
+            <p>Upload a UTF-8 .txt transcript with speaker names. Uploading loads the speaker list; choose the candidate and select Match Answers next.</p>
+            <label class="field">{{ form.transcript_file.label }}{{ form.transcript_file }}{{ form.transcript_file.errors }}</label>
+            <button class="button" type="submit" name="action" value="load">Load Transcript</button>
+            {% if transcript_turn_count %}<p class="interview-transcript-status" role="status">Transcript loaded: {{ transcript_turn_count }} speaker turns. The file picker resets after a page reload; the transcript text is retained below. Save Workspace to keep it for later.</p>{% endif %}
+            {% if speaker_previews %}<details class="interview-speaker-previews"><summary>Check Who Is Speaking</summary>{% for speaker in speaker_previews %}<p><strong>{{ speaker.name }}:</strong> {{ speaker.example }}</p>{% endfor %}</details>{% endif %}
+            <p>Select the person answering the interview questions. Use the speaker previews above to check their identity.</p>
+            <label class="field">{{ form.candidate_speaker.label }}{{ form.candidate_speaker }}{{ form.candidate_speaker.errors }}</label>
+            <details><summary>View Or Edit Transcript</summary><label class="field">Transcript{{ form.transcript }}{{ form.transcript.errors }}</label></details>
+            {% if form.transcript.errors %}<p class="errorlist">Check the transcript format above.</p>{% endif %}
+            <button class="primary button" type="submit" name="action" value="analyse">Match Answers</button>
+            <p class="sub">Local text matching suggests answers from the selected speaker immediately after another speaker’s question. Paraphrased questions may be missed. Check every suggestion; blank answers mean no reliable match was found. Existing answers are preserved.</p>
+        </section>
+        <section class="card stack">
+            <h2>Summary And Notes</h2>
+            <p>The suggested summary contains excerpts of matched answers, not an AI judgement. Edit it before saving. Ratings and notes stay in this review; they do not change application status or matching scores.</p>
+            <label class="field">{{ form.summary.label }}{{ form.summary }}{{ form.summary.errors }}</label>
+            <label class="field">Overall notes{{ form.overall_notes }}{{ form.overall_notes.errors }}</label>
+        </section>
+            </section>
+            <section class="interview-workspace-column interview-workspace-questions" aria-label="Questions and ratings" tabindex="0">
+        <section class="stack">
+            <h2>Questions And Ratings</h2>
+            <p>Sample questions use the job’s listed skills and role. Edit them to match what you asked. Rate the candidate’s demonstrated evidence for this job, rather than the transcript similarity.</p>
+            {{ question_formset.management_form }}{{ question_formset.non_form_errors }}
+            {% for question in question_formset %}
+            <fieldset class="card stack interview-review-question">
+                <legend>Question {{ forloop.counter }}</legend>{{ question.non_field_errors }}
+                <label class="field">Question{{ question.question }}{{ question.question.errors }}</label>
+                {% if question.source_question.value %}<p class="interview-review-source"><strong>Transcript question:</strong> {{ question.source_question.value }}<br>{{ question.match_note.value }}</p>{% endif %}
+                {{ question.source_question }}{{ question.match_note }}
+                <label class="field">{{ question.answer.label }}{{ question.answer }}{{ question.answer.errors }}</label>
+                <label class="field">Rating (1–5){{ question.rating }}{{ question.rating.errors }}</label>
+                <button class="interview-question-delete" type="submit" name="remove_question" value="{{ forloop.counter0 }}" formnovalidate aria-label="Delete question {{ forloop.counter }}" title="Delete question">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>
+                </button>
+            </fieldset>
+            {% endfor %}
+            <button class="button" name="action" value="add_question" type="submit">+ Add Question</button>
+        </section>
+            </section>
+            <aside class="card interview-workspace-column interview-workspace-resume" aria-labelledby="interview-resume-title" tabindex="0">
+        <h2 id="interview-resume-title">Submitted Resume</h2>
+        <p>This is the resume attached to this application.</p>
+        {% if interview.application.tailored_resume %}<div class="interview-submitted-resume">{{ interview.application.tailored_resume }}</div>{% else %}<p>No submitted resume text is available for this application.</p>{% endif %}
+            </aside>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -21,7 +21,7 @@
                     <div class="applicant-score-detail-header">
                         <div class="applicant-score-detail-copy">
                             <h2 id="skill-compatibility-heading">Skill Compatibility</h2>
-                            <p class="sub">Saved skill and evidence assessment from this application.</p>
+                            <p class="sub">Skill and evidence assessment saved with the submitted resume.</p>
                         </div>
                         {% include "components/compatibility_score.html" with label="Skill Compatibility" score=application.match_score hide_label=True %}
                     </div>
@@ -30,18 +30,18 @@
                     <h3>Matched Skills</h3>
                     <ul class="skill-summary-list">{% for skill in application.matched_skills %}<li>{{ skill }}</li>{% empty %}<li>None recorded.</li>{% endfor %}</ul>
                     <p><strong>Readiness:</strong> {{ application.match_assessment|default:"Not calculated" }}</p>
-                    {% if application.match_breakdown %}<div class="score-breakdown">{% for label, component in application.match_breakdown.items %}{% if component.max %}<div class="score-breakdown-item"><span>{{ label|title }}</span><strong>{{ component.earned }}/{{ component.max }} points</strong></div>{% endif %}{% endfor %}</div>{% endif %}
+                    {% if application.match_breakdown %}<div class="score-breakdown">{% for label, component in application.match_breakdown.items %}{% if component.max and label != 'resume_relevance' and label != 'ai_match' %}<div class="score-breakdown-item"><span>{{ label|title }}</span><strong>{{ component.earned }}/{{ component.max }} points</strong></div>{% endif %}{% endfor %}</div>{% endif %}
                 </section>
                 <section class="applicant-score-detail" id="predicted-job-fit" tabindex="-1" aria-labelledby="predicted-job-fit-heading">
                     <div class="applicant-score-detail-header">
                         <div class="applicant-score-detail-copy">
                             <h2 id="predicted-job-fit-heading">Predicted Job Fit</h2>
-                            <p>{{ ml_prediction.label|default:"Prediction unavailable." }}</p>
+                            <p>{{ ml_prediction.label|default:"Profile screening prediction unavailable." }}</p>
                         </div>
                         {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=ml_prediction.score hide_label=True %}
                     </div>
                     {% if ml_prediction %}<p class="sub">{{ ml_prediction.note }}</p>{% endif %}
-                    <p>The model does not provide individual reasons or missing-skill explanations for this prediction.</p>
+                    <p>This uses the current profile and broad job role, not the selected resume or detailed job requirements. It is separate from Skill Compatibility and Predicted Job Fit.</p>
                 </section>
             {% else %}
                 <p class="sub">Applicant ranking and readiness breakdown are SkillBridge Pro features.</p>

@@ -1,0 +1,12 @@
+/* SkillBridge: shared/notifications.css. Loaded in the order declared by skillbridge.css. */
+/* Keep notification text readable despite global paragraph/link colours. */
+.toast-container .toast { --toast-ink: #ffffff; background: #223e76; color: var(--toast-ink); }
+.toast-container .toast-success { background: #195c45; }
+.toast-container .toast-error { background: #922d35; }
+.toast-container .toast-warning { --toast-ink: #593b00; background: #fff1c2; }
+.toast-container .toast p, .toast-container .toast a, .toast-container .toast summary,
+.toast-container .toast strong, .toast-container .toast span,
+.calendar-update-toast p, .calendar-update-toast a, .calendar-update-toast strong { color: var(--toast-ink, #ffffff) !important; }
+.toast-container .toast p { line-height: 1.6; }
+.toast-container .toast a { text-decoration: underline; }
+.toast-container .toast summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 3px; }

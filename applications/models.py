@@ -209,3 +209,13 @@ class Interview(models.Model):
 
     def __str__(self):
         return f"Interview for {self.application}"
+
+
+class InterviewReview(models.Model):
+    interview = models.OneToOneField(Interview, on_delete=models.CASCADE, related_name='review')
+    candidate_speaker = models.CharField(max_length=100, blank=True)
+    loose_notes = models.TextField(blank=True)
+    questions = models.JSONField(default=list)
+    overall_notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    updated_at = models.DateTimeField(auto_now=True)

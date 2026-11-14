@@ -1,0 +1,110 @@
+/* SkillBridge: shared/navigation-collapse.css. Loaded in the order declared by skillbridge.css. */
+/* Simple text collapse control. It becomes a small icon control when the
+   sidebar is collapsed, without adding another floating arrow. */
+.sidebar-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 52px;
+    height: 42px;
+    margin: 0 auto 16px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.sidebar-collapse:hover,
+.sidebar-collapse:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+    outline: none;
+}
+
+.sidebar-collapse svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.sidebar-collapse span {
+    display: none;
+}
+
+@media (min-width: 651px) {
+    body.sidebar-expanded .sidebar-collapse {
+        width: 100%;
+        height: auto;
+        min-height: 38px;
+        margin: 0 0 16px;
+        padding: 9px 10px;
+        justify-content: flex-start;
+        border-color: transparent;
+    }
+
+    body.sidebar-expanded .sidebar-collapse span {
+        display: inline;
+    }
+
+    body:not(body.sidebar-expanded) .sidebar-collapse svg {
+        transform: rotate(180deg);
+    }
+}
+.career-milestone > summary.career-milestone-summary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(110px, 28%) 42px 12px !important;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    gap: 16px;
+    padding: 16px 20px;
+    list-style: none;
+}
+.career-milestone > summary.career-milestone-summary::-webkit-details-marker,
+.career-milestone > summary.career-milestone-summary::marker {
+    display: none;
+    content: "";
+}
+.career-milestone > summary.career-milestone-summary .career-milestone-heading {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    width: auto;
+}
+.career-milestone > summary.career-milestone-summary .career-milestone-progress-track {
+    grid-column: 3;
+    grid-row: 1;
+}
+.career-milestone > summary.career-milestone-summary .career-milestone-progress {
+    grid-column: 4;
+    grid-row: 1;
+}
+.career-milestone > summary.career-milestone-summary .career-milestone-toggle {
+    grid-column: 5;
+    grid-row: 1;
+}
+@media(max-width:650px) {
+    .career-milestone > summary.career-milestone-summary {
+        grid-template-columns: minmax(0, 1fr) auto 42px 12px !important;
+    }
+    .career-milestone > summary.career-milestone-summary .career-milestone-progress-track {
+        display: none;
+    }
+    .career-milestone > summary.career-milestone-summary .career-milestone-progress {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+    .career-milestone > summary.career-milestone-summary .career-milestone-toggle {
+        grid-column: 4;
+    }
+}

@@ -45,8 +45,8 @@
         <aside class="job-card-insights" aria-label="Compatibility and learning">
             <div class="compatibility-scores">
                 {% include "components/compatibility_score.html" with label="Skill Compatibility" score=match.score %}
-                {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.ai_match.earned %}
-            </div>
+                {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=match.score_breakdown.resume_relevance.earned %}
+            </div><small class="score-source-caption">Current profile and main/uploaded resume. Text relevance is a separate estimate.</small>
         </aside>
     {% endif %}
 </article>

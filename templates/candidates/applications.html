@@ -17,7 +17,8 @@
                 <th>Role</th>
                 <th>Company</th>
                 <th>Applied</th>
-                <th>Readiness</th>
+                <th>Skill Compatibility</th>
+                <th>Predicted Job Fit</th>
                 <th>Status</th>
                 <th class="candidate-withdraw-column">Action</th>
             </tr>
@@ -28,12 +29,13 @@
                     <td><a href="{% url 'job_detail' application.job.id %}">{{ application.job.title }}</a></td>
                     <td>{{ application.job.company.name }}</td>
                     <td>{{ application.created_at|date:"d M Y" }}</td>
-                    <td>{% if has_pro and application.overall_score is not None %}<span class="match-badge {% if application.overall_score <= 40 %}match-badge-low{% elif application.overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">Overall suitability: {{ application.overall_score }}%</span>{% elif not has_pro %}<a href="{% url 'plans' %}">Pro feature</a>{% else %}—{% endif %}</td>
+                    <td>{% if has_pro %}{% include "components/compatibility_score.html" with label="Skill Compatibility" score=application.match_score hide_label=True %}<small>Saved at submission</small>{% else %}<a href="{% url 'plans' %}">Pro feature</a>{% endif %}</td>
+                    <td>{% if has_pro %}{% include "components/compatibility_score.html" with label="Predicted Job Fit" score=application.saved_job_fit hide_label=True %}<small>Saved at submission</small>{% else %}<a href="{% url 'plans' %}">Pro feature</a>{% endif %}</td>
                     <td><span class="pill application-status application-status-{{ application.status }}">{{ application.get_status_display }}</span></td>
                     <td class="candidate-withdraw-column">{% if application.status != 'withdrawn' and application.status != 'rejected' and application.status != 'offer' %}<form method="post" action="{% url 'candidate_withdraw_application' application.id %}">{% csrf_token %}<button type="submit" class="candidate-withdraw-button">Withdraw</button></form>{% elif application.status == 'withdrawn' %}<button type="button" class="candidate-withdraw-button" disabled>Withdrawn</button>{% endif %}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">You have not applied for any jobs yet.</td></tr>
+                <tr><td colspan="7">You have not applied for any jobs yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
