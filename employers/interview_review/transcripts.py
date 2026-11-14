@@ -77,10 +77,6 @@ def suggest_answers(rows, turns, candidate_speaker):
     return result
 
 
-def extractive_summary(rows):
-    return '\n\n'.join(f"{row['question']}\n{row['answer'][:600]}" for row in rows if row.get('answer'))
-
-
 def additional_transcript_questions(rows, turns, candidate_speaker):
     """Questions not linked to the prepared list; suggestions require recruiter review."""
     linked = {(row.get('source_question') or '').strip().casefold() for row in rows}

@@ -53,7 +53,7 @@ class InterviewReviewWorkflowTests(TestCase):
 
     def payload(self, action):
         return {'action': action, 'transcript': TRANSCRIPT, 'candidate_speaker': 'Sarah Chen',
-            'summary': '', 'overall_notes': 'Relevant example', 'questions-TOTAL_FORMS': '1',
+            'overall_notes': 'Relevant example', 'questions-TOTAL_FORMS': '1',
             'questions-INITIAL_FORMS': '0', 'questions-MIN_NUM_FORMS': '0', 'questions-MAX_NUM_FORMS': '30',
             'questions-0-question': 'How did you use Python to automate reporting?',
             'questions-0-answer': '', 'questions-0-rating': '4'}
@@ -65,14 +65,15 @@ class InterviewReviewWorkflowTests(TestCase):
         self.assertFalse(InterviewReview.objects.exists())
         data = self.payload('save')
         data['questions-0-answer'] = 'Checked answer'
-        data['summary'] = 'Checked summary'
+        self.interview.summary = 'Historical summary'
+        self.interview.save(update_fields=['summary'])
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 302)
         review = InterviewReview.objects.get(interview=self.interview)
         self.assertEqual(review.questions[0]['rating'], 4)
         self.assertEqual(review.questions[0]['answer'], 'Checked answer')
         self.interview.refresh_from_db()
-        self.assertEqual(self.interview.summary, 'Checked summary')
+        self.assertEqual(self.interview.summary, 'Historical summary')
         self.assertEqual(self.interview.application.status, 'submitted')
         self.assertContains(self.client.get(self.url), 'Checked answer')
 
@@ -150,7 +151,7 @@ class InterviewReviewWorkflowTests(TestCase):
         self.assertEqual(saved.questions[0]['answer'], 'Keep this answer')
         self.assertEqual(saved.loose_notes, 'Keep live notes')
 
-    def test_sample_transcript_generates_problem_answer_summary(self):
+    def test_sample_transcript_matches_answer_without_generating_summary(self):
         data = self.payload('analyse')
         data['questions-0-question'] = 'Describe a difficult problem you solved. What was your contribution and the result?'
         data['transcript'] = """1
@@ -162,9 +163,10 @@ Alex Johnson: Describe a difficult problem you solved. What was your contributio
 Sarah Chen: I compared revenue files and found cancelled orders in one total. The totals then matched.
 """
         response = self.client.post(self.url, data)
-        summary = response.context['form']['summary'].value()
-        self.assertIn('cancelled orders', summary)
-        self.assertIn('The totals then matched.', summary)
+        answer = response.context['question_formset'].forms[0]['answer'].value()
+        self.assertIn('cancelled orders', answer)
+        self.assertIn('The totals then matched.', answer)
+        self.assertNotIn('summary', response.context['form'].fields)
         self.assertEqual(response.context['form']['overall_notes'].value(), 'Relevant example')
 
     def test_upload_then_match_preserves_text_and_fills_answer_widget(self):
@@ -183,7 +185,7 @@ Sarah Chen: I compared revenue files and found cancelled orders in one total. Th
         question = matched.context['question_formset'].forms[0]
         self.assertIn('I built a Python script', question['answer'].value())
         self.assertNotIn('How did you use', question['answer'].value())
-        self.assertIn('I built a Python script', matched.context['form']['summary'].value())
+        self.assertNotIn('summary', matched.context['form'].fields)
 
     def test_selecting_interviewer_does_not_load_questions_as_answers(self):
         data = self.payload('analyse')

@@ -7,7 +7,7 @@ from django.urls import reverse
 from accounts.decorators import recruiter_required
 from applications.models import Interview, InterviewReview
 from employers.interview_review.forms import ReviewForm, QuestionFormSet
-from employers.interview_review.transcripts import parse_turns, sample_questions, suggest_answers, extractive_summary, additional_transcript_questions
+from employers.interview_review.transcripts import parse_turns, sample_questions, suggest_answers, additional_transcript_questions
 from .common import _context
 
 
@@ -16,7 +16,7 @@ def interview_review(request, interview_id):
     interview = get_object_or_404(Interview.objects.select_related('application__job', 'application__candidate'),
         pk=interview_id, application__job__created_by=request.user)
     saved = InterviewReview.objects.filter(interview=interview).first()
-    initial = {'transcript': interview.transcript, 'summary': interview.summary,
+    initial = {'transcript': interview.transcript,
                'candidate_speaker': saved.candidate_speaker if saved else '',
                'overall_notes': saved.overall_notes if saved else '',
                'loose_notes': saved.loose_notes if saved else ''}
@@ -94,8 +94,6 @@ def interview_review(request, interview_id):
                         messages.info(request, f'{suggested_count} question(s) have suggested answers from {speaker}. Check the answer fields in the middle column.')
                     else:
                         messages.warning(request, 'No answers could be matched. Check that the selected candidate speaker is the person answering questions, and that your question wording matches the transcript.')
-                    if not data.get('summary', '').strip():
-                        data['summary'] = extractive_summary(rows)
             elif action in {'save', 'remove_question', 'stage_during', 'stage_after'}:
                 with transaction.atomic():
                     InterviewReview.objects.update_or_create(interview=interview, defaults={
@@ -103,8 +101,7 @@ def interview_review(request, interview_id):
                         'overall_notes': form.cleaned_data['overall_notes'],
                         'loose_notes': form.cleaned_data['loose_notes'], 'reviewed_by': request.user})
                     interview.transcript = form.cleaned_data['transcript']
-                    interview.summary = form.cleaned_data['summary']
-                    interview.save(update_fields=['transcript', 'summary'])
+                    interview.save(update_fields=['transcript'])
                 if action.startswith('stage_'):
                     stage = action.removeprefix('stage_')
                 messages.success(request, 'Question removed and workspace saved.' if action == 'remove_question' else 'Interview notes and review saved.')
