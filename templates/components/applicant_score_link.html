@@ -12,7 +12,7 @@
                 <span><b>Assessment:</b> {{ application.match_assessment|default:"Not recorded" }}</span>
             {% endif %}
         {% else %}
-            <span>{{ application.ml_prediction.label|default:"Screening prediction based on the current profile and broad job role." }}</span>
+            <span>{{ application.ml_prediction.label|default:"No prediction was saved with this application." }}</span>
             <span>The model does not provide individual gap explanations. View Skill Compatibility for recorded missing skills.</span>
         {% endif %}
         <span class="applicant-score-tooltip-hint">Click To View Details</span>

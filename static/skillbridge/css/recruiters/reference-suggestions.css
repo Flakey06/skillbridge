@@ -87,3 +87,9 @@
     align-items: center;
     width: 100%;
 }
+
+/* Prevent short listing fields stretching to match taller neighbouring content. */
+.create-listing-card > .form-grid { align-items: start; }
+.create-listing-card .form-grid > label.field { align-self: start; align-content: start; gap: 7px; }
+.create-listing-card input[name="stipend"],
+.create-listing-card select[name="status"] { height: 44px; min-height: 44px; padding: 10px 12px; box-sizing: border-box; }

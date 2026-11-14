@@ -40,13 +40,13 @@
 
 .content-columns.applicant-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr); }
 .applicant-progress-card > h2 { margin: 0 0 16px; }
-.applicant-progress-controls { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(100px, 1fr) minmax(160px, 1.3fr); align-items: end; gap: 16px; }
-.applicant-progress-controls .field { margin: 0; min-width: 0; }
-.applicant-progress-controls select { width: 100%; min-width: 0; height: 44px; box-sizing: border-box; }
+.applicant-progress-controls { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(100px, 1fr) minmax(160px, 1.3fr); align-items: start; gap: 16px; }
+.applicant-progress-controls .field { margin: 0; min-width: 0; line-height: 18px; gap: 7px; }
+.applicant-progress-controls select, .applicant-progress-controls textarea { width: 100%; min-width: 0; height: 44px; min-height: 44px; box-sizing: border-box; }
 .applicant-progress-controls > button, .applicant-progress-controls > .applicant-schedule-interview { display: inline-flex; align-items: center; justify-content: center; height: 44px; min-height: 44px; padding: 10px 16px; box-sizing: border-box; border: 1px solid #223e76; border-radius: 8px; text-decoration: none; }
-.applicant-progress-controls > button { background: #223e76; color: #fff; }
+.applicant-progress-controls > button { background: #223e76; color: #fff; margin-top: 25px; }
 .applicant-progress-controls > .applicant-schedule-interview { background: #fff; color: #223e76; }
-@media (max-width: 650px) { .applicant-progress-controls { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 650px) { .applicant-progress-controls { grid-template-columns: minmax(0, 1fr); } .applicant-progress-controls > button { margin-top: 0; } }
 
 
 .applicant-progress-card { scroll-margin-top: 24px; }
@@ -94,3 +94,12 @@
 .applicant-score-table-wrap .recruiter-applicants-full-table .application-update-form { gap: 6px; }
 .applicant-score-table-wrap .recruiter-applicants-full-table .application-update-form select { flex: 1 1 90px; width: 90px; min-width: 0; font-size: 12px; }
 .applicant-score-table-wrap .recruiter-applicants-full-table .application-update-form button { font-size: 12px; padding: 8px; }
+
+.interview-attendance-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; }
+.interview-attendance-actions > .attendance-workspace-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 12px 18px; box-sizing: border-box; border: 1px solid #233f78; border-radius: 8px; background: #233f78; color: #fff; font-weight: 600; text-decoration: none; text-align: center; line-height: 1.4; }
+
+/* Space candidate background details without affecting other applicant cards. */
+.applicant-candidate-profile { padding: 24px; }
+.applicant-candidate-profile > h2 { margin: 0 0 20px; }
+.applicant-candidate-profile > p { margin: 0 0 14px; line-height: 1.7; }
+.applicant-candidate-profile > p:last-child { margin-bottom: 0; }

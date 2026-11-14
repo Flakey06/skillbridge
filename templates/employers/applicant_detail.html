@@ -61,12 +61,12 @@
                     <div class="applicant-score-detail-header">
                         <div class="applicant-score-detail-copy">
                             <h2 id="predicted-job-fit-heading">Predicted Job Fit</h2>
-                            <p>{{ ml_prediction.label|default:"Profile screening prediction unavailable." }}</p>
+                            <p>{{ ml_prediction.label|default:"No prediction was saved with this application." }}</p>
                         </div>
                         {% include "components/compatibility_score.html" with label="Predicted Job Fit" score=ml_prediction.score hide_label=True %}
                     </div>
                     {% if ml_prediction %}<p class="sub">{{ ml_prediction.note }}</p>{% endif %}
-                    <p>This uses the current profile and broad job role, not the selected resume or detailed job requirements. It is separate from Skill Compatibility and Predicted Job Fit.</p>
+                    <p>Saved at submission using the same resume–job model shown to the candidate. Later profile or job edits do not change this application’s saved prediction.</p>
                 </section>
             {% else %}
                 <p class="sub">Applicant ranking and readiness breakdown are SkillBridge Pro features.</p>
@@ -81,7 +81,7 @@
             {% endif %}
         </div>
 
-        <div class="card">
+        <div class="card applicant-candidate-profile">
             <h2>Candidate profile</h2>
             <p><b>Career:</b> {{ profile.profile_data.career|default:"Not provided" }}</p>
             <p><b>Specialisation:</b> {{ profile.profile_data.specialisation|default:"Not provided" }}</p>
@@ -117,7 +117,10 @@
                 <label class="field">Attendance<select name="attendance_status"><option value="scheduled"{% if interview.attendance_status == 'scheduled' %} selected{% endif %}>Scheduled</option><option value="attended"{% if interview.attendance_status == 'attended' %} selected{% endif %}>Attended</option><option value="no_show"{% if interview.attendance_status == 'no_show' %} selected{% endif %}>No-show</option></select></label>
                 <label class="field span2">Attendance or serious-concern note<textarea name="recruiter_feedback" rows="3" placeholder="Only add context about attendance or a serious concern">{{ interview.recruiter_feedback }}</textarea></label>
                 <label class="experience-current span2"><input type="checkbox" name="serious_concern" value="yes"{% if interview.serious_concern %} checked{% endif %}> Record a serious interview concern for blacklist review</label>
-                <div class="static-page-actions span2"><button class="button" type="submit">Save attendance</button><a class="button" href="{% url 'recruiter_interview_review' interview.pk %}">Open Interview Workspace</a></div>
+                <div class="static-page-actions span2 interview-attendance-actions">
+                    <button class="button" type="submit">Save attendance</button>
+                    <a class="attendance-workspace-button" href="{% url 'recruiter_interview_review' interview.pk %}">Open Interview Workspace</a>
+                </div>
             </form>{% endfor %}
         </div>{% endif %}
 
@@ -198,7 +201,7 @@
         <form method="post" action="{% url 'recruiter_applicant_detail' application.id %}#update-progress" class="applicant-progress-controls">
             {% csrf_token %}
             <label class="field" for="{{ status_form.status.id_for_label }}">Status{{ status_form.status }}{{ status_form.status.errors }}</label>
-            <label class="field">Review note <textarea name="review_note" rows="3" placeholder="Optional reason or internal review note"></textarea></label>
+            <label class="field">Review note <textarea name="review_note" rows="1" placeholder="Optional reason or internal review note"></textarea></label>
             <button class="primary" type="submit">Save</button>
             {% if application.status == 'shortlisted' %}<a class="button applicant-schedule-interview" href="{% url 'recruiter_calendar' %}?application={{ application.id }}">Schedule Interview</a>{% endif %}
         </form>

@@ -102,7 +102,12 @@ class CandidateProfileForm(forms.Form):
     experience_entries = forms.JSONField(required=False, widget=forms.HiddenInput)
     certifications = forms.CharField(required=False, widget=forms.HiddenInput)
     certification_entries = forms.JSONField(required=False, widget=forms.HiddenInput)
-    skills = forms.CharField(label="Technical skills and technology stack", required=False, widget=forms.Textarea(attrs={"rows": 4}))
+    skills = forms.CharField(
+        label="Technical skills and technology stack",
+        required=False,
+        help_text="Separate skills with commas, rather than bullet points. For example: Python, SQL, Excel, Communication.",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
     portfolio = forms.CharField(label="Project portfolio links", required=False, widget=forms.Textarea(attrs={"rows": 3}))
     awards = forms.CharField(label="Awards and achievements", required=False, widget=forms.Textarea(attrs={"rows": 3}))
     linkedin = forms.CharField(label="LinkedIn profile", required=False, max_length=300)

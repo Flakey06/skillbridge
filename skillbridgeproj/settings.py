@@ -171,8 +171,6 @@ STRIPE_PRICE_ID = os.getenv('STRIPE_PRICE_ID', '')
 PRO_PLAN_AMOUNT_CENTS = int(os.getenv('PRO_PLAN_AMOUNT_CENTS', '900'))
 PRO_PLAN_CURRENCY = os.getenv('PRO_PLAN_CURRENCY', 'sgd')
 JOB_REFERENCE_CSV = Path(os.getenv('JOB_REFERENCE_CSV') or BASE_DIR / 'data' / 'all_job_post.csv')
-ML_SCREENING_CSV = Path(os.getenv('ML_SCREENING_CSV') or BASE_DIR / 'data' / 'AI_Resume_Screening.csv')
-ML_MODEL_PATH = Path(os.getenv('ML_MODEL_PATH') or BASE_DIR / 'data' / 'ml_models' / 'suitability_model.joblib')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

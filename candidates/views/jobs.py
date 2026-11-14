@@ -73,10 +73,6 @@ def jobs(request):
 @candidate_required
 def applications(request):
     application_list = JobApplication.objects.filter(candidate=request.user).select_related("job__company")
-    for application in application_list:
-        breakdown = application.match_breakdown or {}
-        prediction = breakdown.get("resume_relevance", breakdown.get("ai_match", {}))
-        application.saved_job_fit = prediction.get("earned")
     return render(request, "candidates/applications.html", _context(request, applications=application_list))
 
 

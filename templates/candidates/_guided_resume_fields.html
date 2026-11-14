@@ -26,7 +26,9 @@
     <section class="guided-resume-section">{% include "candidates/_native_entries.html" with entry_form=resume_form kind="experience" %}</section>
     <section class="guided-resume-section">{% include "candidates/_native_entries.html" with entry_form=resume_form kind="certification" %}</section>
     <section class="guided-resume-section"><h3>Skills, work and achievements</h3><div class="form-grid">
-        <label class="field span2">{% include "components/field_label.html" with field=resume_form.skills %}{{ resume_form.skills }}{{ resume_form.skills.errors }}</label>
+        <label class="field span2">{% include "components/field_label.html" with field=resume_form.skills %}{{ resume_form.skills }}
+                        <small class="muted" id="id_skills_helptext">{{ resume_form.skills.help_text }}</small>
+                        {{ resume_form.skills.errors }}</label>
         <label class="field span2">{% include "components/field_label.html" with field=resume_form.portfolio %}{{ resume_form.portfolio }}{{ resume_form.portfolio.errors }}</label>
         <label class="field span2">{% include "components/field_label.html" with field=resume_form.awards %}{{ resume_form.awards }}{{ resume_form.awards.errors }}</label>
         <label class="field span2">{% include "components/field_label.html" with field=resume_form.linkedin %}{{ resume_form.linkedin }}{{ resume_form.linkedin.errors }}</label>

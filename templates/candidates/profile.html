@@ -92,7 +92,9 @@
                 <div class="profile-form-section-heading"><h3>Certifications &amp; skills</h3></div>
                 <div class="form-grid">
 {% include "candidates/_native_entries.html" with entry_form=form kind="certification" %}
-                    <label class="field span2">{% include "components/field_label.html" with field=form.skills %}{{ form.skills }}{{ form.skills.errors }}</label>
+                    <label class="field span2">{% include "components/field_label.html" with field=form.skills %}{{ form.skills }}
+                        <small class="muted" id="id_skills_helptext">{{ form.skills.help_text }}</small>
+                        {{ form.skills.errors }}</label>
                 </div>
             </section>
             <section class="profile-form-section" id="profile-connections">

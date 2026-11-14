@@ -48,8 +48,10 @@
                 <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">{{ interview.application.candidate.username }}</span></div>
                 <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</p>
                 <p class="sub">{% if interview.candidate_response == "accepted" %}Candidate accepted this date{% else %}Awaiting candidate approval{% endif %}</p>
-                <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule</a>
-                <a class="button small" href="{% url 'recruiter_interview_review' interview.id %}">Open Interview Workspace</a>
+                <div class="recruiter-interview-actions">
+                    <a class="interview-action-outline" href="?edit={{ interview.id }}#interview-editor">Reschedule</a>
+                    <a class="interview-action-primary" href="{% url 'recruiter_interview_review' interview.id %}">Open Interview Workspace</a>
+                </div>
                 {% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Join external call</a>{% endif %}
             </div>
             {% empty %}

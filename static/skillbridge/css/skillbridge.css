@@ -5,7 +5,7 @@
 @import url("shared/tables-and-dialogs.css");
 @import url("shared/theme.css");
 @import url("accounts/authentication.css");
-@import url("calendar/workspace.css?v=create-icon-3");
+@import url("calendar/workspace.css?v=interview-accept-spacing-6");
 @import url("calendar/desktop-layout.css");
 @import url("shared/dashboards.css");
 @import url("candidates/learning-and-resumes.css");
@@ -17,9 +17,9 @@
 @import url("accounts/forms-and-settings.css");
 @import url("candidates/certification-forms.css");
 @import url("jobs/jobs-and-applicants.css?v=compact-scores-2");
-@import url("recruiters/applicant-previews.css?v=single-line-applicants-3");
+@import url("recruiters/applicant-previews.css?v=candidate-profile-spacing-6");
 @import url("jobs/detail-and-comparison.css");
-@import url("recruiters/reference-suggestions.css");
+@import url("recruiters/reference-suggestions.css?v=listing-field-spacing-1");
 @import url("shared/typography.css");
 @import url("shared/native-controls.css?v=compact-cv-1");
 @import url("administration/statistics-interactions.css?v=custom-properties-1");

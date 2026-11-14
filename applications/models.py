@@ -59,6 +59,22 @@ class JobApplication(models.Model):
             )
         ]
 
+    @property
+    def saved_job_fit(self):
+        """Submission-time Ridge prediction shared by candidates and recruiters."""
+        breakdown = self.match_breakdown or {}
+        prediction = breakdown.get("resume_relevance", breakdown.get("ai_match", {}))
+        return prediction.get("earned") if isinstance(prediction, dict) else None
+
+    @property
+    def job_fit_prediction(self):
+        score = self.saved_job_fit
+        return {
+            "score": score,
+            "label": "Saved resume–job prediction" if score is not None else "No prediction was saved with this application.",
+            "note": "Ridge Regression prediction using the submitted resume and job details at submission. Interpret it with caution; it is not a probability of being hired.",
+        }
+
     def __str__(self):
         return f"{self.candidate.username} — {self.job.title}"
 

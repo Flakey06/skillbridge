@@ -32,10 +32,13 @@
     <h2>Upcoming interviews</h2>
     {% for interview in upcoming_interviews %}
     <div class="notification-item">
-        <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">Interview</span></div>
+        <div class="candidate-interview-heading">
+            <b>{{ interview.application.job.title }}</b>
+            <span class="pill progress-green">Interview</span>
+        </div>
         <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT · {{ interview.application.job.company.name }}</p>
         {% if interview.candidate_response == "pending" %}
-        <form method="post">{% csrf_token %}<input type="hidden" name="interview_id" value="{{ interview.id }}"><button class="primary small" name="action" value="accept_date">Accept interview date</button></form>
+        <form method="post" class="candidate-interview-accept">{% csrf_token %}<input type="hidden" name="interview_id" value="{{ interview.id }}"><button class="primary small" name="action" value="accept_date">Accept interview date</button></form>
         {% else %}<span class="pill progress-green">Date accepted</span>{% endif %}
         <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule / notes</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Join external call</a>{% endif %}
     </div>

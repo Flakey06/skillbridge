@@ -1,26 +1,10 @@
 from django.test import TestCase
 from types import SimpleNamespace
 
-from .ml_model import _model_path, evaluate_model, initialise_model
 from .services import calculate_match
 
 
-class MlModelEvaluationTests(TestCase):
-    def test_baseline_evaluation_reports_metrics_without_leakage_fields(self):
-        results = evaluate_model()
-
-        self.assertEqual(results["records"], 1000)
-        self.assertGreaterEqual(results["accuracy"], 0)
-        self.assertLessEqual(results["accuracy"], 1)
-        self.assertIn("AI Score (0-100)", results["excluded_fields"])
-        self.assertNotIn("AI Score (0-100)", results.keys())
-
-    def test_persisted_joblib_model_can_be_loaded(self):
-        model = initialise_model()
-
-        self.assertTrue(_model_path().is_file())
-        self.assertTrue(hasattr(model, "predict_proba"))
-
+class SkillEvidenceTests(TestCase):
     def test_weighted_skill_match_uses_skill_and_evidence_weights(self):
         candidate = SimpleNamespace(
             profile=SimpleNamespace(
@@ -52,3 +36,18 @@ class MlModelEvaluationTests(TestCase):
         self.assertEqual(missing, [])
         self.assertEqual(breakdown["skill_match"]["earned"], 70)
         self.assertEqual(breakdown["evidence_match"]["earned"], 30)
+
+
+class RidgePredictionTests(TestCase):
+    def test_active_model_is_ridge_and_returns_a_bounded_prediction(self):
+        from sklearn.linear_model import Ridge
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from .ml import DATASET_PATH, _trained_model, predict_ai_compatibility
+        pipeline, rows = _trained_model(DATASET_PATH.stat().st_mtime_ns)
+        self.assertIsInstance(pipeline.steps[0][1], TfidfVectorizer)
+        self.assertIsInstance(pipeline.steps[-1][1], Ridge)
+        self.assertGreaterEqual(rows, 10)
+        score, metadata = predict_ai_compatibility('Python SQL reporting project', 'Data analyst using SQL and Python')
+        self.assertGreaterEqual(score, 0)
+        self.assertLessEqual(score, 100)
+        self.assertEqual(metadata['mode'], 'dataset')

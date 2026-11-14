@@ -1,6 +1,5 @@
 """Applicant review and application status updates."""
 
-from matching.ml_model import predict_suitability
 from .bulk_status import update_selected_applicants
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -134,7 +133,7 @@ def applicants(request):
         ])
     if has_pro:
         for application in applications:
-            application.ml_prediction = predict_suitability(application.candidate, application.job)
+            application.ml_prediction = application.job_fit_prediction
     selection_params = request.GET.copy()
     if selection_params.get("select") == "1":
         selection_params.pop("select", None)
@@ -173,7 +172,7 @@ def applicant_detail(request, application_id):
     evaluation = ApplicantEvaluation.objects.filter(application=application).first()
     candidate_profile = getattr(application.candidate, "candidate_profile", None)
     profile = getattr(application.candidate, "profile", None)
-    ml_prediction = predict_suitability(application.candidate, application.job) if has_pro else None
+    ml_prediction = application.job_fit_prediction if has_pro else None
     if request.method == "POST" and request.POST.get("action") == "blacklist":
         reason = request.POST.get("blacklist_reason", "").strip()
         if blacklist_entry:

@@ -3,7 +3,6 @@ from django.shortcuts import get_object_or_404, render
 
 from accounts.decorators import recruiter_required
 from applications.models import JobApplication
-from matching.ml_model import predict_suitability
 from .common import _context
 
 
@@ -22,7 +21,7 @@ def compare_candidates(request, application_id):
     has_pro = profile.is_pro if profile else False
     for application in (current, other):
         if application is not None and has_pro:
-            application.ml_prediction = predict_suitability(application.candidate, application.job)
+            application.ml_prediction = application.job_fit_prediction
     return render(request, "employers/compare_candidates.html", _context(
         request, application=current, comparison_application=other, comparison_choices=choices,
     ))
