@@ -1,0 +1,38 @@
+        <section class="stack">
+            <div class="interview-panel-heading"><h2>{% if stage == "during" %}Questions And Live Answers{% else %}Check Answers And Ratings{% endif %}</h2>
+                <details class="interview-inline-help"><summary aria-label="About questions and ratings">ⓘ</summary><div>Sample questions use the job’s skills and role. Edit them to match what you asked. Rate demonstrated evidence for this job, not transcript similarity. Expand a question to edit its answer and rating.</div></details>
+            </div>
+            {{ question_formset.management_form }}{{ question_formset.non_form_errors }}
+            {% for question in question_formset %}
+            <details class="card interview-question-card"{% if forloop.first or question.errors or not question.question.value %} open{% endif %}>
+                <summary><span class="interview-question-title"><small>Question {{ forloop.counter }}</small><strong>{{ question.question.value|default:"New question"|truncatewords:14 }}</strong></span>
+                    <span class="interview-question-status">{% if question.errors %}Check inputs{% elif stage == 'after' and not question.answer.value %}Needs review{% elif stage == 'during' and question.live_answer.value %}Notes added{% elif question.rating.value %}Rated {{ question.rating.value }}/5{% else %}Not rated{% endif %}</span>
+                </summary>
+                <fieldset class="stack interview-review-question"><legend class="interview-visually-hidden">Question {{ forloop.counter }}</legend>{{ question.non_field_errors }}
+                <label class="field">Question{{ question.question }}{{ question.question.errors }}</label>
+                {% if stage == 'after' and question.source_question.value %}<p class="interview-review-source"><strong>Transcript question:</strong> {{ question.source_question.value }}<br>{{ question.match_note.value }}</p>{% endif %}
+                {{ question.source_question }}{{ question.match_note }}
+                {% if stage == 'during' %}
+                <label class="field">{{ question.live_answer.label }}{{ question.live_answer }}{{ question.live_answer.errors }}</label>
+                {{ question.answer.as_hidden }}
+                {% else %}
+                {{ question.live_answer.as_hidden }}
+                <div class="interview-answer-comparison">
+                    <div><h3>Your Interview Notes</h3><p class="interview-live-answer">{{ question.live_answer.value|default:"No answer recorded during the interview." }}</p></div>
+                    <div><label class="field">Transcript answer — check and edit{{ question.answer }}{{ question.answer.errors }}</label>
+                    {% if not question.answer.value %}<p class="interview-needs-review">Needs review: no transcript answer matched. This does not mean the candidate left the question unanswered.</p>{% endif %}</div>
+                </div>
+                {% endif %}
+                <label class="field">Rating (1–5){{ question.rating }}{{ question.rating.errors }}</label>
+                <button class="interview-question-delete" type="submit" name="remove_question" value="{{ forloop.counter0 }}" formnovalidate aria-label="Delete question {{ forloop.counter }}" title="Delete question">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>
+                </button>
+                </fieldset>
+            </details>
+            {% endfor %}
+            <button class="button" name="action" value="add_question" type="submit">+ Add Question</button>
+            {% if stage == 'after' and additional_questions %}
+            <section class="card stack"><h3>Other Transcript Questions</h3><p>These questions are not linked to your prepared list. Check for duplicates before adding them.</p>
+            {% for extra in additional_questions %}<div class="interview-extra-question"><p><strong>{{ extra.question }}</strong></p><p>{{ extra.answer|default:"No following candidate answer detected — needs review." }}</p><button class="button small" type="submit" name="add_transcript_question" value="{{ forloop.counter0 }}">Add To Review</button></div>{% endfor %}
+            </section>{% endif %}
+        </section>

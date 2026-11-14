@@ -192,3 +192,53 @@ Sarah Chen: I compared revenue files and found cancelled orders in one total. Th
         question = response.context['question_formset'].forms[0]
         self.assertFalse(question['answer'].value())
         self.assertContains(response, 'No answers could be matched.')
+
+    def test_stage_switch_saves_live_answers_without_overwriting_transcript_review(self):
+        data = self.payload('stage_after')
+        data['stage'] = 'during'
+        data['questions-0-live_answer'] = 'My quick interview notes'
+        data['questions-0-answer'] = 'Previously checked transcript answer'
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, self.url + '?stage=after')
+        saved = InterviewReview.objects.get(interview=self.interview)
+        self.assertEqual(saved.questions[0]['live_answer'], 'My quick interview notes')
+        self.assertEqual(saved.questions[0]['answer'], 'Previously checked transcript answer')
+        after = self.client.get(self.url, {'stage': 'after'})
+        self.assertContains(after, 'Your Interview Notes')
+        self.assertContains(after, 'My quick interview notes')
+        self.assertContains(after, 'Previously checked transcript answer')
+        during = self.client.get(self.url)
+        self.assertNotContains(during, 'Load Transcript')
+        self.assertContains(during, 'Save Interview Notes')
+
+    def test_matching_keeps_live_answer_and_adds_transcript_answer_separately(self):
+        data = self.payload('analyse')
+        data['stage'] = 'after'
+        data['questions-0-live_answer'] = 'Mentioned Python script; verify time savings'
+        response = self.client.post(self.url, data)
+        question = response.context['question_formset'].forms[0]
+        self.assertEqual(question['live_answer'].value(), 'Mentioned Python script; verify time savings')
+        self.assertIn('saved two hours', question['answer'].value())
+        self.assertEqual(response.context['stage'], 'after')
+
+    def test_unlinked_transcript_question_can_be_added_for_review(self):
+        data = self.payload('analyse')
+        data['stage'] = 'after'
+        data['questions-0-question'] = 'Explain database replication failures'
+        response = self.client.post(self.url, data)
+        self.assertContains(response, 'Needs review: no transcript answer matched.')
+        self.assertEqual(len(response.context['additional_questions']), 1)
+        data['add_transcript_question'] = '0'
+        response = self.client.post(self.url, data)
+        forms = response.context['question_formset'].forms
+        self.assertEqual(len(forms), 2)
+        self.assertIn('I built a Python script', forms[1]['answer'].value())
+        self.assertFalse(forms[1]['live_answer'].value())
+
+    def test_transcript_question_without_detected_answer_is_flagged(self):
+        data = self.payload('analyse')
+        data['stage'] = 'after'
+        data['transcript'] += '\n3\n00:01:00.000 --> 00:01:05.000\nAlex Johnson: How would you validate a new requirement?\n'
+        response = self.client.post(self.url, data)
+        self.assertContains(response, 'How would you validate a new requirement?')
+        self.assertContains(response, 'No following candidate answer detected')

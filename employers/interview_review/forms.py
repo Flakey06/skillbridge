@@ -23,6 +23,7 @@ class ReviewForm(forms.Form):
 
 class QuestionForm(forms.Form):
     question = forms.CharField(max_length=1000, widget=forms.Textarea(attrs={'rows': 2}))
+    live_answer = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 4}), label='Answer recorded during the interview')
     answer = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 4}), label='Candidate answer — review and edit')
     rating = forms.TypedChoiceField(required=False, coerce=int, empty_value=None,
         choices=[('', 'Not rated')] + [(i, text) for i, text in enumerate([

@@ -32,7 +32,7 @@ def tokens(text):
     return set(re.findall(r'[a-z0-9+#]+', text.lower())) - STOP
 
 
-def suggest_answers(rows, turns, candidate_speaker):
+def question_answer_exchanges(turns, candidate_speaker):
     exchanges = []
     for index, turn in enumerate(turns):
         if turn['speaker'] == candidate_speaker:
@@ -48,8 +48,12 @@ def suggest_answers(rows, turns, candidate_speaker):
             if reply['speaker'] != candidate_speaker:
                 break
             answers.append(reply['text'])
-        if answers:
-            exchanges.append((turn['text'], '\n'.join(answers)))
+        exchanges.append((turn['text'], '\n'.join(answers)))
+    return exchanges
+
+
+def suggest_answers(rows, turns, candidate_speaker):
+    exchanges = question_answer_exchanges(turns, candidate_speaker)
     result = []
     for row in rows:
         row = dict(row)
@@ -57,6 +61,8 @@ def suggest_answers(rows, turns, candidate_speaker):
         if not row.get('answer'):
             ranked = []
             for question, answer in exchanges:
+                if not answer:
+                    continue
                 left, right = tokens(row['question']), tokens(question)
                 coverage = len(left & right) / len(left) if left else 0
                 similarity = SequenceMatcher(None, row['question'].lower(), question.lower()).ratio()
@@ -73,3 +79,12 @@ def suggest_answers(rows, turns, candidate_speaker):
 
 def extractive_summary(rows):
     return '\n\n'.join(f"{row['question']}\n{row['answer'][:600]}" for row in rows if row.get('answer'))
+
+
+def additional_transcript_questions(rows, turns, candidate_speaker):
+    """Questions not linked to the prepared list; suggestions require recruiter review."""
+    linked = {(row.get('source_question') or '').strip().casefold() for row in rows}
+    prepared = {(row.get('question') or '').strip().casefold() for row in rows}
+    return [{'question': question, 'answer': answer} for question, answer in
+            question_answer_exchanges(turns, candidate_speaker)
+            if question.strip().casefold() not in linked | prepared]

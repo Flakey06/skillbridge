@@ -2,11 +2,12 @@
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from accounts.decorators import recruiter_required
 from applications.models import Interview, InterviewReview
 from employers.interview_review.forms import ReviewForm, QuestionFormSet
-from employers.interview_review.transcripts import parse_turns, sample_questions, suggest_answers, extractive_summary
+from employers.interview_review.transcripts import parse_turns, sample_questions, suggest_answers, extractive_summary, additional_transcript_questions
 from .common import _context
 
 
@@ -20,7 +21,11 @@ def interview_review(request, interview_id):
                'overall_notes': saved.overall_notes if saved else '',
                'loose_notes': saved.loose_notes if saved else ''}
     rows = saved.questions if saved else [{'question': q} for q in sample_questions(interview.application.job)]
+    stage = request.POST.get('stage', request.GET.get('stage', 'during'))
+    stage = stage if stage in {'during', 'after'} else 'during'
     data = request.POST.copy() if request.method == 'POST' else None
+    if data is not None and data.get('action') in {'load', 'analyse'}:
+        stage = 'after'
     upload_error = ''
     if data is not None and request.FILES.get('transcript_file'):
         upload = request.FILES['transcript_file']
@@ -38,6 +43,9 @@ def interview_review(request, interview_id):
     text = data.get('transcript', '') if data is not None else initial['transcript']
     turns = parse_turns(text)
     speakers = list(dict.fromkeys(turn['speaker'] for turn in turns))
+    extra_index = data.get('add_transcript_question', '') if data is not None else ''
+    if extra_index.isdecimal():
+        data['action'] = 'add_transcript_question'
     form = ReviewForm(data, request.FILES or None, initial=initial, speakers=speakers)
     formset = QuestionFormSet(data, initial=rows, prefix='questions')
     if data is not None:
@@ -62,7 +70,16 @@ def interview_review(request, interview_id):
                         rows.append({'question': question[:1000]})
                         existing.add(question.casefold())
                 messages.info(request, 'Added note lines as questions. Review their wording and save the workspace to keep them.')
+            elif action == 'add_transcript_question':
+                extras = additional_transcript_questions(rows, turns, form.cleaned_data['candidate_speaker'])
+                index = int(extra_index)
+                if index < len(extras) and len(rows) < 30:
+                    extra = extras[index]
+                    rows.append({'question': extra['question'][:1000], 'answer': extra['answer'],
+                                 'source_question': extra['question'], 'match_note': 'Added from transcript; review the answer.'})
+                stage = 'after'
             elif action == 'analyse':
+                stage = 'after'
                 speaker = form.cleaned_data['candidate_speaker']
                 if not turns:
                     form.add_error('transcript', 'No speaker-labelled turns found. Use lines such as “Alex: question” and “Sarah: answer”.')
@@ -79,7 +96,7 @@ def interview_review(request, interview_id):
                         messages.warning(request, 'No answers could be matched. Check that the selected candidate speaker is the person answering questions, and that your question wording matches the transcript.')
                     if not data.get('summary', '').strip():
                         data['summary'] = extractive_summary(rows)
-            elif action in {'save', 'remove_question'}:
+            elif action in {'save', 'remove_question', 'stage_during', 'stage_after'}:
                 with transaction.atomic():
                     InterviewReview.objects.update_or_create(interview=interview, defaults={
                         'candidate_speaker': form.cleaned_data['candidate_speaker'], 'questions': rows,
@@ -88,16 +105,24 @@ def interview_review(request, interview_id):
                     interview.transcript = form.cleaned_data['transcript']
                     interview.summary = form.cleaned_data['summary']
                     interview.save(update_fields=['transcript', 'summary'])
-                messages.success(request, 'Question removed and workspace saved.' if action == 'remove_question' else 'Interview review saved.')
-                return redirect('recruiter_interview_review', interview_id=interview.pk)
+                if action.startswith('stage_'):
+                    stage = action.removeprefix('stage_')
+                messages.success(request, 'Question removed and workspace saved.' if action == 'remove_question' else 'Interview notes and review saved.')
+                return redirect(reverse('recruiter_interview_review', args=[interview.pk]) + f'?stage={stage}')
             # Redisplay preview/add actions without saving or losing the entered text.
             if form_valid:
                 form = ReviewForm(initial={key: data.get(key, '') for key in initial}, speakers=speakers)
                 formset = QuestionFormSet(initial=rows, prefix='questions')
+    visible_rows = [question.initial if not question.is_bound else {
+        key: question[key].value() for key in ('question', 'answer', 'source_question')
+    } for question in formset.forms]
+    selected_speaker = form['candidate_speaker'].value()
+    additional_questions = additional_transcript_questions(visible_rows, turns, selected_speaker) if selected_speaker else []
     speaker_previews = [{'name': name, 'example': next(turn['text'][:240] for turn in turns if turn['speaker'] == name)} for name in speakers]
     return render(request, 'employers/interview_review.html', _context(request,
         interview=interview, form=form, question_formset=formset,
-        transcript_turn_count=len(turns), speaker_previews=speaker_previews))
+        transcript_turn_count=len(turns), speaker_previews=speaker_previews,
+        stage=stage, additional_questions=additional_questions))
 
 
 @recruiter_required
