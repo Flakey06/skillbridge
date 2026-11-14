@@ -25,7 +25,7 @@ class MlModelEvaluationTests(TestCase):
         self.assertTrue(_model_path().is_file())
         self.assertTrue(hasattr(model, "predict_proba"))
 
-    def test_weighted_skill_match_uses_skill_and_evidence_weights(self):
+    def test_skill_and_evidence_scores_remain_separate(self):
         candidate = SimpleNamespace(
             profile=SimpleNamespace(
                 profile_data={
@@ -51,7 +51,14 @@ class MlModelEvaluationTests(TestCase):
 
         score, matched, missing, breakdown, _assessment = calculate_match(candidate, job)
 
-        self.assertEqual(score, 53)
+        self.assertEqual(score, 100)
         self.assertEqual(sorted(matched), ["Creativity", "UI/UX"])
         self.assertEqual(missing, [])
-        self.assertEqual(breakdown["weighted_skills"]["max"], 75)
+        self.assertEqual(breakdown["skill_match"], {
+            "earned": 100,
+            "max": 100,
+            "reason": "Requested skills found in the profile or submitted resume.",
+            "details": breakdown["skill_match"]["details"],
+        })
+        self.assertEqual(breakdown["evidence_match"]["earned"], 100)
+        self.assertEqual(breakdown["evidence_match"]["max"], 100)

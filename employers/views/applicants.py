@@ -72,6 +72,8 @@ def applicants(request):
     sort = "match" if request.GET.get("sort") == "match" and request.user.profile.is_pro else "newest"
     if sort == "match":
         applications = applications.order_by(F("match_score").desc(nulls_last=True), "-created_at", "-pk")
+    else:
+        applications = applications.order_by("-created_at", "-pk")
 
     if request.method == "POST":
         application = get_object_or_404(applications, pk=request.POST.get("application_id"))

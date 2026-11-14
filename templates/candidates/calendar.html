@@ -28,7 +28,6 @@
         <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.application.job.company.name }}</p>
         <div class="row">
             {% if interview.response_status == 'awaiting' %}<form method="post">{% csrf_token %}<input type="hidden" name="interview_id" value="{{ interview.id }}"><button class="primary small" name="action" value="accept">Accept interview</button></form>{% endif %}
-            {% if interview.response_status == 'accepted' and interview.contact_method == 'video' %}<a class="primary button small" href="{% url 'candidate_interview_room' interview.id %}">Join interview</a>{% endif %}
             <button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}" data-notes="{{ interview.candidate_notes }}">Reschedule / notes</button>
         </div>
     </div>

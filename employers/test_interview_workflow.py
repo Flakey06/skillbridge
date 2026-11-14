@@ -149,7 +149,7 @@ class InterviewSchedulingRulesTests(TestCase):
         self.assertEqual(interview.contact_method, 'phone')
         self.assertEqual(interview.contact_details, '+65 8123 4567')
 
-    def test_video_interview_creates_in_app_jitsi_room(self):
+    def test_video_interview_uses_transcription_workspace_without_built_in_call(self):
         self.application.status = 'shortlisted'
         self.application.save(update_fields=['status'])
         self.client.post(reverse('recruiter_calendar'), {
@@ -158,7 +158,7 @@ class InterviewSchedulingRulesTests(TestCase):
             'contact_method': 'video',
         })
         interview = Interview.objects.get(application=self.application)
-        self.assertTrue(interview.meeting_url.startswith('https://meet.jit.si/skillbridge-'))
+        self.assertEqual(interview.meeting_url, '')
 
         interview.response_status = 'accepted'
         interview.save(update_fields=['response_status'])
@@ -167,10 +167,13 @@ class InterviewSchedulingRulesTests(TestCase):
         workspace_url = reverse('recruiter_interview_workspace', args=[interview.pk])
         self.assertContains(calendar_page, workspace_url)
         workspace = self.client.get(workspace_url)
-        self.assertContains(workspace, 'Embedded Jitsi Meet interview')
-        self.assertContains(workspace, interview.meeting_url)
+        self.assertContains(workspace, 'Start transcription')
+        self.assertContains(workspace, 'Generate summary')
+        self.assertContains(workspace, 'Private recruiter notes')
+        self.assertNotContains(workspace, '<iframe')
+        self.assertNotContains(workspace, 'Jitsi')
 
-    def test_candidate_joins_inside_app_only_after_accepting(self):
+    def test_recruiter_can_generate_and_save_summary_from_transcript_and_notes(self):
         self.application.status = 'interview'
         self.application.save(update_fields=['status'])
         interview = Interview.objects.create(
@@ -178,23 +181,22 @@ class InterviewSchedulingRulesTests(TestCase):
             created_by=self.recruiter,
             scheduled_start='2026-12-01T14:00:00+08:00',
             scheduled_end='2026-12-01T15:00:00+08:00',
-            meeting_url='https://meet.jit.si/skillbridge-test-room',
+            response_status='accepted',
         )
-        self.client.force_login(self.candidate)
-        room_url = reverse('candidate_interview_room', args=[interview.pk])
-        self.assertEqual(self.client.get(room_url).status_code, 404)
-
-        self.client.post(reverse('candidate_calendar'), {
-            'interview_id': interview.pk,
-            'action': 'accept',
+        workspace_url = reverse('recruiter_interview_workspace', args=[interview.pk])
+        response = self.client.post(workspace_url, {
+            'action': 'generate_summary',
+            'transcript': 'Jamie described a Django project. Jamie explained the deployment process.',
+            'notes': 'Strong, specific technical examples.',
         })
 
-        calendar_page = self.client.get(reverse('candidate_calendar'))
-        self.assertContains(calendar_page, room_url)
-        room = self.client.get(room_url)
-        self.assertEqual(room.status_code, 200)
-        self.assertContains(room, 'Embedded Jitsi interview')
-        self.assertContains(room, interview.meeting_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['ok'])
+        self.assertIn('Django project', response.json()['summary'])
+        self.assertIn('Recruiter notes:', response.json()['summary'])
+        interview.refresh_from_db()
+        self.assertEqual(interview.summary, response.json()['summary'])
+        self.assertIn('deployment process', interview.transcript)
 
     def test_candidate_interview_clash_requires_confirmation(self):
         other_job = Job.objects.create(

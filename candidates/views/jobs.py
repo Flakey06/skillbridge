@@ -84,10 +84,7 @@ def applications(request):
     has_pro = _current_profile(request).is_pro
     for application in application_list:
         ml_prediction = predict_suitability(request.user, application.job) if has_pro else None
-        application.overall_score = calculate_overall_suitability(
-            application.match_score,
-            ml_prediction["score"] if ml_prediction else None,
-        )
+        application.predicted_job_fit = ml_prediction["score"] if ml_prediction else None
     return render(request, "candidates/applications.html", _context(request, applications=application_list))
 
 

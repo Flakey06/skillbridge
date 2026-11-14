@@ -7,6 +7,7 @@
     <div>
         <h1 class="preserve-case">{{ application.candidate.username }}</h1>
         <p class="sub">{{ application.job.title }} · {{ application.job.company.name }}</p>
+        <p class="sub">Applied <time datetime="{{ application.created_at|date:'c' }}">{{ application.created_at|date:"d M Y, H:i" }}</time></p>
     </div>
     <div class="row"><a class="button" href="{% url 'recruiter_compare_candidates' application.id %}">Compare Candidates</a><a class="button" href="{% url 'recruiter_applicants' %}">Back to applicants</a></div>
 </div>
@@ -21,7 +22,7 @@
                     <div class="applicant-score-detail-header">
                         <div class="applicant-score-detail-copy">
                             <h2 id="skill-compatibility-heading">Skill Compatibility</h2>
-                            <p class="sub">Saved skill and evidence assessment from this application.</p>
+                            <p class="sub">Requested skills found in the submitted profile or résumé.</p>
                         </div>
                         {% include "components/compatibility_score.html" with label="Skill Compatibility" score=application.match_score hide_label=True %}
                     </div>
@@ -30,7 +31,6 @@
                     <h3>Matched Skills</h3>
                     <ul class="skill-summary-list">{% for skill in application.matched_skills %}<li>{{ skill }}</li>{% empty %}<li>None recorded.</li>{% endfor %}</ul>
                     <p><strong>Readiness:</strong> {{ application.match_assessment|default:"Not calculated" }}</p>
-                    {% if application.match_breakdown %}<div class="score-breakdown">{% for label, component in application.match_breakdown.items %}{% if component.max %}<div class="score-breakdown-item"><span>{{ label|title }}</span><strong>{{ component.earned }}/{{ component.max }} points</strong></div>{% endif %}{% endfor %}</div>{% endif %}
                 </section>
                 <section class="applicant-score-detail" id="predicted-job-fit" tabindex="-1" aria-labelledby="predicted-job-fit-heading">
                     <div class="applicant-score-detail-header">

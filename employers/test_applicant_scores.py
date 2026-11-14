@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -28,6 +29,40 @@ class ApplicantScoreDisplayTests(TestCase):
         self.assertContains(response, '<strong>32%</strong>', html=True)
         self.assertContains(response, '<strong>78%</strong>', html=True)
         self.assertNotContains(response, 'Overall suitability')
+
+    @patch('employers.views.applicants.predict_suitability', return_value={'score': 78})
+    def test_application_date_and_time_are_shown_in_list_and_detail(self, predictor):
+        applied_at = datetime(2026, 11, 14, 2, 30, tzinfo=timezone.utc)
+        JobApplication.objects.filter(pk=self.application.pk).update(created_at=applied_at)
+
+        listing = self.client.get(reverse('recruiter_applicants'))
+        self.assertContains(listing, 'Applied')
+        self.assertContains(listing, '14 Nov 2026')
+        self.assertContains(listing, '10:30')
+
+        detail = self.client.get(reverse('recruiter_applicant_detail', args=[self.application.pk]))
+        self.assertContains(detail, 'Applied')
+        self.assertContains(detail, '14 Nov 2026, 10:30')
+
+    @patch('employers.views.applicants.predict_suitability', return_value={'score': 78})
+    def test_newest_application_is_listed_first(self, predictor):
+        older_candidate = User.objects.create_user(username='older-candidate')
+        older_application = JobApplication.objects.create(
+            candidate=older_candidate,
+            job=self.application.job,
+            match_score=45,
+        )
+        JobApplication.objects.filter(pk=older_application.pk).update(
+            created_at=datetime(2026, 11, 13, 2, 30, tzinfo=timezone.utc)
+        )
+        JobApplication.objects.filter(pk=self.application.pk).update(
+            created_at=datetime(2026, 11, 14, 2, 30, tzinfo=timezone.utc)
+        )
+
+        response = self.client.get(reverse('recruiter_applicants'), {'sort': 'newest'})
+
+        application_ids = [application.pk for application in response.context['applications']]
+        self.assertEqual(application_ids, [self.application.pk, older_application.pk])
 
     @patch('employers.views.applicants.predict_suitability', return_value={'score': 0})
     def test_zero_and_missing_scores_are_distinct(self, predictor):

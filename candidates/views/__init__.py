@@ -22,11 +22,9 @@ from .learning import (
 )
 from .dashboard import dashboard_context
 from .withdrawals import withdraw_application
-from .interviews import interview_room
 
 __all__ = [
     "withdraw_application",
-    "interview_room",
     'CERTIFICATE_FILE_EXTENSIONS',
     'MAX_CERTIFICATE_FILE_SIZE',
     'jobs',

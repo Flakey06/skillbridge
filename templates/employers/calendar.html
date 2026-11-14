@@ -32,7 +32,7 @@
                     <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">{{ interview.application.candidate.username }}</span></div>
                     <p>{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>
                     <p class="sub">Applicant response: {{ interview.get_response_status_display }}</p>
-                    <div class="row">{% if interview.response_status == 'accepted' %}<a class="primary button small" href="{% url 'recruiter_interview_workspace' interview.id %}">Start interview</a>{% else %}<span class="muted">Waiting for applicant confirmation</span>{% endif %}<button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}">Reschedule</button></div>
+                    <div class="row">{% if interview.response_status == 'accepted' %}<a class="primary button small" href="{% url 'recruiter_interview_workspace' interview.id %}">Open interview workspace</a>{% else %}<span class="muted">Waiting for applicant confirmation</span>{% endif %}<button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}">Reschedule</button></div>
                 </div>
             {% empty %}<p class="sub">No upcoming interviews.</p>{% endfor %}
         </div>

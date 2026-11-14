@@ -76,12 +76,11 @@ class ApplicationWorkflowTests(TestCase):
 
         self.assertRedirects(response, reverse("candidate_applications"))
         application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
-        # Two of three skills earn 47 points, plus 3 for declared skills.
-        self.assertEqual(application.match_score, 50)
+        # Skill compatibility and evidence strength are stored separately.
+        self.assertEqual(application.match_score, 67)
         self.assertEqual(application.missing_skills, ["JavaScript"])
-        self.assertEqual(application.match_breakdown["skill_match"]["earned"], 47)
-        self.assertEqual(application.match_breakdown["evidence_match"]["earned"], 3)
-        self.assertEqual(application.match_breakdown["required_skills"], {"earned": 40, "max": 60})
+        self.assertEqual(application.match_breakdown["skill_match"]["earned"], 67)
+        self.assertEqual(application.match_breakdown["evidence_match"]["earned"], 10)
         self.assertEqual(application.tailored_resume, tailored_resume.content)
 
     def test_free_candidate_can_submit_without_a_pro_match_object(self):

@@ -6,7 +6,7 @@
     <div class="static-page-actions"><a class="button" href="{% url 'recruiter_calendar' %}">Calendar</a><a class="button" href="{% url 'recruiter_applicant_detail' application.pk %}">Applicant profile</a></div>
 </div>
 
-<div class="interview-live-layout">
+<div class="interview-live-layout interview-notes-only-layout">
     <aside class="interview-context-pane">
         <section class="card"><h2>Candidate context</h2><p><b>Career:</b> {{ profile.profile_data.career|default:"Not provided" }}</p><p><b>Specialisation:</b> {{ profile.profile_data.specialisation|default:"Not provided" }}</p><p><b>Skills:</b> {{ profile.profile_data.skills|default:"Not provided" }}</p><p><b>Experience:</b> {{ profile.profile_data.experience|default:"Not provided"|linebreaksbr }}</p></section>
         <section class="card"><h2>Role requirements</h2><p><b>Required skills:</b> {{ application.job.required_skills|default:"Not specified" }}</p><p>{{ application.job.description|linebreaksbr }}</p></section>
@@ -14,20 +14,9 @@
     </aside>
 
     <main class="interview-working-pane">
-        <section class="card interview-call-panel" data-call-panel>
-            <div class="section-heading"><div><p class="eyebrow">Interview call</p><h2>{{ meeting_provider }}</h2></div>{% if meeting_url and not meeting_embed_url %}<button class="button" type="button" data-open-call data-call-url="{{ meeting_url }}">Open call window</button>{% endif %}</div>
-            {% if meeting_embed_url %}
-                <div class="interview-video-frame"><iframe src="{{ meeting_embed_url }}#config.prejoinPageEnabled=false" title="Embedded {{ meeting_provider }} interview" allow="camera; microphone; fullscreen; display-capture; autoplay" referrerpolicy="no-referrer" allowfullscreen></iframe></div>
-                <p class="sub">The call stays inside SkillBridge beside the notes workspace. Allow camera and microphone access when prompted.</p>
-            {% elif meeting_url %}
-                <div class="interview-external-call"><strong>{{ meeting_provider }} opens outside the SkillBridge panel</strong><p>Google Meet, Zoom, and Teams normally prevent their meeting pages from being embedded. Open the call window and keep this workspace visible for concurrent notes and transcription.</p></div>
-            {% else %}
-                <div class="interview-external-call"><strong>No video meeting link was added</strong><p>Add a meeting URL when scheduling the interview. Jitsi links can appear inside this panel; Meet, Zoom, and Teams open in a separate call window.</p></div>
-            {% endif %}
-        </section>
         <form method="post" class="card interview-notes-workspace" data-interview-notes-form>
             {% csrf_token %}<input type="hidden" name="action" value="autosave_notes">
-            <div class="section-heading"><div><h2>Live transcript and notes</h2><p class="sub" data-interview-save-status>Changes save automatically</p></div><button class="button" type="button" data-transcription-toggle>Start transcription</button></div>
+            <div class="section-heading"><div><h2>Live transcript and notes</h2><p class="sub" data-interview-save-status>Changes save automatically</p></div><div class="row"><button class="button" type="button" data-transcription-toggle>Start transcription</button><button class="primary" type="button" data-generate-summary>Generate summary</button></div></div>
             <p class="sub">Start only after informing the candidate and obtaining any consent required for recording or transcription. Audio is handled by the browser; SkillBridge saves the resulting text.</p>
             <p class="profile-message" data-transcription-support hidden>Live transcription is not supported by this browser. You can still type or paste a transcript.</p>
             <label class="field">Transcript<textarea name="transcript" rows="13" placeholder="Live speech or typed transcript appears here…">{{ interview.transcript }}</textarea></label>
@@ -49,12 +38,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("[data-open-call]")?.addEventListener("click", (event) => {
-        const url = event.currentTarget.dataset.callUrl;
-        const width = Math.max(720, Math.floor(window.screen.availWidth * .55));
-        const callWindow = window.open(url, "skillbridge-interview-call", `popup=yes,width=${width},height=${window.screen.availHeight},left=0,top=0,resizable=yes`);
-        if (!callWindow) window.location.assign(url);
-    });
     const notesForm = document.querySelector("[data-interview-notes-form]");
     const saveStatus = document.querySelector("[data-interview-save-status]");
     let saveTimer;
@@ -69,6 +52,23 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     notesForm.addEventListener("input", () => { window.clearTimeout(saveTimer); saveStatus.textContent = "Waiting to save…"; saveTimer = window.setTimeout(saveNotes, 700); });
     notesForm.addEventListener("focusout", () => { window.clearTimeout(saveTimer); saveTimer = window.setTimeout(saveNotes, 50); });
+
+    document.querySelector("[data-generate-summary]")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        button.textContent = "Generating…";
+        saveStatus.textContent = "Generating summary…";
+        const data = new FormData(notesForm);
+        data.set("action", "generate_summary");
+        try {
+            const response = await fetch(window.location.href, {method: "POST", body: data, headers: {"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"}, credentials: "same-origin"});
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || "Summary could not be generated.");
+            notesForm.elements.summary.value = payload.summary;
+            saveStatus.textContent = payload.message;
+        } catch (error) { saveStatus.textContent = error.message || "Summary could not be generated."; }
+        finally { button.disabled = false; button.textContent = "Generate summary"; }
+    });
 
     const transcript = notesForm.elements.transcript;
     const transcriptionButton = document.querySelector("[data-transcription-toggle]");

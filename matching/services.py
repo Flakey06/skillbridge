@@ -261,11 +261,12 @@ def _evidence_score(data, resume_text, configured):
         "internship": bool(re.search(r"\b(intern|internship)\b", combined, re.I)),
         "self-proclaimed skills": bool(data.get("skills") or resume_text),
     }
+    total_weight = sum(weights.values()) or 100
     earned = sum(weight for label, weight in weights.items() if evidence.get(label, False))
-    return round(earned * 0.3), {
+    return round(earned * 100 / total_weight), {
         label: {
-            "earned": round(weight * 0.3) if evidence.get(label, False) else 0,
-            "max": round(weight * 0.3),
+            "earned": round(weight * 100 / total_weight) if evidence.get(label, False) else 0,
+            "max": round(weight * 100 / total_weight),
             "reason": f"{label.title()} evidence {'found' if evidence.get(label, False) else 'not found'} in your profile or resume.",
         }
         for label, weight in weights.items()
@@ -289,7 +290,7 @@ def calculate_match(candidate, job):
         }
         return 0, [], [], breakdown, "Insufficient job data"
 
-    all_skills = _dedupe_skills(required_skills + preferred_skills)
+    all_skills = _dedupe_skills(required_skills + preferred_skills + list((job.skill_weights or {}).keys()))
     skill_weights = _configured_weights(
         job.skill_weights,
         {_normalise(skill): 100 / len(all_skills) for skill in all_skills} if all_skills else {},
@@ -299,21 +300,27 @@ def calculate_match(candidate, job):
         key for key in skill_lookup
         if key in candidate_skills or re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", resume_text)
     }
-    skill_points = round(sum(weight for key, weight in skill_weights.items() if key in matched_keys) * 0.7)
+    total_skill_weight = sum(skill_weights.values()) or 100
+    skill_points = round(
+        sum(weight for key, weight in skill_weights.items() if key in matched_keys)
+        * 100 / total_skill_weight
+    )
     skill_reasons = {
         label: {
-            "earned": round(weight * 0.7) if label in matched_keys else 0,
-            "max": round(weight * 0.7),
+            "earned": round(weight * 100 / total_skill_weight) if label in matched_keys else 0,
+            "max": round(weight * 100 / total_skill_weight),
             "reason": f"{skill_lookup.get(label, label.title())} {'was found' if label in matched_keys else 'is missing'} from your profile or resume.",
         }
         for label, weight in skill_weights.items()
     }
     evidence_points, evidence_reasons = _evidence_score(data, resume_text, job.evidence_weights)
     breakdown = {
-        "skill_match": {"earned": skill_points, "max": 70, "reason": "Weighted recruiter skill coverage.", "details": skill_reasons},
-        "evidence_match": {"earned": evidence_points, "max": 30, "reason": "Weighted evidence from projects, internships, and self-declared skills.", "details": evidence_reasons},
+        "skill_match": {"earned": skill_points, "max": 100, "reason": "Requested skills found in the profile or submitted resume.", "details": skill_reasons},
+        "evidence_match": {"earned": evidence_points, "max": 100, "reason": "Independent evidence strength from projects, internships, and self-declared skills.", "details": evidence_reasons},
     }
-    score = sum(component["earned"] for component in breakdown.values())
+    # JobMatch.score is the skill-compatibility percentage. Evidence remains a
+    # separate score in evidence_match and is never added to skill coverage.
+    score = skill_points
     job_text = " ".join(
         (job.title, job.description, job.required_skills, job.preferred_skills)
     )

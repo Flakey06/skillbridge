@@ -97,7 +97,7 @@
                     <option value="{{ item.resume.id }}"{% if item.resume.id|stringformat:"s" == selected_resume_id|stringformat:"s" %} selected{% endif %}>{{ item.resume.title }} — {{ item.type }} — {{ item.version }}{% if has_pro %} — {{ item.fit_score }}% evidence fit — {{ item.ai_compatibility }}% AI compatibility{% if item.resume.id == recommended_resume.resume.id %} — Recommended{% endif %}{% endif %}{% if item.resume.approved_at %} — Reviewed{% else %} — Confirm before applying{% endif %}</option>
                 {% endfor %}
             </select>
-            <small class="muted">Choose the exact resume version to attach. Pro combines transparent evidence fit (70%) with the dataset-trained AI compatibility signal (30%). This is guidance, not a hiring score.</small>
+            <small class="muted">Choose the exact resume version to attach. Skill and model percentages are shown separately and are guidance, not hiring decisions.</small>
         </label>
     </section>
     {% endif %}
@@ -108,7 +108,7 @@
         <div class="section-heading">
             <div>
                 <p class="eyebrow">YOUR READINESS</p>
-                <h2><span class="match-badge match-badge-with-help {% if overall_score <= 40 %}match-badge-low{% elif overall_score <= 70 %}match-badge-medium{% else %}match-badge-high{% endif %}">Overall suitability: {{ overall_score }}%<span class="match-help" role="tooltip">70% comes from your explainable Skill Match and 30% from the historical ML suitability signal.</span></span></h2>
+                <h2>Application insights</h2>
             </div>
             <div>{% if match.assessment %}<span class="pill">{{ match.assessment }}</span>{% endif %}</div>
         </div>
@@ -118,19 +118,11 @@
             <p><strong>Readiness:</strong> {{ match.assessment }}{% if match.assessment == "Early-stage fit" %} — you are still building the evidence or skills needed for this role.{% endif %}</p>
         </div>
         {% if match.missing_skills %}<a class="button small" href="{% url 'candidate_learning' %}?job={{ job.id }}">See certifications to bridge this gap →</a>{% endif %}
-        <h3>How your overall suitability is assessed</h3>
-        <p class="muted">Skill Match contributes 70%; the historical ML suitability signal contributes 30%. This is guidance, not an automatic hiring decision.</p>
+        <h3>Separate application insights</h3>
+        <p class="muted">Skill Compatibility and Predicted Job Fit are separate signals. They are not merged into an ATS score.</p>
         <div class="score-breakdown">
-            {% for label, component in match.score_breakdown.items %}
-                <div class="score-breakdown-item">
-                    <span>{% if label == "required_skills" %}Required Skills{% elif label == "preferred_skills" %}Preferred Skills{% elif label == "career_alignment" %}Career Alignment{% elif label == "experience_level" %}Experience Level{% elif label == "profile_evidence" %}Profile Evidence{% else %}{{ label|title }}{% endif %}</span>
-                    <strong>{{ component.earned }}/{{ component.max }} points</strong>
-                </div>
-            {% endfor %}
-        </div>
-        <div class="score-breakdown">
-            <div class="score-breakdown-item"><span>Skill Match (70%)</span><strong>{{ match.score }}%</strong></div>
-            <div class="score-breakdown-item"><span>ML suitability signal (30%)</span><strong>{{ ml_prediction.score }}%</strong></div>
+            <div class="score-breakdown-item"><span>Skill Compatibility</span><strong>{{ match.score }}%</strong></div>
+            <div class="score-breakdown-item"><span>Predicted Job Fit</span><strong>{{ ml_prediction.score }}%</strong></div>
         </div>
     </div>
     {% else %}

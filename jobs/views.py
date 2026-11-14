@@ -202,9 +202,8 @@ def detail(request, job_id):
                 application = form.save(commit=False)
                 application.candidate = request.user
                 application.job = job
-                # Every submitted application receives a persisted recruiter-facing
-                # ATS score. Candidate plan access only controls whether the
-                # candidate can see insights; it must not leave recruiter data blank.
+                # Persist the submission-time skill score and its separate evidence
+                # breakdown. Candidate plan access only controls insight visibility.
                 application_match = match or get_or_update_match(request.user, job)
                 application.match_score = application_match.score
                 application.matched_skills = application_match.matched_skills

@@ -1,7 +1,5 @@
 """Recruiter interviews, scheduling, and reschedule requests."""
 
-from uuid import uuid4
-
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -119,8 +117,6 @@ def calendar(request):
             selected_application = application
             messages.warning(request, "This interview may clash with another approved interview. Review the overlap before continuing.")
         else:
-            if interview.contact_method == "video" and not interview.meeting_url:
-                interview.meeting_url = f"https://meet.jit.si/skillbridge-{uuid4().hex}"
             interview.save()
             if interview_id:
                 interview.reschedule_status = "accepted"
