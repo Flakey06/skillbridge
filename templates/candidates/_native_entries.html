@@ -14,10 +14,23 @@
     </details>
     {% endfor %}
     <aside class="experience-cv-preview"><p class="eyebrow">CV Preview</p>
-        {% for row in group.rows %}<div class="native-entry-preview">
-        {% if kind == 'experience' %}<strong>{{ row.position.value|default:"" }} — {{ row.company.value|default:"" }}</strong><p>{{ row.start_date.value|default:"" }}{% if row.current.value %} – Present{% elif row.end_date.value %} – {{ row.end_date.value }}{% endif %}</p><p>{{ row.achievements.value|default:""|linebreaksbr }}</p>
-        {% else %}<strong>{{ row.name.value|default:"" }}</strong><p>{{ row.issuer.value|default:"" }} · {{ row.issue_date.value|default:"" }}</p><p>Certificate ID: {{ row.credential_id.value|default:"Not provided" }}</p>{% endif %}
-        </div>{% empty %}<p class="muted">Add an entry, then save or update the preview.</p>{% endfor %}
+        {% for row in group.rows %}
+        {% if kind == 'experience' %}
+            {% if row.position.value or row.company.value or row.start_date.value or row.end_date.value or row.achievements.value %}
+            <div class="native-entry-preview">
+                {% if row.position.value or row.company.value %}<strong>{{ row.position.value|default:"" }}{% if row.position.value and row.company.value %} — {% endif %}{{ row.company.value|default:"" }}</strong>{% endif %}
+                {% if row.start_date.value or row.end_date.value or row.current.value %}<p>{{ row.start_date.value|default:"" }}{% if row.current.value %} – Present{% elif row.end_date.value %} – {{ row.end_date.value }}{% endif %}</p>{% endif %}
+                {% if row.achievements.value %}<p>{{ row.achievements.value|linebreaksbr }}</p>{% endif %}
+            </div>
+            {% endif %}
+        {% elif row.name.value or row.issuer.value or row.issue_date.value or row.credential_id.value %}
+            <div class="native-entry-preview">
+                {% if row.name.value %}<strong>{{ row.name.value }}</strong>{% endif %}
+                {% if row.issuer.value or row.issue_date.value %}<p>{{ row.issuer.value|default:"" }}{% if row.issuer.value and row.issue_date.value %} · {% endif %}{{ row.issue_date.value|default:"" }}</p>{% endif %}
+                {% if row.credential_id.value %}<p>Certificate ID: {{ row.credential_id.value }}</p>{% endif %}
+            </div>
+        {% endif %}
+        {% empty %}<p class="muted">Add an entry, then save or update the preview.</p>{% endfor %}
     </aside>
 </div>
 {% endif %}

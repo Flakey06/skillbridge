@@ -1,6 +1,7 @@
 import re
 
 from accounts.models import UserProfile
+from accounts.profile_display import profile_label
 from candidates.resume_parser import KNOWN_SKILLS, extract_resume_text
 from candidates.services import merge_completed_certifications
 from matching.services import get_or_update_match
@@ -184,18 +185,18 @@ def build_profile_resume(candidate):
     )
     name = data.get("name") or candidate.get_full_name() or candidate.username
     contact = _dedupe([data.get("email") or candidate.email, data.get("phone"), data.get("linkedin")])
-    direction = ", ".join(_dedupe([data.get("career"), data.get("specialisation")]))
+    direction = ", ".join(_dedupe([profile_label(data, "career"), profile_label(data, "specialisation")]))
     sections = [
         name,
         " | ".join(contact),
         _section("PROFESSIONAL SUMMARY", f"Career direction: {direction}." if direction else ""),
         _section("CORE SKILLS", data.get("skills")),
-        _section("EDUCATION", "\n".join(_dedupe([data.get("education"), data.get("institution")]))),
+        _section("EDUCATION", "\n".join(_dedupe([profile_label(data, "education"), profile_label(data, "institution")]))),
         _section("EXPERIENCE", data.get("experience")),
         _section("PROJECTS & PORTFOLIO", data.get("portfolio")),
         _section("CERTIFICATIONS", data.get("certifications")),
         _section("AWARDS & ACHIEVEMENTS", data.get("awards")),
-        _section("WORK AUTHORISATION", data.get("visa")),
+        _section("WORK AUTHORISATION", profile_label(data, "visa")),
     ]
     return "\n\n".join(section for section in sections if section.strip())
 
@@ -244,10 +245,10 @@ def build_tailored_resume(candidate, job):
         "role-relevant": f"contribute to the {job.title} role",
     }[focus]
     summary_parts = [f"Interested in using my background to {focus_summary}."]
-    if data.get("career") or data.get("specialisation"):
+    if profile_label(data, "career") or profile_label(data, "specialisation"):
         summary_parts.append(
             "Background in " + ", ".join(
-                value for value in (data.get("career"), data.get("specialisation")) if value
+                value for value in (profile_label(data, "career"), profile_label(data, "specialisation")) if value
             ) + "."
         )
     if verified_job_skills:
@@ -279,12 +280,12 @@ def build_tailored_resume(candidate, job):
         _section("TARGET ROLE", f"{job.title} at {job.company.name}"),
         _section("PROFESSIONAL SUMMARY", " ".join(summary_parts)),
         _section("CORE SKILLS", ", ".join(all_skills)),
-        _section("EDUCATION", "\n".join(_dedupe([data.get("education"), data.get("institution")])),),
+        _section("EDUCATION", "\n".join(_dedupe([profile_label(data, "education"), profile_label(data, "institution")])),),
         _section("EXPERIENCE", "\n".join(experience_lines)),
         _section("PROJECTS & PORTFOLIO", "\n".join(project_lines)),
         _section("CERTIFICATIONS", data.get("certifications")),
         _section("AWARDS & ACHIEVEMENTS", data.get("awards")),
-        _section("WORK AUTHORISATION", data.get("visa")),
+        _section("WORK AUTHORISATION", profile_label(data, "visa")),
     ]
     return "\n\n".join(section for section in sections if section.strip())
 
@@ -390,7 +391,7 @@ def build_tailored_cover_letter(candidate, job):
         f"Dear Hiring Team,\n\nI am writing to apply for the {job.title} position at {job.company.name}."
     ]
     background = ", ".join(
-        value for value in (data.get("career"), data.get("specialisation")) if value
+        value for value in (profile_label(data, "career"), profile_label(data, "specialisation")) if value
     )
     if background:
         paragraphs.append(f"My background in {background} gives me a relevant foundation for this role.")
