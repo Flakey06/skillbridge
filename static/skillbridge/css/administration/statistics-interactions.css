@@ -17,3 +17,7 @@
 /* Draw visible markers below every tooltip; reveal only the active overlay marker. */
 .growth-active-point { opacity: 0; pointer-events: none; }
 .growth-point-group:hover .growth-active-point, .growth-point-group:focus .growth-active-point { opacity: 1; }
+
+/* Dynamic template values use custom properties; CSS declarations stay valid. */
+.administration-page .donut-chart { background: var(--member-gradient, #edf0f4); }
+.administration-page .chart-legend i { background: var(--category-colour, #233f78); }

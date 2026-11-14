@@ -57,10 +57,10 @@
                     <span class="statistics-chip">Donut chart</span>
                 </div>
                 <div class="donut-layout">
-                    <div class="donut-chart" style="background: {{ member_charts.gradient }}" data-donut-chart role="img" aria-label="Member category breakdown">
+                    <div class="donut-chart" style="--member-gradient: {{ member_charts.gradient }};" data-donut-chart role="img" aria-label="Member category breakdown">
                         <div class="donut-centre"><strong>{{ member_charts.total }}</strong><span>Total</span></div>
                     </div>
-                    <div class="chart-legend">{% for category in member_charts.categories %}<a href="?section=analytics&amp;stat_role={{ member_charts.role }}&amp;from={{ member_charts.from }}&amp;to={{ member_charts.to }}&amp;category={% if member_charts.selected != category.name %}{{ category.name|urlencode }}{% endif %}"><i style="background: {{ category.colour }}"></i><span>{{ category.name|title }}</span><strong>{{ category.count }} · {{ category.percent }}%</strong></a>{% endfor %}</div>
+                    <div class="chart-legend">{% for category in member_charts.categories %}<a href="?section=analytics&amp;stat_role={{ member_charts.role }}&amp;from={{ member_charts.from }}&amp;to={{ member_charts.to }}&amp;category={% if member_charts.selected != category.name %}{{ category.name|urlencode }}{% endif %}"><i style="--category-colour: {{ category.colour }};"></i><span>{{ category.name|title }}</span><strong>{{ category.count }} · {{ category.percent }}%</strong></a>{% endfor %}</div>
                 </div>
             </article>
             <article class="statistics-panel">

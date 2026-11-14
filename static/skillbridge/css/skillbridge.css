@@ -22,7 +22,7 @@
 @import url("recruiters/reference-suggestions.css");
 @import url("shared/typography.css");
 @import url("shared/native-controls.css?v=compact-cv-1");
-@import url("administration/statistics-interactions.css");
+@import url("administration/statistics-interactions.css?v=custom-properties-1");
 @import url("shared/notifications.css");
 @import url("recruiters/interview-review.css?v=9");
 @import url("accounts/onboarding.css?v=career-controls-1");
