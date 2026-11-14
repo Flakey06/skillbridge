@@ -10,6 +10,7 @@ from accounts.models import UserProfile
 from employers.models import Company
 from jobs.models import Job
 from resumes.services import build_tailored_cover_letter, build_tailored_resume
+from resumes.models import TailoredResume
 
 from .forms import CandidateProfileForm
 from .models import CandidateMilestone, CandidateProfile, Certification
@@ -30,7 +31,7 @@ class ResumeAutofillTests(TestCase):
     def test_text_resume_autofills_blank_profile_fields(self):
         resume = SimpleUploadedFile(
             "resume.txt",
-            b"Skills\nPython, Django, SQL\nExperience\nBackend intern at a fintech company\nLinkedIn https://linkedin.com/in/autofill",
+            b"Alex Candidate\nalex@example.com\nSkills\nPython, Django, SQL\nExperience\nBackend intern at a fintech company in 2025 building reliable reporting tools and customer service APIs.\nLinkedIn https://linkedin.com/in/autofill",
             content_type="text/plain",
         )
 
@@ -48,7 +49,7 @@ class ResumeAutofillTests(TestCase):
     def test_resume_page_shows_feedback_for_uploaded_resume(self):
         resume = SimpleUploadedFile(
             "review.txt",
-            b"Skills\nPython, Django\nExperience\nBackend intern with 20% faster API response\n",
+            b"Alex Candidate\nalex@example.com\nSkills\nPython, Django\nExperience\nBackend intern in 2025 with 20% faster API response for customer reporting tools and internal applications used by the operations team.\n",
             content_type="text/plain",
         )
         self.client.post("/profile/", {"action": "autofill", "resume": resume})
@@ -172,7 +173,8 @@ class CareerProgressTests(TestCase):
             {"phone_country_code": "+65", "phone": "81234567"},
         )
 
-        self.assertRedirects(response, reverse("candidate_profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].errors)
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.profile_data["phone_country_code"], "+65")
         self.assertEqual(profile.profile_data["phone"], "+65 81234567")
@@ -208,7 +210,8 @@ class CareerProgressTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("candidate_profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].errors)
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.profile_data["name"], "Jamie Updated")
         self.assertEqual(profile.profile_data["skills"], "Excel, SQL")
@@ -238,7 +241,8 @@ class CareerProgressTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("candidate_profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].errors)
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.profile_data["career_interests"], ["software-engineering", "fintech"])
 
@@ -273,6 +277,8 @@ class CareerProgressTests(TestCase):
             role="candidate",
             profile_data={"career_interests": ["ai-engineering"], "skills": "Python"},
         )
+        TailoredResume.objects.create(candidate=user, is_main=True, content="SKILLS\nPython")
+
         self.client.force_login(user)
 
         response = self.client.get(reverse("candidate_learning"))
@@ -292,6 +298,8 @@ class CareerProgressTests(TestCase):
                 "skills": "Python, Django",
             },
         )
+
+        TailoredResume.objects.create(candidate=user, is_main=True, content="SKILLS\nPython, Django")
 
         progress = career_progress(user, ["software-engineering", "machine-learning"])
 
@@ -365,7 +373,7 @@ class CareerProgressTests(TestCase):
         self.assertIn("Git", progress["matched"])
         self.assertNotIn("Python", progress["missing"])
 
-    def test_completed_data_analytics_certificate_covers_foundations(self):
+    def test_completed_certificate_only_counts_when_present_in_resume(self):
         user = User.objects.create_user(username="data-analytics-complete")
         UserProfile.objects.create(
             user=user,
@@ -384,6 +392,9 @@ class CareerProgressTests(TestCase):
             status="completed",
         )
 
+        self.assertIn("SQL", career_progress(user, ["machine-learning"])[0]["missing"])
+        TailoredResume.objects.create(candidate=user, is_main=True,
+            content="CERTIFICATIONS\nGoogle Advanced Data Analytics — Python, SQL, statistics, machine learning, analytics")
         goal = career_progress(user, ["machine-learning"])[0]
 
         self.assertNotIn("SQL", goal["missing"])
@@ -399,7 +410,7 @@ class CareerProgressTests(TestCase):
         self.assertEqual(len(progress), 1)
         self.assertEqual(progress[0]["label"], "Marketing")
 
-    def test_certificate_submission_waits_for_verification_before_progress_updates(self):
+    def test_certificate_status_does_not_change_progress_until_resume_evidence_updates(self):
         user = User.objects.create_user(username="course-complete", password="Password123!")
         UserProfile.objects.create(
             user=user,
@@ -409,6 +420,7 @@ class CareerProgressTests(TestCase):
                 "skills": "Python, Django",
             },
         )
+        resume = TailoredResume.objects.create(candidate=user, is_main=True, content="SKILLS\nPython, Django")
         self.client.force_login(user)
 
         with TemporaryDirectory() as media_directory:
@@ -436,6 +448,9 @@ class CareerProgressTests(TestCase):
         self.assertEqual(career_progress(user, ["software-engineering"])[0]["percent"], 40)
         milestone.status = "completed"
         milestone.save(update_fields=["status"])
+        self.assertEqual(career_progress(user, ["software-engineering"])[0]["percent"], 40)
+        resume.content += "\nCERTIFICATIONS\nVerified certificate skills: Python, Git, SQL"
+        resume.save(update_fields=["content"])
         self.assertEqual(career_progress(user, ["software-engineering"])[0]["percent"], 80)
 
     def test_short_fake_certificate_id_is_rejected(self):
@@ -489,6 +504,8 @@ class CareerProgressTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "1 pending verification")
         self.assertContains(response, "was submitted and is pending administrator verification")
+        self.assertContains(response, 'class="toast toast-success"')
+        self.assertTrue(user.notifications.filter(kind="certificate", body__contains="pending administrator verification").exists())
         self.assertEqual(CandidateMilestone.objects.get(candidate=user).status, "pending_verification")
 
         status_response = self.client.get(reverse("candidate_verification_status"))
@@ -619,6 +636,8 @@ class CareerProgressTests(TestCase):
                 "skills": "marketing, SEO",
             },
         )
+        TailoredResume.objects.create(candidate=user, is_main=True, content="SKILLS\nmarketing, SEO")
+
         self.client.force_login(user)
         session = self.client.session
         session["onboarding_complete"] = True

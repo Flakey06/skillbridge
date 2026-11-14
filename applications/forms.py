@@ -158,5 +158,5 @@ class CandidateInterviewForm(forms.ModelForm):
         if end and not start:
             self.add_error("requested_start", "Choose a start time when specifying an end time.")
         if start and end and end <= start:
-            self.add_error("scheduled_end", "End time must be after the start time.")
+            self.add_error("requested_end", "End time must be after the start time.")
         return cleaned

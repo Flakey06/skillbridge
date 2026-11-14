@@ -3,8 +3,8 @@
 {% block page %}
 <main class="administration-page">
     <header class="administration-header">
-        <div><p class="eyebrow">SkillBridge Staff</p><h1>Administration</h1><p class="sub">Platform statistics · {{ updated_at|date:"j M Y, g:i A" }} SGT</p></div>
-        <form method="post" action="{% url 'administration_logout' %}">{% csrf_token %}<button class="button" type="submit">Sign Out</button></form>
+        <div><p class="eyebrow">SkillBridge Staff</p><h1>Administration</h1><p class="sub">All-time statistics (except filtered member charts) · {{ updated_at|date:"j M Y, g:i A" }} SGT</p></div>
+        <div class="row"><a class="button primary" href="?{{ export_query }}&amp;export=xlsx">Export Excel</a><form method="post" action="{% url 'administration_logout' %}">{% csrf_token %}<button class="button" type="submit">Sign Out</button></form></div>
     </header>
     <div class="administration-workspace" data-admin-workspace>
     <aside class="administration-section-nav" aria-label="Administration sections">
@@ -26,7 +26,7 @@
     </section>
     <section class="card administration-statistics-board" data-statistics-board data-admin-section="analytics"{% if active_section != "analytics" %} hidden{% endif %}>
         <header class="statistics-board-header">
-            <div><p class="eyebrow">Live data</p><h2>Member Statistics</h2><p class="sub">Explore account growth and member interests.</p></div>
+            <div><p class="eyebrow">Live data</p><h2>Member Statistics</h2><p class="sub">Explore account growth and member interests. Category percentages use {{ member_charts.total }} members matching the account type and inclusive date range. Growth is cumulative within this range, with an optional category filter.</p></div>
             <form method="get" class="statistics-filters">
                 <input type="hidden" name="section" value="analytics">
                 <label>Account Type<select name="stat_role"><option value="all">All Members</option><option value="candidate"{% if member_charts.role == 'candidate' %} selected{% endif %}>Candidates</option><option value="recruiter"{% if member_charts.role == 'recruiter' %} selected{% endif %}>Recruiters</option></select></label>
@@ -84,13 +84,13 @@
     </section>
     <section class="card administration-onboarding" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}>
         <h2>Onboarding Statistics</h2>
-        <p class="sub">Completion is recorded when a user finishes onboarding. Earlier completions without a saved record cannot be confirmed.</p>
+        <p class="sub">Completion is recorded when a user finishes onboarding. Earlier completions without a saved record cannot be confirmed. Each rate uses all registered accounts of that role as its denominator; all recorded history is included.</p>
         <div class="table-wrap"><table><thead><tr><th>Account Type</th><th>Registered</th><th>Recorded Complete</th><th>Completion Not Recorded</th><th>Recorded Completion Rate</th></tr></thead><tbody>
             {% for item in onboarding_statistics %}<tr><th>{{ item.label }}</th><td>{{ item.total }}</td><td>{{ item.completed }}</td><td>{{ item.not_recorded }}</td><td>{{ item.percent }}%</td></tr>{% endfor %}
         </tbody></table></div>
     </section>
     <div class="administration-panels" data-admin-section="overview"{% if active_section != "overview" %} hidden{% endif %}>
-        <section class="card"><h2>Application Progress</h2><p class="sub">Current status of all applications.</p>
+        <section class="card"><h2>Application Progress</h2><p class="sub">Current status of all {{ application_count }} applications; this is the denominator for each percentage. All recorded history through the snapshot time.</p>
             {% for item in statuses %}<div class="administration-status"><div><span>{{ item.label }}</span><strong>{{ item.count }}</strong></div><progress value="{{ item.percentage }}" max="100" aria-label="{{ item.label }}: {{ item.count }} applications"></progress></div>{% endfor %}
         </section>
         <section class="card"><h2>Job Listings</h2>{% for item in job_statuses %}<p class="row between"><span>{{ item.status|title }}</span><strong>{{ item.total }}</strong></p>{% empty %}<p class="sub">No listings yet.</p>{% endfor %}

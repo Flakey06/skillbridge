@@ -63,7 +63,16 @@
     <p class="sub">The minimum compatibility filter now uses this automatic score. Recruiters can still complete a separate structured evaluation from the candidate detail page.</p>
 </aside>
 
-<div class="card table-wrap applicant-score-table-wrap">
+<div class="card table-wrap applicant-score-table-wrap" id="applicant-results">
+    <div class="row between bulk-applicant-toolbar">
+        {% if selecting %}<a class="button" href="?{{ selection_query }}#applicant-results">Cancel Selection</a>{% else %}<a class="button" href="?{{ selection_query }}#applicant-results">Select Applicants</a>{% endif %}
+    </div>
+    {% if selecting %}<form id="bulk-applicants" method="post" class="row bulk-applicant-toolbar">
+        {% csrf_token %}<input type="hidden" name="action" value="bulk_status">
+        <label class="field">Assign Status<select name="status" required><option value="">Choose a status</option>{% for value, label in status_choices %}{% if value != 'interview' %}<option value="{{ value }}">{{ label }}</option>{% endif %}{% endfor %}</select></label>
+        <button class="primary" type="submit">Update Selected</button>
+        <small>Only checked applications change. Withdrawn applications cannot be changed. Schedule interviews individually after shortlisting.</small>
+    </form>{% endif %}
     {% include "components/applicant_table.html" with applications=applications show_update=True show_company_history=True show_interview_rating=True %}
 </div>
 

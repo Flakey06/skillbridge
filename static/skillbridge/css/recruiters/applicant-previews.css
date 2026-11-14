@@ -68,3 +68,29 @@
 .recruiter-applicants-table .applicant-interview-rating { text-align: center; }
 .applicant-interview-rating .interview-rating-value { display: inline-block; padding: 7px 8px; border: 1px solid #cbd7ed; border-radius: 8px; color: #233f78; background: #eef3fc; font-size: 14px; line-height: 1.4; overflow-wrap: normal; }
 .applicant-interview-rating small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.4; }
+
+/* Native bulk selection: checkboxes belong to a separate form, without nesting row forms. */
+.bulk-applicant-toolbar { gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: end; }
+.bulk-applicant-toolbar .field { min-width: 180px; }
+.bulk-applicant-toolbar small { flex: 1; min-width: 220px; }
+.recruiter-applicants-table input[type="checkbox"] { width: 18px; height: 18px; accent-color: #233f78; }
+
+/* Reserve a narrow checkbox column instead of letting ten columns share widths equally. */
+.recruiter-applicants-full-table.applicant-selection-table { width: 100%; min-width: 0; }
+.recruiter-applicants-full-table.applicant-selection-table th, .recruiter-applicants-full-table.applicant-selection-table td { padding: 12px 6px; font-size: 12px; }
+.recruiter-applicants-full-table.applicant-selection-table th:first-child { font-size: 0; }
+.recruiter-applicants-full-table.applicant-selection-table .application-update-form { gap: 6px; }
+.recruiter-applicants-full-table.applicant-selection-table .application-update-form select { flex: 1 1 100px; width: 100px; min-width: 0; height: 38px; padding: 6px 24px 6px 8px; font-size: 12px; }
+.recruiter-applicants-full-table.applicant-selection-table .application-update-form button,
+.recruiter-applicants-full-table.applicant-selection-table .candidate-compare-button { min-height: 38px; padding: 7px 8px; font-size: 12px; }
+#bulk-applicants { display: grid; grid-template-columns: minmax(160px, 220px) max-content minmax(0, 1fr); gap: 12px; }
+#bulk-applicants .field { min-width: 0; margin: 0; }
+#bulk-applicants select, #bulk-applicants button { min-height: 40px; height: 40px; padding: 8px 12px; font-size: 13px; }
+#bulk-applicants small { min-width: 0; font-size: 12px; line-height: 1.5; }
+@media (max-width: 700px) { #bulk-applicants { grid-template-columns: minmax(0, 1fr) max-content; } #bulk-applicants small { grid-column: 1 / -1; } }
+
+/* Keep column labels intact; reserve more width for the three score headings. */
+.applicant-score-table-wrap .recruiter-applicants-full-table th { white-space: nowrap; overflow-wrap: normal; font-size: clamp(10px, .78vw, 13px); padding: 12px 5px; }
+.applicant-score-table-wrap .recruiter-applicants-full-table .application-update-form { gap: 6px; }
+.applicant-score-table-wrap .recruiter-applicants-full-table .application-update-form select { flex: 1 1 90px; width: 90px; min-width: 0; font-size: 12px; }
+.applicant-score-table-wrap .recruiter-applicants-full-table .application-update-form button { font-size: 12px; padding: 8px; }

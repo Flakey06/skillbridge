@@ -1,6 +1,6 @@
         <section class="stack">
             <div class="interview-panel-heading"><h2>{% if stage == "during" %}Questions And Follow-Up{% else %}Check Answers And Ratings{% endif %}</h2>
-                {% if stage == 'during' %}<details class="interview-inline-help"><summary aria-label="About questions and ratings">ⓘ</summary><div>Sample questions use the job’s skills and role. Edit them to match what you asked. During the interview, use questions and follow-up flags. Afterwards, check transcript answers and rate demonstrated evidence for the job.</div></details>{% endif %}
+                {% if stage == 'during' %}<details class="interview-inline-help"><summary aria-label="About questions and ratings">ⓘ</summary><div>Sample questions use the job’s skills and role, plus available experience or project lines from the submitted resume. Edit them to match what you asked. During the interview, use questions and follow-up flags. Afterwards, check transcript answers and rate demonstrated evidence for the job.</div></details>{% endif %}
             </div>
             {{ question_formset.management_form }}{{ question_formset.non_form_errors }}
             {% for question in question_formset %}
@@ -25,7 +25,7 @@
                 {% endif %}
                 <label class="interview-flag-toggle">{{ question.flagged }} {{ question.flagged.label }}</label>
                 <label class="field">{{ question.flag_note.label }}{{ question.flag_note }}{{ question.flag_note.errors }}</label>
-                {% if stage == 'after' %}<label class="field">Rating (1–5){{ question.rating }}{{ question.rating.errors }}</label>{% else %}{{ question.rating.as_hidden }}{% endif %}
+                {% if stage == 'after' %}<div class="field"><div class="row"><label for="{{ question.rating.id_for_label }}">Rating (1–5)</label> <details class="interview-inline-help"><summary aria-label="Rating guide">ⓘ</summary><div>Rate evidence relevant to this job: 1 — No relevant evidence; 2 — Limited evidence; 3 — Meets expectations; 4 — Strong evidence; 5 — Exceptional evidence. Leave unrated if you cannot assess it. The overall rating averages rated questions across all saved interviews; unrated questions are excluded. You make the final assessment.</div></details></div>{{ question.rating }}{{ question.rating.errors }}</div>{% else %}{{ question.rating.as_hidden }}{% endif %}
                 <button class="interview-question-delete" type="submit" name="remove_question" value="{{ forloop.counter0 }}" formnovalidate aria-label="Delete question {{ forloop.counter }}" title="Delete question">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>
                 </button>

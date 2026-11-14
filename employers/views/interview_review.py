@@ -20,7 +20,7 @@ def interview_review(request, interview_id):
                'candidate_speaker': saved.candidate_speaker if saved else '',
                'overall_notes': saved.overall_notes if saved else '',
                'loose_notes': saved.loose_notes if saved else ''}
-    rows = saved.questions if saved else [{'question': q} for q in sample_questions(interview.application.job)]
+    rows = saved.questions if saved else [{'question': q} for q in sample_questions(interview.application.job, getattr(interview.application.tailored_resume, 'content', '') or '')]
     stage = request.POST.get('stage', request.GET.get('stage', 'during'))
     stage = stage if stage in {'during', 'after'} else 'during'
     data = request.POST.copy() if request.method == 'POST' else None

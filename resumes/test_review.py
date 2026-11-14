@@ -78,7 +78,7 @@ class ResumeReviewTests(TestCase):
         profile = self.user.profile
         profile.profile_data.update(career="technology", specialisation="backend")
         profile.save()
-        response = self.client.post(reverse("job_detail", args=[self.job.pk]), {"action": "apply", "cover_note": "Interested"})
+        response = self.client.post(reverse("job_detail", args=[self.job.pk]), {"action": "apply", "cover_note": "Interested", "resume_confirmed": "yes"})
         self.assertEqual(response.status_code, 302)
         application = JobApplication.objects.get(candidate=self.user, job=self.job)
         self.assertEqual(application.tailored_resume, "Candidate\nCORE SKILLS\nPython")

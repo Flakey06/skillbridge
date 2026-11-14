@@ -208,6 +208,7 @@ def learning(request):
                     else f"{course_title} was submitted and is pending administrator verification."
                 )
                 notify(request.user, course_title, response_message, "certificate")
+                messages.success(request, response_message)
                 if ajax_submission:
                     return JsonResponse({
                         "ok": True,

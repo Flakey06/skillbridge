@@ -18,10 +18,24 @@ def parse_turns(text):
     return turns
 
 
-def sample_questions(job):
+def sample_questions(job, resume_text=""):
     skills = _job_skills(job)[:6]
     questions = [f'Describe a specific example of how you used {skill}. What did you do and what was the outcome?' for skill in skills]
-    return questions + [f'What experience best prepares you for the {job.title} role?',
+    # Quote a small amount of submitted evidence; never invent candidate achievements.
+    section = ""
+    personal = []
+    for line in resume_text.splitlines():
+        text = line.strip()
+        if text.upper().rstrip(":") in {"EXPERIENCE", "WORK EXPERIENCE", "PROJECTS", "PROJECTS & PORTFOLIO"}:
+            section = text.upper()
+            continue
+        if text and text.isupper() and len(text.split()) < 6:
+            section = ""
+        if section and len(text.split()) >= 6 and len(text) <= 240:
+            personal.append(f'Your resume states: “{text}”. What was your own contribution, and how is it relevant to the {job.title} role?')
+            if len(personal) == 2:
+                break
+    return questions + personal + [f'What experience best prepares you for the {job.title} role?',
                         'Describe a difficult problem you solved. What was your contribution and the result?']
 
 
