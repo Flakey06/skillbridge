@@ -1,15 +1,22 @@
 """Resume–job text relevance predicted by TF-IDF and Ridge regression."""
 
 import csv
+
+import joblib
 from functools import lru_cache
 from pathlib import Path
 
 DATASET_PATH = Path(__file__).resolve().parents[1] / "data" / "job_resume_fit.csv"
+MODEL_PATH = DATASET_PATH.parent / "ml_models" / "resume_job_fit.joblib"
 MAX_DATASET_ROWS = 20000
 
 
 @lru_cache(maxsize=1)
 def _trained_model(dataset_mtime):
+   """Load the saved pipeline; train and persist it only when absent."""
+   if MODEL_PATH.exists():
+       model = joblib.load(MODEL_PATH)
+       return model, model.skillbridge_training_rows
    try:
        from sklearn.feature_extraction.text import TfidfVectorizer
        from sklearn.linear_model import Ridge
@@ -45,6 +52,9 @@ def _trained_model(dataset_mtime):
        Ridge(alpha=2.0),
    )
    model.fit(texts, labels)
+   model.skillbridge_training_rows = len(texts)
+   MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+   joblib.dump(model, MODEL_PATH, compress=3)
    return model, len(texts)
 
 

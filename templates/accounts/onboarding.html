@@ -82,14 +82,13 @@
 
             <div class="onboard-messages" role="log" aria-live="polite" data-onboard-messages>
                 {% if show_sandy_intro %}
-                    <div class="sandy-introduction is-speaking" data-sandy-intro>
+                    <div class="sandy-introduction" data-sandy-intro>
                         <span class="sandy-avatar-wrap">
                             <img class="sandy-introduction-avatar" src="{% static 'skillbridge/images/sandy-onboarding-bot.png' %}" alt="Sandy, the SkillBridge signup guide">
                             <span class="sandy-animated-mouth" aria-hidden="true"></span>
                         </span>
                         <div class="onboard-bubble bot sandy-welcome-bubble" aria-label="Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.">
-                            <span data-sandy-text data-message="Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started." aria-hidden="true">Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.</span><span class="sandy-cursor" aria-hidden="true"></span>
-                            <noscript>Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.</noscript>
+                            <span>Hi, I’m Sandy, your SkillBridge guide. Welcome! I’ll help you build your profile step by step. Let’s get started.</span>
                         </div>
                     </div>
                 {% endif %}
@@ -105,7 +104,7 @@
                     </span>
                     <div class="onboard-bubble bot current-question" data-current-question aria-label="{{ step.question }}">
                         <span class="eyebrow">Question {{ step_number|add:1 }}</span>
-                        <h2><span data-question-text>{{ step.question }}</span><span class="sandy-question-cursor" aria-hidden="true"></span></h2>
+                        <h2><span data-question-text>{{ step.question }}</span></h2>
                     </div>
                 </div>
             </div>
@@ -218,75 +217,4 @@
 
 
 {% endif %}
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-(() => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const intro = document.querySelector('[data-sandy-intro]');
-    const introText = document.querySelector('[data-sandy-text]');
-    const question = document.querySelector('[data-sandy-question]');
-    const questionText = document.querySelector('[data-question-text]');
-    const questionMessage = questionText ? questionText.textContent.trim() : '';
-
-    if (reducedMotion) {
-        if (intro) intro.classList.remove('is-speaking');
-        return;
-    }
-
-    // Keep the upcoming question hidden until Sandy has finished her welcome.
-    if (questionText) questionText.textContent = '';
-
-    const typeMessage = (element, message, speaker, cursor) => new Promise((resolve) => {
-        if (!element || !message) {
-            resolve();
-            return;
-        }
-
-        element.textContent = '';
-        if (cursor) cursor.style.display = 'inline-block';
-        if (speaker) speaker.classList.add('sandy-question-speaking', 'is-speaking');
-
-        let index = 0;
-        const typeNextCharacter = () => {
-            element.textContent += message[index];
-            index += 1;
-            if (index < message.length) {
-                window.setTimeout(typeNextCharacter, 28);
-                return;
-            }
-
-            if (speaker) speaker.classList.remove('sandy-question-speaking', 'is-speaking');
-            if (cursor) cursor.style.display = 'none';
-            resolve();
-        };
-        typeNextCharacter();
-    });
-
-    const typeQuestion = () => {
-        if (!questionText) return Promise.resolve();
-        return typeMessage(
-            questionText,
-            questionMessage,
-            question,
-            question.querySelector('.sandy-question-cursor')
-        );
-    };
-
-    if (intro && introText) {
-        const welcome = introText.dataset.message || introText.textContent.trim();
-        typeMessage(
-            introText,
-            welcome,
-            intro,
-            intro.querySelector('.sandy-cursor')
-        ).then(() => new Promise((resolve) => window.setTimeout(resolve, 300)))
-         .then(typeQuestion);
-    } else {
-        typeQuestion();
-    }
-})();
-</script>
 {% endblock %}

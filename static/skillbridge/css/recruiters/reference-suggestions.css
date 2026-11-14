@@ -93,3 +93,24 @@
 .create-listing-card .form-grid > label.field { align-self: start; align-content: start; gap: 7px; }
 .create-listing-card input[name="stipend"],
 .create-listing-card select[name="status"] { height: 44px; min-height: 44px; padding: 10px 12px; box-sizing: border-box; }
+
+/* Native evidence ranking controls on the listing form. */
+.create-listing-card .evidence-rank-input {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    margin: 10px 0;
+}
+.create-listing-card .evidence-rank-input input[type="number"] {
+    flex: 0 0 64px;
+    width: 64px;
+    max-width: 64px;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    box-sizing: border-box;
+    padding: 8px;
+    text-align: center;
+}

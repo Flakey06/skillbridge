@@ -19,12 +19,12 @@
             {% csrf_token %}
             {% for field in form %}
                 {% if field.is_hidden %}{{ field }}{% else %}
-                <label class="field {% if field.name == 'description' or field.name == 'required_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
+                <div class="field {% if field.name == 'description' or field.name == 'required_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
                     {% include "components/field_label.html" with field=field %}
                     {% if field.name == 'evidence_rank_order' %}
-                        {{ field.as_hidden }}
+                        {{ field }}
                         <div class="evidence-ranker-heading">
-                            <small class="muted">Drag the evidence types into order from most important to least important.</small>
+                            <small class="muted">Rank each type from 1–3. 1 is most important. Use each rank once.</small>
                             <details class="evidence-weight-help">
                                 <summary aria-label="How evidence weighting works" title="How evidence weighting works">ⓘ</summary>
                                 <div>
@@ -39,12 +39,6 @@
                                 </div>
                             </details>
                         </div>
-                        <ol class="evidence-ranker-list" data-evidence-ranker>
-                            <li draggable="true" data-evidence="Projects"><span class="drag-handle" aria-hidden="true">☰</span><span>Projects</span></li>
-                            <li draggable="true" data-evidence="Internship"><span class="drag-handle" aria-hidden="true">☰</span><span>Internship</span></li>
-                            <li draggable="true" data-evidence="Self-proclaimed skills"><span class="drag-handle" aria-hidden="true">☰</span><span>Self-proclaimed skills</span></li>
-                        </ol>
-                        <noscript><p class="muted">Enter the order separated by commas:</p>{{ field }}</noscript>
                     {% elif field.name == 'required_skills' %}
                         {{ field }}
                         <small class="muted">{{ field.help_text }}</small>
@@ -52,7 +46,7 @@
                         {{ field }}
                     {% endif %}
                     {{ field.errors }}
-                </label>
+                </div>
                 {% endif %}
             {% endfor %}
             {% if has_pro %}
@@ -96,41 +90,4 @@
 {% if company %}
 
 {% endif %}
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-(() => {
-    const list = document.querySelector('[data-evidence-ranker]');
-    const input = document.querySelector('#id_evidence_rank_order');
-    if (!list || !input) return;
-
-    const items = new Map([...list.children].map(item => [item.dataset.evidence, item]));
-    const savedOrder = input.value.split(',').map(value => value.trim()).filter(value => items.has(value));
-    savedOrder.forEach(value => list.append(items.get(value)));
-
-    const saveOrder = () => {
-        input.value = [...list.children].map(item => item.dataset.evidence).join(',');
-    };
-    saveOrder();
-
-    let dragged = null;
-    list.addEventListener('dragstart', event => {
-        dragged = event.target.closest('li');
-        if (dragged) dragged.classList.add('is-dragging');
-    });
-    list.addEventListener('dragover', event => {
-        event.preventDefault();
-        const target = event.target.closest('li');
-        if (!dragged || !target || target === dragged) return;
-        const box = target.getBoundingClientRect();
-        list.insertBefore(dragged, event.clientY < box.top + box.height / 2 ? target : target.nextSibling);
-    });
-    list.addEventListener('dragend', () => {
-        if (dragged) dragged.classList.remove('is-dragging');
-        dragged = null;
-        saveOrder();
-    });
-})();
-</script>
 {% endblock %}

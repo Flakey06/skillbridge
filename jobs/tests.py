@@ -55,7 +55,7 @@ class JobFormTests(TestCase):
         self.assertGreater(weights["Internship"], weights["Projects"])
         self.assertGreater(weights["Projects"], weights["Self-proclaimed skills"])
 
-    def test_new_listing_starts_with_draggable_evidence_order(self):
+    def test_new_listing_starts_with_default_evidence_order(self):
         form = JobForm()
         self.assertEqual(
             form["evidence_rank_order"].value(),
@@ -69,3 +69,30 @@ class JobFormTests(TestCase):
         self.assertEqual(set(weights), {"Projects", "Internship", "Self-proclaimed skills"})
         self.assertAlmostEqual(sum(weights.values()), 100, places=3)
         self.assertEqual(weights["Internship"], max(weights.values()))
+
+
+    def test_numeric_evidence_ranks_save_the_selected_order(self):
+        data = self.ranking_form("").data.copy()
+        data.pop("evidence_rank_order")
+        data.update(evidence_rank_order_0="2", evidence_rank_order_1="1", evidence_rank_order_2="3")
+        form = JobForm(data=data)
+        self.assertTrue(form.is_valid(), form.errors)
+        weights = form.save(commit=False).evidence_weights
+        self.assertGreater(weights["Internship"], weights["Projects"])
+        self.assertGreater(weights["Projects"], weights["Self-proclaimed skills"])
+
+    def test_numeric_evidence_ranks_reject_duplicates_missing_and_out_of_range(self):
+        for ranks in ((1, 1, 3), (1, "", 3), (0, 2, 3), (1, 2, 4), (1.5, 2, 3)):
+            with self.subTest(ranks=ranks):
+                data = self.ranking_form("").data.copy()
+                data.update({f"evidence_rank_order_{i}": rank for i, rank in enumerate(ranks)})
+                form = JobForm(data=data)
+                self.assertFalse(form.is_valid())
+                self.assertIn("evidence_rank_order", form.errors)
+
+    def test_edit_widget_displays_saved_ranking_as_numbers(self):
+        job = Job(evidence_weights={"Projects": 33.3333, "Internship": 50, "Self-proclaimed skills": 16.6667})
+        job.pk = 1
+        html = str(JobForm(instance=job)["evidence_rank_order"])
+        self.assertIn('name="evidence_rank_order_0" value="2"', html)
+        self.assertIn('name="evidence_rank_order_1" value="1"', html)

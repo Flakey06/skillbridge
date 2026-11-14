@@ -51,3 +51,29 @@ class RidgePredictionTests(TestCase):
         self.assertGreaterEqual(score, 0)
         self.assertLessEqual(score, 100)
         self.assertEqual(metadata['mode'], 'dataset')
+
+
+class SavedPipelineTests(TestCase):
+    def test_saved_pipeline_loads_without_training_data(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        import joblib
+        from . import ml
+
+        pipeline, rows = ml._trained_model(ml.DATASET_PATH.stat().st_mtime_ns)
+        text = ['resume: Python SQL job: Data analyst']
+        expected = pipeline.predict(text)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            artifact = Path(directory) / 'pipeline.joblib'
+            joblib.dump(pipeline, artifact)
+            ml._trained_model.cache_clear()
+            try:
+                with patch.object(ml, 'MODEL_PATH', artifact), patch.object(
+                    ml, 'DATASET_PATH', Path(directory) / 'absent.csv'
+                ):
+                    restored, restored_rows = ml._trained_model(0)
+                    self.assertEqual(restored_rows, rows)
+                    self.assertAlmostEqual(restored.predict(text)[0], expected)
+            finally:
+                ml._trained_model.cache_clear()

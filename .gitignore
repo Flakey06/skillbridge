@@ -6,3 +6,4 @@ media/*
 !media/.gitkeep
 data/ml_models/*.joblib
 .DS_Store
+!data/ml_models/resume_job_fit.joblib

@@ -36,10 +36,10 @@ class AccountSecurityTests(TestCase):
             record.save()
         return values
 
-    def test_recovery_links_present_on_login_and_signup(self):
-        for route in ('login', 'signup'):
-            response = self.client.get(reverse(route))
-            self.assertContains(response, reverse('security_question_recovery'))
+    def test_recovery_link_is_on_login_only(self):
+        recovery_url = reverse('security_question_recovery')
+        self.assertContains(self.client.get(reverse('login')), recovery_url)
+        self.assertNotContains(self.client.get(reverse('signup')), recovery_url)
 
     def test_signup_hashes_three_optional_security_answers(self):
         response = self.client.post(reverse("signup"), {

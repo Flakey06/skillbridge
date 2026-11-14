@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.html import format_html_join
 
 from candidates.resume_parser import KNOWN_SKILLS
 
@@ -9,6 +10,47 @@ class FreeChoiceMultipleField(forms.MultipleChoiceField):
     def validate(self, value):
         if self.required and not value:
             raise forms.ValidationError(self.error_messages["required"], code="required")
+
+
+EVIDENCE_TYPES = ("Projects", "Internship", "Self-proclaimed skills")
+
+
+class EvidenceRankWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        super().__init__([
+            forms.NumberInput(attrs={"min": 1, "max": 3, "step": 1})
+            for _ in EVIDENCE_TYPES
+        ], attrs)
+
+    def decompress(self, value):
+        order = (value or "").split(",")
+        return [order.index(item) + 1 if item in order else index + 1
+                for index, item in enumerate(EVIDENCE_TYPES)]
+
+    def value_from_datadict(self, data, files, name):
+        # CSV imports retain their existing comma-separated order format.
+        if not any(f"{name}_{i}" in data for i in range(3)):
+            return data.get(name, "")
+        return super().value_from_datadict(data, files, name)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        context = self.get_context(name, value, attrs)["widget"]
+        return format_html_join("", '<label class="evidence-rank-input">{}<span>{}</span></label>', (
+            (widget.render(subwidget["name"], subwidget["value"],
+                           subwidget["attrs"], renderer=renderer), label)
+            for label, widget, subwidget in zip(EVIDENCE_TYPES, self.widgets, context["subwidgets"])
+        ))
+
+
+class EvidenceRankField(forms.CharField):
+    widget = EvidenceRankWidget
+
+    def to_python(self, value):
+        if isinstance(value, list):
+            if sorted(str(rank) for rank in value) != ["1", "2", "3"]:
+                raise forms.ValidationError("Use each rank once: 1, 2 and 3. 1 is most important.")
+            return ",".join(item for _, item in sorted(zip(map(int, value), EVIDENCE_TYPES)))
+        return super().to_python(value)
 
 
 class JobForm(forms.ModelForm):
@@ -32,11 +74,10 @@ class JobForm(forms.ModelForm):
         choices=skill_choices,
         widget=forms.MultipleHiddenInput(),
     )
-    evidence_rank_order = forms.CharField(
+    evidence_rank_order = EvidenceRankField(
         required=False,
         label="Rank evidence",
-        help_text="Drag and drop to rank the evidence recruiters value most.",
-        widget=forms.TextInput(),
+        help_text="Rank each type from 1–3. 1 is most important. Use each rank once.",
     )
 
     @staticmethod

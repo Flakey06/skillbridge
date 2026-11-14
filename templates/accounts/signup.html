@@ -51,7 +51,7 @@
     {% endif %}
     {{ form.company_website }}{{ form.company_logo_url }}
 </section>
-<label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<a class="forgot-password-link" href="{% url 'security_question_recovery' %}">Forgot Password?</a><span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
+<label class="field signup-password-field">{% include "components/field_label.html" with field=form.password1 %}{{ form.password1 }}<span class="signup-field-errors" id="id_password1_error">{% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <label class="field signup-password-field">{% include "components/field_label.html" with field=form.password2 %}{{ form.password2 }}<span class="signup-field-errors" id="id_password2_error">{% for error in form.password2.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <details class="signup-recovery-questions">
     <summary>Set up recovery questions (optional)</summary>

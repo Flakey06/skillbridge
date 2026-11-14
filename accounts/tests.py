@@ -197,7 +197,8 @@ class AccountOnboardingTests(TestCase):
 
         response = self.client.get(reverse("onboarding"))
         self.assertContains(response, "Auto-fill from current resume")
-        self.assertContains(response, "typeMessage")
+        self.assertNotContains(response, "<script")
+        self.assertContains(response, "Hi, I’m Sandy")
         self.assertContains(response, "data-question-text")
 
         response = self.client.post(reverse("onboarding"), {"action": "extract_existing_resume"})
