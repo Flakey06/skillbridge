@@ -2,12 +2,31 @@
 {% load static %}
 {% block title %}Create account · SkillBridge{% endblock %}
 {% block page %}
-<div class="auth-shell auth-signup-shell"><aside class="auth-story"><div class="logo"><span class="brand-logo-shell brand-logo-auth"><img class="brand-logo-image" src="{% static 'skillbridge/images/skillbridge-logo.png' %}" alt="SkillBridge"></span></div><div class="auth-story-copy"><p class="eyebrow">Get started</p><h1>Build your<br>next bridge.</h1><p>Create your account, choose your workspace, and complete your background.</p></div><p class="auth-story-footer">© SkillBridge · Jobs, applications & hiring.</p></aside>
-<section class="auth-panel"><div class="auth-form-wrap"><p class="eyebrow">Create account</p><h2>Start with the basics.</h2><p class="sub">First choose how you want to use SkillBridge.</p>
-<form method="post">{% csrf_token %}{% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}{% if form.non_field_errors %}<div class="auth-error">{{ form.non_field_errors }}</div>{% endif %}
+<div class="auth-shell auth-signup-shell">
+    <aside class="auth-story">
+        <div class="logo"><span class="brand-logo-shell brand-logo-auth"><img class="brand-logo-image" src="{% static 'skillbridge/images/skillbridge-logo.png' %}" alt="SkillBridge"></span></div>
+        <div class="auth-story-copy">
+            <p class="eyebrow">Get started</p>
+            <h1>Build your<br>next bridge.</h1>
+            <p>Create your account, choose your workspace, and complete your background.</p>
+        </div>
+        <p class="auth-story-footer">© SkillBridge · Jobs, applications & hiring.</p>
+    </aside>
+<section class="auth-panel">
+    <div class="auth-form-wrap">
+        <p class="eyebrow">Create account</p>
+        <h2>Start with the basics.</h2>
+        <p class="sub">First choose how you want to use SkillBridge.</p>
+<form method="post">
+    {% csrf_token %}{% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}{% if form.non_field_errors %}
+    <div class="auth-error">{{ form.non_field_errors }}</div>
+    {% endif %}
 <label class="field">{% include "components/field_label.html" with field=form.username %}{{ form.username }}<span class="signup-field-errors" id="id_username_error">{% for error in form.username.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
 <label class="field">{% include "components/field_label.html" with field=form.email %}{{ form.email }}<span class="signup-field-errors" id="id_email_error">{% for error in form.email.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</span></label>
-<fieldset class="role-choice"><legend>{% include "components/field_label.html" with field=form.role %}</legend>{{ form.role }}{% for error in form.role.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}</fieldset>
+<fieldset class="role-choice">
+    <legend>{% include "components/field_label.html" with field=form.role %}</legend>
+    {{ form.role }}{% for error in form.role.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}
+</fieldset>
 <section class="signup-company" data-signup-company>
     <h3>Which company are you recruiting for?</h3>
     <label class="field">Company Name{{ form.company_name }}{{ form.company_name.errors }}</label>
@@ -25,6 +44,12 @@
     {% endfor %}
     <label class="field" for="{{ form.password_hint.id_for_label }}">{% include "components/field_label.html" with field=form.password_hint %}{{ form.password_hint }}{{ form.password_hint.errors }}<small class="muted">{{ form.password_hint.help_text }}</small></label>
 </details>
-<button class="primary full" type="submit">Create account →</button></form><p class="sub auth-existing-account">Already registered? <a href="{% url 'login' %}">Sign in</a></p></div><p class="auth-footer">Find work. Build your team.</p></section></div>
+<button class="primary full" type="submit">Create account →</button>
+</form>
+<p class="sub auth-existing-account">Already registered? <a href="{% url 'login' %}">Sign in</a></p>
+</div>
+<p class="auth-footer">Find work. Build your team.</p>
+</section>
+</div>
 
 {% endblock %}

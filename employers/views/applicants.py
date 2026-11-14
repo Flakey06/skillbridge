@@ -1,6 +1,7 @@
 """Applicant review and application status updates."""
 
 from matching.ml_model import predict_suitability
+from .bulk_status import update_selected_applicants
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
@@ -35,6 +36,12 @@ def applicants(request):
             filter=Q(candidate__job_applications__job__company_id=company_id),
             distinct=True,
         ),
+        company_offer_count=Count("candidate__job_applications", filter=Q(
+            candidate__job_applications__job__company_id=company_id,
+            candidate__job_applications__status="offer"), distinct=True),
+        company_active_count=Count("candidate__job_applications", filter=Q(
+            candidate__job_applications__job__company_id=company_id,
+            candidate__job_applications__status__in=["submitted", "shortlisted", "interview"]), distinct=True),
         company_rejection_count=Count(
             "candidate__job_applications",
             filter=Q(
@@ -54,7 +61,9 @@ def applicants(request):
     query = request.GET.get("q", "").strip()
     candidate_history = request.GET.get("history", "")
     minimum_ats_score = request.GET.get("min_ats_score", "")
-    if job_id:
+    if job_id and not job_id.isdigit():
+        applications = applications.none()
+    elif job_id:
         applications = applications.filter(job_id=job_id)
     if status:
         applications = applications.filter(status=status) if status in dict(JobApplication.STATUS_CHOICES) and status != "withdrawn" else applications.none()
@@ -74,6 +83,13 @@ def applicants(request):
     sort = "match" if request.GET.get("sort") == "match" and request.user.profile.is_pro else "newest"
     if sort == "match":
         applications = applications.order_by(F("match_score").desc(nulls_last=True), "-created_at", "-pk")
+
+    if sort == "newest":
+        applications = applications.order_by("-created_at", "-pk")
+
+    if request.method == "POST" and request.POST.get("action") == "bulk_status":
+        update_selected_applicants(request, applications)
+        return redirect(request.get_full_path() + "#applicant-results")
 
     if request.method == "POST":
         application = get_object_or_404(applications, pk=request.POST.get("application_id"))
@@ -119,7 +135,12 @@ def applicants(request):
     if has_pro:
         for application in applications:
             application.ml_prediction = predict_suitability(application.candidate, application.job)
-    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro, history_filter=candidate_history, minimum_ats_score=minimum_ats_score))
+    selection_params = request.GET.copy()
+    if selection_params.get("select") == "1":
+        selection_params.pop("select", None)
+    else:
+        selection_params["select"] = "1"
+    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro, history_filter=candidate_history, minimum_ats_score=minimum_ats_score, selecting=request.GET.get("select") == "1", selection_query=selection_params.urlencode()))
 
 
 @recruiter_required

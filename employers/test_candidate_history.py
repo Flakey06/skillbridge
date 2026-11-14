@@ -1,10 +1,12 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import UserProfile
 from applications.models import (
     ApplicantEvaluation,
+    Interview,
     ApplicationReviewEvent,
     CandidateCompanyBlacklist,
     JobApplication,
@@ -66,9 +68,12 @@ class RecruiterCandidateHistoryTests(TestCase):
 
     def test_permanent_blacklist_blocks_future_company_applications(self):
         application = self.applications[0]
+        Interview.objects.create(application=application, created_by=self.recruiter,
+            scheduled_start=timezone.now(), serious_concern=True,
+            recruiter_feedback="Documented serious interview concern.")
         response = self.client.post(
             reverse("recruiter_applicant_detail", args=[application.pk]),
-            {"action": "blacklist", "blacklist_reason": "Repeated failed screening reviews."},
+            {"action": "blacklist", "blacklist_reason": "Documented serious interview concern."},
         )
 
         self.assertEqual(response.status_code, 302)
@@ -106,6 +111,26 @@ class RecruiterCandidateHistoryTests(TestCase):
         response = self.client.get(reverse("recruiter_applicants"), {"min_ats_score": "80"})
         applications = list(response.context["applications"])
         self.assertEqual(applications, [application])
-        self.assertContains(response, "85/100")
-        self.assertContains(response, "Automatic application match")
+        self.assertContains(response, "Pro Insights")
+        self.assertNotContains(response, "85%")
+        self.recruiter.profile.plan = "pro"
+        self.recruiter.profile.save(update_fields=["plan"])
+        response = self.client.get(reverse("recruiter_applicants"), {"min_ats_score": "80"})
+        self.assertContains(response, "85%")
+        self.assertContains(response, "Skill Compatibility")
 
+
+    def test_rejections_alone_do_not_allow_blacklisting(self):
+        self.client.post(reverse("recruiter_applicant_detail", args=[self.applications[0].pk]),
+            {"action": "blacklist", "blacklist_reason": "Two rejections"})
+        self.assertFalse(CandidateCompanyBlacklist.objects.filter(company=self.company, candidate=self.candidate).exists())
+
+    def test_two_no_shows_allow_blacklisting_but_one_does_not(self):
+        url = reverse("recruiter_applicant_detail", args=[self.applications[0].pk])
+        payload = {"action": "blacklist", "blacklist_reason": "Two recorded interview no-shows"}
+        for index, application in enumerate(self.applications):
+            Interview.objects.create(application=application, created_by=self.recruiter,
+                scheduled_start=timezone.now(), attendance_status="no_show")
+            self.client.post(url, payload)
+            self.assertEqual(CandidateCompanyBlacklist.objects.filter(
+                company=self.company, candidate=self.candidate).exists(), index == 1)

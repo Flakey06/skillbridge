@@ -113,7 +113,9 @@
 {% if payments %}
 <section class="card account-card">
     <h2>Payment history</h2>
-    {% for payment in payments %}<p>{{ payment.provider|title }} · {{ payment.currency }} {{ payment.amount }} · {{ payment.get_status_display }} · {{ payment.created_at|date:"d M Y" }}</p>{% endfor %}
+    {% for payment in payments %}
+    <p>{{ payment.provider|title }} · {{ payment.currency }} {{ payment.amount }} · {{ payment.get_status_display }} · {{ payment.created_at|date:"d M Y" }}</p>
+    {% endfor %}
 </section>
 {% endif %}
 

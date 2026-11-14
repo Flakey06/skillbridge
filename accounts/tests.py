@@ -360,7 +360,8 @@ class AccountOnboardingTests(TestCase):
             {"resume": SimpleUploadedFile("updated-resume.pdf", b"%PDF-1.4\nupdated", content_type="application/pdf")},
         )
 
-        self.assertRedirects(response, reverse("candidate_profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].errors)
         resume_name = UserProfile.objects.get(user=user).resume.name
         self.assertIn("updated-resume", resume_name)
         self.assertTrue(resume_name.endswith(".pdf"))

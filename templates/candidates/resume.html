@@ -25,7 +25,9 @@
     <article class="resume-paper candidate-resume-document">
         <header class="resume-document-header">
             <h2 class="resume-document-name preserve-case">{{ main_resume_document.name }}</h2>
-            {% if main_resume_document.contacts %}<div class="resume-document-contact">{% for line in main_resume_document.contacts %}<span>{{ line }}</span>{% endfor %}</div>{% endif %}
+            {% if main_resume_document.contacts %}
+            <div class="resume-document-contact">{% for line in main_resume_document.contacts %}<span>{{ line }}</span>{% endfor %}</div>
+            {% endif %}
         </header>
         {% for section in main_resume_document.sections %}
         <section class="resume-document-section">
@@ -47,9 +49,12 @@
         {% if profile_data.career_stage_label %}<p><strong>Current level:</strong> {{ profile_data.career_stage_label }}</p>{% endif %}
         {% if profile_data.career_interest_labels %}<p><strong>Career directions:</strong> {{ profile_data.career_interest_labels|join:", " }}</p>{% endif %}
         <p>Interested in {{ profile_data.specialisation_label|default:"a new career direction" }}.</p>
-        {% if profile_data.email or profile_data.phone or profile_data.linkedin %}<p><strong>Contact:</strong> {{ profile_data.email }}{% if profile_data.phone %} · {{ profile_data.phone }}{% endif %}{% if profile_data.linkedin %} · {{ profile_data.linkedin }}{% endif %}</p>{% endif %}
+        {% if profile_data.email or profile_data.phone or profile_data.linkedin %}
+        <p><strong>Contact:</strong> {{ profile_data.email }}{% if profile_data.phone %} · {{ profile_data.phone }}{% endif %}{% if profile_data.linkedin %} · {{ profile_data.linkedin }}{% endif %}</p>
+        {% endif %}
 
-        <h3>Education</h3><p>{{ profile_data.education_label|default:"Education level not set" }}{% if profile_data.institution %}<br>{{ profile_data.institution_label }}{% endif %}</p>
+        <h3>Education</h3>
+        <p>{{ profile_data.education_label|default:"Education level not set" }}{% if profile_data.institution %}<br>{{ profile_data.institution_label }}{% endif %}</p>
 
         <h3>Experience</h3>
         <p>{{ profile_data.experience|default:"Add your work experience through My profile."|linebreaksbr }}</p>

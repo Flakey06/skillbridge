@@ -34,7 +34,9 @@
                 </label>
                 {% endif %}
             {% endfor %}
-            {% if has_pro %}<div class="reference-action span2"><button type="submit" name="action" value="suggest_reference">Find Reference Matches</button></div>{% endif %}
+            {% if has_pro %}
+            <div class="reference-action span2"><button type="submit" name="action" value="suggest_reference">Find Reference Matches</button></div>
+            {% endif %}
             {% if has_pro and suggestions %}
             <div class="reference-suggestions span2" aria-live="polite">
                 <div class="reference-suggestions-heading">

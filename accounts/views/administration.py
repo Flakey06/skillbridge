@@ -108,7 +108,9 @@ def administration_dashboard(request):
             'role': profile.role,
             'category': category,
         })
-    return render(request, 'accounts/administration_dashboard.html', {
+    context = {
+        'export_query': request.GET.urlencode(),
+        'application_count': application_count,
         'metrics': metrics, 'statuses': statuses, 'updated_at': now,
         'member_charts': member_charts(member_statistics, request.GET),
         'active_section': request.GET.get('section') if request.GET.get('section') in {'overview', 'analytics', 'certifications', 'users', 'employers', 'reports', 'payments', 'audit'} else 'overview',
@@ -129,7 +131,11 @@ def administration_dashboard(request):
         'audit_logs': AdminAuditLog.objects.select_related('actor')[:100],
         'member_statistics': member_statistics,
         'payments': paid_records.order_by().values('currency').annotate(total=Sum('amount'), count=Count('pk')).order_by('currency'),
-    })
+    }
+    if request.GET.get('export') == 'xlsx':
+        from ..administration_export import statistics_workbook
+        return statistics_workbook(context)
+    return render(request, 'accounts/administration_dashboard.html', context)
 
 
 @staff_required

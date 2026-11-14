@@ -219,3 +219,17 @@ class InterviewReview(models.Model):
     overall_notes = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class InterviewReminder(models.Model):
+    """One page-load reminder per participant and scheduled interview time."""
+    interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name='reminders')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    scheduled_start = models.DateTimeField()
+    delivered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=['interview', 'recipient', 'scheduled_start'],
+            name='unique_interview_time_reminder',
+        )]

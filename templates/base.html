@@ -18,7 +18,10 @@
     {% if messages %}
     <div class="toast-container" aria-live="polite" aria-atomic="true">
         {% for message in messages %}
-            <details class="toast toast-{{ message.tags|default:'info' }}" open><summary aria-label="Dismiss notification">×</summary><p>{{ message }}</p></details>
+            <details class="toast toast-{{ message.tags|default:'info' }}" open>
+                <summary aria-label="Dismiss notification">×</summary>
+                <p>{{ message }}</p>
+            </details>
         {% endfor %}
     </div>
     {% endif %}

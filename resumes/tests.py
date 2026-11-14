@@ -26,7 +26,7 @@ class TailoredResumeWorkflowTests(TestCase):
             employment_type="full_time",
         )
 
-    def test_tailored_resume_can_be_edited_and_saved(self):
+    def test_resume_content_saves_without_renaming_generated_title(self):
         tailored_resume = TailoredResume.objects.create(
             candidate=self.user,
             job=self.job,
@@ -35,6 +35,9 @@ class TailoredResumeWorkflowTests(TestCase):
         )
         self.client.force_login(self.user)
 
+        page = self.client.get(f"/resumes/{tailored_resume.id}/")
+        self.assertNotContains(page, 'name="title"')
+        self.assertContains(page, 'name="content"')
         response = self.client.post(
             f"/resumes/{tailored_resume.id}/",
             {
@@ -45,7 +48,7 @@ class TailoredResumeWorkflowTests(TestCase):
 
         self.assertRedirects(response, f"/resumes/{tailored_resume.id}/")
         tailored_resume.refresh_from_db()
-        self.assertEqual(tailored_resume.title, "Updated application resume")
+        self.assertEqual(tailored_resume.title, "Resume for Software Engineer")
         self.assertEqual(tailored_resume.content, "Updated resume content")
         self.assertIsNone(tailored_resume.approved_at)
 

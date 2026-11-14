@@ -1,0 +1,18 @@
+/* Keep paired career controls aligned despite the extra update action. */
+.guided-resume-section .guided-career-field,
+.guided-resume-section .guided-specialisation-field {
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+    justify-content: flex-start;
+    gap: 8px;
+}
+.guided-career-field > label, .guided-specialisation-field > label { margin: 0; }
+.guided-career-field > select, .guided-specialisation-field > select {
+    box-sizing: border-box;
+    flex: 0 0 46px;
+    height: 46px;
+    min-height: 46px;
+    width: 100%;
+}
+.guided-career-field > button { margin-top: 0; }

@@ -25,7 +25,8 @@
         <a class="{% if request.resolver_match.url_name == 'plans' %}active{% endif %}" href="{% url 'plans' %}" aria-label="My plans" data-label="My plans" title="My plans"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m17.5 6.5 2-2"/></svg></span><span class="nav-label">My plans</span></a>
     </nav>
     <div class="sidebar-bottom">
-        <form method="post" action="{% url 'toggle_navigation' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="sidebar-collapse" type="submit" aria-label="Toggle navigation">
+        <form method="post" action="{% url 'toggle_navigation' %}">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="sidebar-collapse" type="submit" aria-label="Toggle navigation">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6M5 4v16"/></svg>
             <span>{% if request.session.sidebar_expanded == False %}Expand{% else %}Collapse{% endif %}</span>
         </button></form>

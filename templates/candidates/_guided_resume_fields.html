@@ -13,8 +13,14 @@
         <div class="form-grid">
             <label class="field">{% include "components/field_label.html" with field=resume_form.education %}{{ resume_form.education }}{{ resume_form.education.errors }}</label>
             <label class="field">{% include "components/field_label.html" with field=resume_form.institution %}{{ resume_form.institution }}{{ resume_form.institution.errors }}</label>
-            <label class="field">{% include "components/field_label.html" with field=resume_form.career %}{{ resume_form.career }}{{ resume_form.career.errors }}<button class="button small" type="submit" name="entry_action" value="preview" formnovalidate>Update Specialisations</button></label>
-            <label class="field">{% include "components/field_label.html" with field=resume_form.specialisation %}{{ resume_form.specialisation }}{{ resume_form.specialisation.errors }}</label>
+            <div class="field guided-career-field">
+                <label for="{{ resume_form.career.id_for_label }}">{% include "components/field_label.html" with field=resume_form.career %}</label>
+                {{ resume_form.career }}{{ resume_form.career.errors }}<button class="button small" type="submit" name="entry_action" value="preview" formnovalidate>Update Specialisations</button>
+            </div>
+            <div class="field guided-specialisation-field">
+                <label for="{{ resume_form.specialisation.id_for_label }}">{% include "components/field_label.html" with field=resume_form.specialisation %}</label>
+                {{ resume_form.specialisation }}{{ resume_form.specialisation.errors }}
+            </div>
         </div>
     </section>
     <section class="guided-resume-section">{% include "candidates/_native_entries.html" with entry_form=resume_form kind="experience" %}</section>

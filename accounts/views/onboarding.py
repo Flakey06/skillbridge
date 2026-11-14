@@ -13,6 +13,7 @@ from ..choices import (
     choices_for_career,
 )
 from ..forms import OnboardingForm
+from ..profile_display import profile_display_data
 from ..notification_helpers import notify
 from .common import _role, _profile
 from .onboarding_helpers import (
@@ -23,6 +24,7 @@ from .onboarding_helpers import (
     _finish_onboarding,
     _resume_form_initial,
     _save_resume_form,
+    _store_resume_draft,
 )
 
 
@@ -85,8 +87,11 @@ def onboarding(request):
         from candidates.forms import CandidateProfileForm
         resume_form = CandidateProfileForm(
             request.POST or None, request.FILES or None,
-            initial=_resume_form_initial(request, profile, answers),
+            initial={**_resume_form_initial(request, profile, answers),
+                     **request.session.get("onboarding_resume_draft", {})},
         )
+        if request.method == 'POST':
+            _store_resume_draft(request, resume_form)
         if request.method == "POST" and len(request.FILES.getlist("resume")) > 1:
             resume_form.is_valid()
             resume_form.add_error("resume", "Upload only one resume at a time.")
@@ -135,6 +140,10 @@ def onboarding(request):
                     profile.save(update_fields=["profile_data"])
                     sync_candidate_profile(request.user, answers)
                     request.session["onboarding_answers"] = answers
+                    draft = dict(request.session.get('onboarding_resume_draft', {}))
+                    refreshed = _resume_form_initial(request, profile, answers)
+                    draft.update({key: refreshed[key] for key in updates if key in refreshed})
+                    request.session['onboarding_resume_draft'] = draft
                     request.session["onboarding_step"] = step_number
                     request.session["sandy_intro_seen"] = True
                     notify(request.user, "Resume auto-filled", "Sandy auto-filled your guided profile fields. Review and edit them before continuing.", "profile")
@@ -142,10 +151,11 @@ def onboarding(request):
                 resume_form.add_error("resume", rejection_reason)
         else:
             _save_resume_form(request, profile, resume_form, answers)
+            request.session.pop('onboarding_resume_draft', None)
             request.session["onboarding_answers"] = answers
-            request.session["onboarding_step"] = step_number + 1
+            request.session["onboarding_step"] = step_number if action in {'save_resume_draft', 'save_resume_logout'} else step_number + 1
             notify(request.user, "Resume profile saved", "Your resume profile was saved and the preview has been updated.", "profile")
-            return redirect("onboarding")
+            return redirect("logout" if action == "save_resume_logout" else "onboarding")
     elif request.method == "POST" and step["id"] != "resume" and form.is_valid():
         value = form.cleaned_data.get(step["id"])
         if step["id"] == "resume":
@@ -171,6 +181,14 @@ def onboarding(request):
         if step_number + 1 >= len(steps):
             return _finish_onboarding(request)
         return redirect("onboarding")
+    preview_data = dict(answers)
+    if resume_form:
+        if resume_form.is_bound:
+            resume_form.is_valid()
+            preview_data.update({key: value for key, value in resume_form.cleaned_data.items()
+                                 if key not in {'resume', 'profile_photo'} and value is not None})
+        else:
+            preview_data.update(request.session.get('onboarding_resume_draft', {}))
     completed_steps = []
     for item in steps[:step_number]:
         if item["id"] in linked_company_fields:
@@ -218,7 +236,7 @@ def onboarding(request):
         else answers.get("career_interests", [])
     )
     display_steps = steps
-    return render(request, "accounts/onboarding.html", {"role": role, "profile": profile, "steps": display_steps, "step": step, "step_number": step_number, "answers": answers, "completed_steps": completed_steps, "form": form, "resume_form": resume_form, "show_sandy_intro": show_sandy_intro, "career_choice_map": career_choice_map, "primary_interest_choices": primary_interest_choices, "cross_interest_groups": cross_interest_groups, "selected_career_interests": selected_career_interests, "total_steps": len(display_steps)})
+    return render(request, "accounts/onboarding.html", {"role": role, "profile": profile, "steps": display_steps, "step": step, "step_number": step_number, "answers": answers, "preview_answers": profile_display_data(preview_data), "completed_steps": completed_steps, "form": form, "resume_form": resume_form, "show_sandy_intro": show_sandy_intro, "career_choice_map": career_choice_map, "primary_interest_choices": primary_interest_choices, "cross_interest_groups": cross_interest_groups, "selected_career_interests": selected_career_interests, "total_steps": len(display_steps)})
 
 
 @login_required

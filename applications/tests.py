@@ -81,7 +81,8 @@ class ApplicationWorkflowTests(TestCase):
         self.assertEqual(application.missing_skills, ["JavaScript"])
         self.assertEqual(application.match_breakdown["skill_match"]["earned"], 47)
         self.assertEqual(application.match_breakdown["evidence_match"]["earned"], 3)
-        self.assertEqual(application.match_breakdown["required_skills"], {"earned": 40, "max": 60})
+        self.assertEqual(application.match_breakdown["skill_match"]["max"], 70)
+        self.assertEqual(application.match_breakdown["evidence_match"]["max"], 30)
         self.assertEqual(application.tailored_resume, tailored_resume.content)
 
     def test_free_candidate_can_submit_without_a_pro_match_object(self):
@@ -123,7 +124,7 @@ class ApplicationWorkflowTests(TestCase):
         application = JobApplication.objects.get(candidate=self.candidate, job=self.job)
         self.assertEqual(application.tailored_resume, "My edited tailored resume")
 
-    def test_candidate_can_choose_which_approved_resume_to_submit(self):
+    def test_pro_candidate_gets_best_resume_and_can_compare_without_submission_dropdown(self):
         default_resume = TailoredResume.objects.create(
             candidate=self.candidate,
             job=self.job,
@@ -140,15 +141,18 @@ class ApplicationWorkflowTests(TestCase):
         self.client.force_login(self.candidate)
 
         page = self.client.get(reverse("job_detail", args=[self.job.pk]))
-        self.assertContains(page, "Resume to submit")
         self.assertContains(page, "Chosen general resume")
-        self.assertContains(page, "Pro recommendation: Chosen general resume")
-        self.assertContains(page, "AI compatibility")
+        self.assertContains(page, "Skill Compatibility")
+        self.assertContains(page, "Predicted Job Fit")
         self.assertContains(page, "For your highest-scoring resume")
-        self.assertContains(page, "Compare another resume")
-        self.assertContains(page, "% predicted fit")
-        self.assertContains(page, "Recommended")
-        self.assertNotContains(page, "Tailor my resume")
+        self.assertContains(page, "Compare Resumes")
+        self.assertNotContains(page, "Resume to submit")
+        self.assertEqual(page.context["recommended_resume"]["resume"].pk, chosen_resume.pk)
+        comparison = self.client.get(reverse("job_detail", args=[self.job.pk]), {"compare_resume": default_resume.pk})
+        self.assertEqual(comparison.context["comparison_resume"]["resume"].pk, default_resume.pk)
+        self.assertEqual(comparison.context["recommended_resume"]["resume"].pk, chosen_resume.pk)
+        # Comparing another version must not silently change the automatic application choice.
+        self.assertContains(comparison, f'name="resume_id" form="job-application-form" value="{chosen_resume.pk}"')
         response = self.client.post(reverse("job_detail", args=[self.job.pk]), {
             "action": "apply",
             "cover_note": "I am interested.",

@@ -14,7 +14,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from accounts.views.navigation import toggle_navigation
 from django.conf import settings
 from django.conf.urls.static import static
@@ -33,7 +32,6 @@ urlpatterns = [
     path('administration/reports/<int:report_id>/review/', administration.review_report, name='administration_review_report'),
     path('administration/login/', administration.administration_login, name='administration_login'),
     path('administration/logout/', administration.administration_logout, name='administration_logout'),
-    path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('account/payment-method/', manage_payment_method, name='manage_payment_method'),
     path('account/settings/', security.account_settings, name='account_settings'),

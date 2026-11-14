@@ -1,5 +1,7 @@
 """Onboarding steps, completion checks, and guided profile persistence."""
 
+import json
+
 from django.shortcuts import redirect
 from django.utils import timezone
 from ..administration_stats import ONBOARDING_COMPLETED_KEY
@@ -99,3 +101,21 @@ def _save_resume_form(request, profile, resume_form, answers):
     profile.save()
     from candidates.services import sync_candidate_profile
     sync_candidate_profile(request.user, answers)
+
+
+def _store_resume_draft(request, form):
+    """Keep unfinished text/choices in this session without publishing profile data."""
+    draft = {}
+    for name, field in form.fields.items():
+        if getattr(field.widget, 'input_type', None) == 'file':
+            continue
+        if name == 'career_interests':
+            draft[name] = form.data.getlist(name)
+        elif name in {'experience_entries', 'certification_entries'}:
+            try:
+                draft[name] = json.loads(form.data.get(name) or '[]')
+            except (TypeError, ValueError):
+                draft[name] = form.data.get(name, '')
+        else:
+            draft[name] = form.data.get(name, '')
+    request.session['onboarding_resume_draft'] = draft
