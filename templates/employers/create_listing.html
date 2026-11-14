@@ -18,27 +18,15 @@
         <form method="post" class="form-grid">
             {% csrf_token %}
             {% for field in form %}
-                {% if field.name != 'required_skills' %}
+                {% if field.is_hidden %}{{ field }}{% else %}
                 <label class="field {% if field.name == 'description' or field.name == 'required_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
                     {% include "components/field_label.html" with field=field %}
                     {% if field.name == 'required_skill_choices' %}
-                        <div class="skills-picker" data-skills-picker>
-                            {{ field }}
-                            <input class="skills-picker-search" type="search" placeholder="Search skills, e.g. FastAPI, Django, Management..." autocomplete="off" data-skills-search>
-                            <div class="skills-picker-suggestions" data-skills-suggestions hidden></div>
-                            <div class="skills-picker-selected" data-skills-selected></div>
-                            <small class="muted">{{ field.help_text }}</small>
-                        </div>
+                        {{ field }}
+                        <small class="muted">{{ field.help_text }}</small>
                     {% elif field.name == 'evidence_rank_order' %}
-                        <div class="evidence-ranker" data-evidence-ranker>
-                            {{ field }}
-                            <p class="muted">{{ field.help_text }}</p>
-                            <ol class="evidence-ranker-list" data-evidence-list>
-                                <li draggable="true" data-evidence="Projects"><span class="drag-handle">☷</span>Projects</li>
-                                <li draggable="true" data-evidence="Internship"><span class="drag-handle">☷</span>Internship</li>
-                                <li draggable="true" data-evidence="Self-proclaimed skills"><span class="drag-handle">☷</span>Self-proclaimed skills</li>
-                            </ol>
-                        </div>
+                        {{ field }}
+                        <small class="muted">Enter Projects, Internship, Self-proclaimed skills in order of importance, separated by commas.</small>
                     {% else %}
                         {{ field }}
                     {% endif %}
@@ -83,140 +71,6 @@
     {% endif %}
 </section>
 {% if company %}
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("[data-skills-picker]").forEach((picker) => {
-        const select = picker.querySelector("select");
-        const search = picker.querySelector("[data-skills-search]");
-        const suggestions = picker.querySelector("[data-skills-suggestions]");
-        const selected = picker.querySelector("[data-skills-selected]");
-        const options = [...select.options];
 
-        const renderSelected = () => {
-        selected.replaceChildren();
-        [...select.selectedOptions].forEach((option) => {
-            const chip = document.createElement("span");
-            chip.className = "skills-picker-chip";
-            chip.textContent = option.text;
-            const remove = document.createElement("button");
-            remove.type = "button";
-            remove.className = "skills-picker-remove";
-            remove.textContent = "×";
-            remove.setAttribute("aria-label", `Remove ${option.text}`);
-            remove.addEventListener("click", () => {
-                option.selected = false;
-                renderSelected();
-                renderSuggestions();
-            });
-            chip.append(remove);
-            selected.append(chip);
-        });
-        };
-
-        const renderSuggestions = () => {
-        const query = search.value.trim().toLowerCase();
-        suggestions.replaceChildren();
-        if (!query) {
-            suggestions.hidden = true;
-            return;
-        }
-        const matches = options.filter((option) =>
-            !option.selected && (!query || option.text.toLowerCase().includes(query))
-        ).slice(0, 8);
-        matches.forEach((option) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "skills-picker-suggestion";
-            button.textContent = option.text;
-            button.addEventListener("click", () => {
-                option.selected = true;
-                search.value = "";
-                renderSelected();
-                renderSuggestions();
-                search.focus();
-            });
-            suggestions.append(button);
-        });
-        if (matches.length === 0) {
-            const add = document.createElement("button");
-            add.type = "button";
-            add.className = "skills-picker-suggestion";
-            add.textContent = `Add "${search.value.trim()}"`;
-            add.addEventListener("click", () => {
-                const value = search.value.trim();
-                const option = new Option(value, value, false, true);
-                select.add(option);
-                options.push(option);
-                search.value = "";
-                renderSelected();
-                renderSuggestions();
-                search.focus();
-            });
-            suggestions.append(add);
-        }
-        suggestions.hidden = false;
-        };
-
-        select.hidden = true;
-        search.addEventListener("input", renderSuggestions);
-        search.addEventListener("focus", renderSuggestions);
-        search.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" && search.value.trim()) {
-                event.preventDefault();
-                const exact = options.find((option) => option.text.toLowerCase() === search.value.trim().toLowerCase());
-                if (exact) {
-                    exact.selected = true;
-                    search.value = "";
-                    renderSelected();
-                    renderSuggestions();
-                } else {
-                    const value = search.value.trim();
-                    const option = new Option(value, value, false, true);
-                    select.add(option);
-                    options.push(option);
-                    search.value = "";
-                    renderSelected();
-                    renderSuggestions();
-                }
-            }
-        });
-        document.addEventListener("click", (event) => {
-            if (!picker.contains(event.target)) suggestions.hidden = true;
-        });
-        renderSelected();
-    });
-    document.querySelectorAll("[data-evidence-ranker]").forEach((ranker) => {
-        const hidden = ranker.querySelector("input[name='evidence_rank_order']");
-        const list = ranker.querySelector("[data-evidence-list]");
-        let dragged;
-        const sync = () => {
-            hidden.value = [...list.querySelectorAll("[data-evidence]")].map((item) => item.dataset.evidence).join(",");
-        };
-        list.addEventListener("dragstart", (event) => {
-            dragged = event.target.closest("[data-evidence]");
-            dragged.classList.add("is-dragging");
-        });
-        list.addEventListener("dragend", () => {
-            dragged?.classList.remove("is-dragging");
-            dragged = null;
-            sync();
-        });
-        list.addEventListener("dragover", (event) => {
-            event.preventDefault();
-            const target = event.target.closest("[data-evidence]");
-            if (target && target !== dragged) {
-                const box = target.getBoundingClientRect();
-                list.insertBefore(dragged, event.clientY < box.top + box.height / 2 ? target : target.nextSibling);
-            }
-        });
-        // Restore the saved order before writing the hidden field.
-        hidden.value.split(",").map((value) => value.trim().toLowerCase()).forEach((value) => {
-            const item = [...list.children].find((item) => item.dataset.evidence.toLowerCase() === value);
-            if (item) list.append(item);
-        });
-        sync();
-    });
-});
-</script>
 {% endif %}
 {% endblock %}

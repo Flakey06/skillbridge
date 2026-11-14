@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Interview Workspace · SkillBridge{% endblock %}
+{% block content %}
+<section class="interview-workspace-page{% if stage == 'after' %} interview-workspace-after{% endif %}" aria-labelledby="interview-review-title">
+    <header class="interview-workspace-header">
+        <div><a class="interview-workspace-back" href="{% url 'recruiter_interviews' %}">← Back To Interviews</a>
+        <h1 id="interview-review-title">Interview Workspace</h1>
+        <p>{{ interview.application.candidate.username }} · {{ interview.application.job.title }} · {{ interview.scheduled_start|date:"d M Y, H:i" }}</p></div>
+        <button class="primary button" form="interview-workspace-form" name="action" value="save" type="submit">{% if stage == 'during' %}Save Interview Notes{% else %}Save Post-Interview Review{% endif %}</button>
+    </header>
+    <nav class="interview-stage-tabs" aria-label="Interview stage">
+        <button type="submit" form="interview-workspace-form" name="action" value="stage_during" class="button{% if stage == 'during' %} primary{% endif %}"{% if stage == 'during' %} aria-current="page"{% endif %}>During Interview</button>
+        <button type="submit" form="interview-workspace-form" name="action" value="stage_after" class="button{% if stage == 'after' %} primary{% endif %}"{% if stage == 'after' %} aria-current="page"{% endif %}>After Interview</button>
+        <small>Switching tabs saves your current entries.</small>
+    </nav>
+    {% for message in messages %}<p class="interview-workspace-message" role="status">{{ message }}</p>{% endfor %}
+    <form id="interview-workspace-form" method="post" enctype="multipart/form-data" class="interview-workspace-form">
+        {% csrf_token %}<input type="hidden" name="stage" value="{{ stage }}">{{ form.non_field_errors }}
+        <div class="interview-workspace-columns">
+            <section class="interview-workspace-column interview-workspace-notes" aria-label="{% if stage == 'during' %}Live interview notes{% else %}Transcript and review{% endif %}" tabindex="0">
+            {% if stage == 'during' %}
+        <section class="card stack">
+            <h2>Quick Notes</h2>
+            <label class="field">{{ form.loose_notes.label }}{{ form.loose_notes }}{{ form.loose_notes.errors }}</label>
+            <p>One question idea per line. Adding questions keeps these notes intact.</p>
+            <button class="button" name="action" value="notes_to_questions" type="submit">Add Notes As Questions</button>
+        </section>
+            {{ form.transcript.as_hidden }}{{ form.candidate_speaker.as_hidden }}{{ form.summary.as_hidden }}{{ form.overall_notes.as_hidden }}
+            {% else %}
+            {{ form.loose_notes.as_hidden }}
+            <section class="card interview-live-notes-panel"><h2>Live Notes</h2><p class="interview-live-answer">{{ form.loose_notes.value|default:"No loose notes recorded." }}</p></section>
+            {% include "employers/_interview_transcript.html" %}
+            <section class="card interview-after-resume"><h2>Submitted Resume</h2>{% include "employers/_interview_resume.html" %}</section>
+            {% endif %}
+            </section>
+            <section class="interview-workspace-column interview-workspace-questions" aria-label="Questions and ratings" tabindex="0">
+                {% include "employers/_interview_questions.html" %}
+                {% if stage == 'after' %}{% include "employers/_interview_summary.html" %}{% endif %}
+            </section>
+            {% if stage == 'during' %}<aside class="card interview-workspace-column interview-workspace-resume" aria-labelledby="interview-resume-title" tabindex="0">
+        <h2 id="interview-resume-title">Submitted Resume</h2>
+        {% include "employers/_interview_resume.html" %}
+            </aside>{% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

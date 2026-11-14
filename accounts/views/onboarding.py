@@ -95,7 +95,14 @@ def onboarding(request):
         return redirect("onboarding")
     if request.method == "POST" and request.POST.get("skip") == "1":
         return _finish_onboarding(request)
-    if request.method == "POST" and step["id"] == "resume" and resume_form and resume_form.is_valid():
+    if request.method == "POST" and request.POST.get("action") == "delete_resume" and step["id"] == "resume":
+        profile.resume.delete(save=True)
+        answers.pop("resume", None)
+        profile.profile_data = answers
+        profile.save(update_fields=["profile_data"])
+        request.session["onboarding_answers"] = answers
+        return redirect("onboarding")
+    if request.method == "POST" and step["id"] == "resume" and resume_form and not request.POST.get("entry_action") and resume_form.is_valid():
         action = request.POST.get("action", "save_resume")
         uploaded_resume = resume_form.cleaned_data.get("resume")
         if action in {"extract_resume", "extract_existing_resume"}:

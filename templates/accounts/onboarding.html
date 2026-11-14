@@ -82,19 +82,19 @@
                     <div class="onboard-bubble user">{{ item.answer_display }}</div>
                 {% endfor %}
 
-                <div class="sandy-question-row sandy-question-waiting" data-sandy-question>
+                <div class="sandy-question-row " data-sandy-question>
                     <span class="sandy-question-avatar-wrap">
                         <img src="{% static 'skillbridge/images/sandy-onboarding-bot.png' %}" alt="Sandy">
                         <span class="sandy-animated-mouth" aria-hidden="true"></span>
                     </span>
                     <div class="onboard-bubble bot current-question" data-current-question aria-label="{{ step.question }}">
                         <span class="eyebrow">Question {{ step_number|add:1 }}</span>
-                        <h2><span data-question-text data-message="{{ step.question }}"></span><span class="sandy-question-cursor" aria-hidden="true"></span></h2>
+                        <h2><span data-question-text>{{ step.question }}</span><span class="sandy-question-cursor" aria-hidden="true"></span></h2>
                     </div>
                 </div>
             </div>
 
-            <form method="post" enctype="multipart/form-data" class="onboard-compose sandy-compose-waiting" data-onboard-compose{% if step.id == "resume" %} data-autosave-url="{% url 'autosave_resume_draft' %}" data-scan-url="{% url 'scan_resume_upload' %}" data-delete-resume-url="{% url 'delete_onboarding_resume' %}"{% endif %}>
+            <form method="post" enctype="multipart/form-data" class="onboard-compose " data-onboard-compose{% if step.id == "resume" %} data-autosave-url="{% url 'autosave_resume_draft' %}" data-scan-url="{% url 'scan_resume_upload' %}" data-delete-resume-url="{% url 'delete_onboarding_resume' %}"{% endif %}>
                 {% csrf_token %}
                 {% if step.id == "resume" %}
                     {% if messages %}{% for message in messages %}<div class="card profile-message">{{ message }}</div>{% endfor %}{% endif %}
@@ -109,19 +109,19 @@
                             <div class="current-resume-card" data-current-resume{% if not profile.resume %} hidden{% endif %}>
                                 <div><small>Current document</small><b data-current-resume-name>{% if profile.resume %}{{ profile.resume.name }}{% endif %}</b></div>
                                 <button class="button small" type="submit" name="action" value="extract_existing_resume">Auto-fill from current resume</button>
-                                <button class="button small" type="button" data-delete-resume>Delete current document</button>
+                                <button class="button small" type="submit" name="action" value="delete_resume" formnovalidate>Delete current document</button>
                             </div>
                         </section>
                         <section class="resume-method-card">
                             <span class="resume-method-number">2</span>
                             <div><h3>Fill it in myself</h3><p>No resume yet? Complete the guided fields below. You do not need to choose or upload a file.</p></div>
-                            <button class="button" type="button" data-start-manual-resume>Start guided resume ↓</button>
+                            <a class="button" href="#guided-resume-fields">Start Guided Resume ↓</a>
                         </section>
                     </div>
                     {{ resume_form.resume.errors }}
                     {% if resume_form.errors %}<div class="auth-error resume-save-errors"><b>Please fix the highlighted resume details:</b>{{ resume_form.errors }}</div>{% endif %}
-                    <div data-guided-resume-fields>{% include "candidates/_guided_resume_fields.html" %}</div>
-                    <p class="resume-autosave-status" data-resume-autosave-status aria-live="polite">Changes save automatically</p>
+                    <div id="guided-resume-fields">{% include "candidates/_guided_resume_fields.html" %}</div>
+                    <p class="resume-autosave-status" data-resume-autosave-status aria-live="polite">Use Save Resume &amp; Continue to save your changes.</p>
                     <div class="auth-error">{{ resume_form.non_field_errors }}</div>
                 {% else %}
                     {% if step.id == "career_interests" %}
@@ -189,80 +189,9 @@
         </section>
     </main>
 </div>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const messages = document.querySelector("[data-onboard-messages]");
-    if (!messages) return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const scrollToLatest = () => requestAnimationFrame(() => {
-        messages.scrollTo({
-            top: messages.scrollHeight,
-            behavior: reduceMotion ? "auto" : "smooth"
-        });
-    });
-    const intro = document.querySelector("[data-sandy-intro]");
-    const textTarget = intro?.querySelector("[data-sandy-text]");
-    const question = document.querySelector("[data-sandy-question]");
-    const questionText = question?.querySelector("[data-question-text]");
-    const compose = document.querySelector("[data-onboard-compose]");
-    const finishQuestion = () => {
-        question?.classList.remove("sandy-question-speaking");
-        question?.querySelector(".sandy-question-cursor")?.remove();
-        compose?.classList.remove("sandy-compose-waiting");
-        scrollToLatest();
-    };
-    const speakQuestion = () => {
-        question?.classList.remove("sandy-question-waiting");
-        if (!questionText) return finishQuestion();
-        const message = questionText.dataset.message || "";
-        if (reduceMotion) {
-            questionText.textContent = message;
-            return finishQuestion();
-        }
-        question.classList.add("sandy-question-speaking");
-        let index = 0;
-        const timer = window.setInterval(() => {
-            questionText.textContent += message[index++];
-            if (index >= message.length) {
-                window.clearInterval(timer);
-                window.setTimeout(finishQuestion, 250);
-            }
-        }, 20);
-    };
-
-    if (!intro || !textTarget) {
-        speakQuestion();
-        return;
-    }
-
-    const finishIntro = () => {
-        intro.classList.remove("is-speaking");
-        intro.querySelector(".sandy-cursor")?.remove();
-        scrollToLatest();
-        window.setTimeout(speakQuestion, reduceMotion ? 0 : 250);
-    };
-    const message = textTarget.dataset.message || "";
-    if (reduceMotion) {
-        textTarget.textContent = message;
-        finishIntro();
-        return;
-    }
-
-    textTarget.textContent = "";
-    intro.classList.add("is-speaking");
-    let introIndex = 0;
-    const introTimer = window.setInterval(() => {
-        textTarget.textContent += message[introIndex++];
-        if (introIndex >= message.length) {
-            window.clearInterval(introTimer);
-            window.setTimeout(finishIntro, 250);
-        }
-    }, 20);
-});
-</script>
 {% if step.id == "resume" %}
-    {{ career_choice_map|json_script:"onboarding-career-choice-map" }}
-    <script src="{% static 'skillbridge/js/guided-resume.js' %}?v=guided-builder-2"></script>
+
+
 {% endif %}
 {% endblock %}

@@ -2,8 +2,8 @@
     <h4>{{ label }}</h4>
     <div class="skill-preview" data-skill-preview>
         <div class="skill-preview-items" data-skill-items>
-            {% for skill in skills %}<span data-skill-item>{{ skill }}{% if not forloop.last %}, {% endif %}</span>{% empty %}<span>{{ empty }}</span>{% endfor %}
+            {% for skill in skills|slice:":3" %}<span data-skill-item>{{ skill }}{% if not forloop.last %}, {% endif %}</span>{% empty %}<span>{{ empty }}</span>{% endfor %}
         </div>
-        <span class="skill-preview-count" data-skill-count hidden></span>
+        {% if skills|length > 3 %}<span class="skill-preview-count">+{{ skills|length|add:"-3" }}</span>{% endif %}
     </div>
 </div>

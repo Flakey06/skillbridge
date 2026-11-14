@@ -95,7 +95,7 @@ def profile(request):
     is_autosave = save_action == "autosave"
     is_auto_upload = save_action == "auto_upload"
     is_async_save = is_autosave or is_auto_upload
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and not request.POST.get("entry_action") and form.is_valid():
         action = request.POST.get("action", "save")
         if action == "autofill":
             uploaded_resume = form.cleaned_data.get("resume")

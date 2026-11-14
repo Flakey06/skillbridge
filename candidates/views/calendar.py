@@ -16,10 +16,10 @@ def calendar(request):
     download, calendar_changed = calendar_download_or_reminder(request, interviews)
     if download is not None:
         return download
-    interview_id = request.POST.get("interview_id")
+    interview_id = request.POST.get("interview_id") or request.GET.get("edit")
     interview = get_object_or_404(interviews, pk=interview_id) if interview_id else None
     form = CandidateInterviewForm(request.POST or None, instance=interview)
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and interview is not None and form.is_valid():
         candidate_notes = form.cleaned_data["candidate_notes"]
         interview.candidate_notes = candidate_notes
         requested_start = form.cleaned_data.get("requested_start")
@@ -58,6 +58,8 @@ def calendar(request):
         upcoming_interviews=interviews.filter(scheduled_start__gte=now),
         past_interviews=interviews.filter(scheduled_start__lt=now),
         form=form,
+        editing_interview=interview,
+        editor_open=bool(interview_id or request.GET.get("create") or request.GET.get("application") or request.method == "POST"),
         calendar=calendar_data,
         calendar_changed=calendar_changed,
     ))

@@ -19,6 +19,7 @@ from employers.models import Company
 from jobs.models import Job
 from accounts.notification_helpers import notify
 from ..models import AdminAuditLog, ModerationReport, Payment, UserProfile
+from ..statistics_presentation import member_charts
 from ..administration_stats import onboarding_statistics, successful_match_statistics
 
 
@@ -43,7 +44,7 @@ def _audit(request, action, target, details=''):
 
 
 def _dashboard_section(name, query=''):
-    return redirect(f"{reverse_lazy('administration_dashboard')}{query}#{name}")
+    return redirect(f"{reverse_lazy('administration_dashboard')}?section={name}{query.replace(chr(63), chr(38), 1)}")
 
 
 @never_cache
@@ -109,6 +110,8 @@ def administration_dashboard(request):
         })
     return render(request, 'accounts/administration_dashboard.html', {
         'metrics': metrics, 'statuses': statuses, 'updated_at': now,
+        'member_charts': member_charts(member_statistics, request.GET),
+        'active_section': request.GET.get('section') if request.GET.get('section') in {'overview', 'analytics', 'certifications', 'users', 'employers', 'reports', 'payments', 'audit'} else 'overview',
         'job_statuses': Job.objects.values('status').annotate(total=Count('pk')).order_by('status'),
         'popular_jobs': popular_jobs,
         'most_popular_job': popular_jobs[0] if popular_jobs and popular_jobs[0].application_total else None,
@@ -122,8 +125,6 @@ def administration_dashboard(request):
         'user_query': user_query,
         'companies_for_review': Company.objects.filter(verification_status='pending').order_by('name'),
         'company_history': Company.objects.exclude(reviewed_at=None).select_related('reviewed_by').order_by('-reviewed_at')[:30],
-        'jobs_for_review': Job.objects.filter(moderation_status='pending').select_related('company', 'created_by').order_by('created_at'),
-        'job_review_history': Job.objects.exclude(reviewed_at=None).select_related('company', 'reviewed_by').order_by('-reviewed_at')[:30],
         'moderation_reports': ModerationReport.objects.select_related('reporter', 'moderator').order_by('status', '-created_at')[:50],
         'audit_logs': AdminAuditLog.objects.select_related('actor')[:100],
         'member_statistics': member_statistics,
@@ -208,28 +209,6 @@ def review_company(request, company_id):
         notify(recruiter.user, f'Company {company.verification_status}', comment or f'{company.name} was approved.', 'moderation')
     _audit(request, f'company_{decision}', company, comment)
     return _dashboard_section('employers')
-
-
-@staff_required
-@require_POST
-def review_job(request, job_id):
-    job = get_object_or_404(Job, pk=job_id)
-    decision = request.POST.get('decision')
-    comment = request.POST.get('comment', '').strip()
-    if decision not in {'approve', 'reject'} or (decision == 'reject' and not comment):
-        messages.error(request, 'A rejection reason is required.')
-        return _dashboard_section('jobs')
-    if decision == 'approve' and job.company.verification_status != 'verified':
-        messages.error(request, 'Approve the employer before approving its job listings.')
-        return _dashboard_section('jobs')
-    job.moderation_status = 'approved' if decision == 'approve' else 'rejected'
-    job.moderation_comment = comment
-    job.reviewed_by = request.user
-    job.reviewed_at = timezone.now()
-    job.save(update_fields=['moderation_status', 'moderation_comment', 'reviewed_by', 'reviewed_at'])
-    notify(job.created_by, f'Job listing {job.moderation_status}', comment or f'{job.title} is approved and visible.', 'moderation')
-    _audit(request, f'job_{decision}', job, comment)
-    return _dashboard_section('jobs')
 
 
 @staff_required

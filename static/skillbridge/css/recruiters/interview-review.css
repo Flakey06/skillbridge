@@ -1,0 +1,87 @@
+/* Dedicated interview page. Three independent desktop columns; native forms only. */
+main:has(.interview-workspace-page) { max-width: none; padding: 16px 20px; }
+.interview-workspace-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.interview-workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.interview-workspace-header h1 { font-size: 28px; line-height: 1.2; margin: 8px 0; }
+.interview-workspace-header p { margin: 0; text-transform: none; }
+.interview-workspace-back { display: inline-block; font-size: 14px; }
+.interview-workspace-header > button { flex: 0 0 auto; }
+.interview-workspace-form { min-height: 0; min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.interview-workspace-columns { min-height: 0; min-width: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; }
+.interview-workspace-column { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 2px 6px 12px 2px; }
+.interview-workspace-notes { display: flex; flex-direction: column; gap: 16px; }
+.interview-workspace-page .card { padding: 18px; margin: 0; box-sizing: border-box; }
+.interview-workspace-page .field { display: grid; gap: 8px; }
+.interview-workspace-page h2 { font-size: 20px; line-height: 1.25; margin: 0; }
+.interview-workspace-page p, .interview-workspace-page label, .interview-workspace-page textarea { text-transform: none; }
+.interview-workspace-page p { font-size: 14px; line-height: 1.5; }
+.interview-workspace-page textarea, .interview-workspace-page select, .interview-workspace-page input[type=file] { width: 100%; min-width: 0; box-sizing: border-box; font-size: 14px; }
+.interview-workspace-question { min-width: 0; }
+.interview-workspace-page fieldset { min-width: 0; }
+.interview-workspace-page legend { padding: 0 8px; font-weight: 700; }
+.interview-review-source { padding: 12px; background: #edf2fc; border-radius: 8px; }
+.interview-workspace-resume { position: static; max-height: none; }
+.interview-workspace-resume h2 { margin-bottom: 12px; }
+.interview-submitted-resume { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; text-transform: none; }
+.interview-workspace-message { margin: 0; }
+@media (min-width: 1100px) {
+    .interview-workspace-page { height: calc(100dvh - 104px); }
+}
+@media (max-width: 1099px) {
+    .interview-workspace-columns { grid-template-columns: minmax(0, 1fr); }
+    .interview-workspace-column { overflow-y: visible; }
+    .interview-workspace-header { align-items: flex-start; flex-wrap: wrap; }
+}
+
+.interview-review-question { position: relative; }
+.interview-workspace-page .interview-question-delete { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 7px; margin-left: auto; border: 1px solid #d9a5a5; border-radius: 8px; background: #fff; color: #a32b2b; box-shadow: none; }
+.interview-question-delete svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.interview-workspace-page .interview-question-delete:hover { background: #fff0f0; }
+.interview-transcript-status { padding: 10px 12px; border-radius: 8px; background: #eaf3ee; color: #174b37; }
+.interview-speaker-previews { padding: 10px 12px; border: 1px solid #ccd8ed; border-radius: 8px; }
+
+.interview-stage-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.interview-stage-tabs .button { padding: 9px 14px; font-size: 14px; }
+.interview-stage-tabs small { text-transform: none; }
+.interview-answer-comparison { display: grid; gap: 14px; }
+.interview-live-answer { white-space: pre-wrap; overflow-wrap: anywhere; padding: 10px; background: #eef2fa; border-radius: 8px; }
+.interview-needs-review { padding: 10px; border-left: 3px solid #a86c00; background: #fff8e7; color: #674400; }
+.interview-extra-question + .interview-extra-question { border-top: 1px solid #ccd8ed; padding-top: 12px; }
+@media (min-width: 1600px) { .interview-answer-comparison { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+/* Compact question navigation with native HTML disclosures. */
+.interview-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.interview-inline-help { position: relative; flex: 0 0 auto; }
+.interview-inline-help > summary { cursor: help; list-style: none; color: #233f78; font-size: 20px; }
+.interview-inline-help > summary::-webkit-details-marker { display: none; }
+.interview-inline-help > div { display: none; position: absolute; right: 0; top: 28px; z-index: 10; width: min(260px, 65vw); padding: 12px; border-radius: 8px; background: #233f78; color: #fff; font-size: 13px; line-height: 1.5; text-transform: none; }
+.interview-inline-help[open] > div, .interview-inline-help:hover > div, .interview-inline-help:focus-within > div { display: block; }
+.interview-question-card > summary { display: flex; align-items: center; gap: 12px; cursor: pointer; list-style: none; }
+.interview-question-card > summary::-webkit-details-marker { display: none; }
+.interview-question-card > summary::after { content: '⌄'; flex: 0 0 auto; color: #233f78; }
+.interview-question-card[open] > summary::after { content: '⌃'; }
+.interview-question-title { display: grid; gap: 5px; flex: 1; min-width: 0; }
+.interview-question-title small { color: #536078; font-size: 12px; }
+.interview-question-title strong { font-size: 14px; line-height: 1.4; text-transform: none; }
+.interview-question-status { flex: 0 0 auto; max-width: 85px; padding: 5px 7px; border-radius: 6px; background: #edf2fc; color: #233f78; font-size: 11px; text-transform: none; }
+.interview-question-card > fieldset { padding: 16px 0 0; margin: 16px 0 0; border: 0; border-top: 1px solid #dce4f2; }
+.interview-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Questions and flags during the meeting; answer review afterwards. */
+.interview-flag-toggle { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.interview-flag-toggle input { flex: 0 0 auto; width: 16px; height: 16px; }
+.interview-transcript-setup > summary, .interview-resume-disclosure > summary { cursor: pointer; font-weight: 700; }
+.interview-transcript-setup[open] > summary, .interview-resume-disclosure[open] > summary { margin-bottom: 16px; }
+@media (min-width: 1100px) {
+    .interview-workspace-after .interview-workspace-columns { grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); }
+}
+
+.interview-answer-comparison.interview-answer-single { grid-template-columns: minmax(0, 1fr); }
+
+/* After-interview reference column follows the live notes → upload → resume flow. */
+.interview-workspace-after .interview-workspace-questions { display: flex; flex-direction: column; gap: 24px; }
+.interview-live-notes-panel .interview-live-answer { margin-bottom: 0; max-height: 160px; overflow-y: auto; }
+.interview-after-resume { flex: 1 0 220px; overflow-y: auto; }
+.interview-after-resume h2 { margin-bottom: 12px; }
+.interview-workspace-page .interview-question-flagged { border-color: #c18a22; border-left: 4px solid #c18a22; background: #fffdf6; }
+.interview-question-flagged .interview-question-status { background: #fff0c9; color: #6c4700; }

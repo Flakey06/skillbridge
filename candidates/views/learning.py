@@ -270,7 +270,7 @@ def learning(request):
             profile_data=data,
             certifications=certifications,
             milestones=milestones,
-            open_jobs=Job.objects.filter(status="open", moderation_status="approved").select_related("company"),
+            open_jobs=Job.objects.filter(status="open").select_related("company"),
             target_job=target_job,
             match=match,
             gap_recommendations=gap_recommendations,

@@ -1,0 +1,24 @@
+{% for group in entry_form.entry_builders %}
+{% if group.kind == kind %}
+<div class="field span2 experience-builder" id="native-{{ kind }}-entries">
+    <div class="row between"><strong>{{ group.title }}</strong><button class="button small" type="submit" formaction="{{ request.path }}#native-{{ kind }}-entries" name="entry_action" value="{{ kind }}:add" formnovalidate>+ Add {% if kind == 'experience' %}Experience{% else %}Certification{% endif %}</button></div>
+    <input type="hidden" name="{{ kind }}_count" value="{{ group.rows|length }}">
+    {{ group.legacy }}{{ group.field }}{{ group.field.errors }}
+    {% for row in group.rows %}
+    <details class="native-entry card"{% if forloop.last and request.POST.entry_action %} open{% endif %}>
+        <summary>{% if kind == 'experience' %}Experience{% else %}Certification{% endif %} {{ forloop.counter }} · {% if kind == 'experience' %}{{ row.position.value|default:"New Entry" }}{% else %}{{ row.name.value|default:"New Entry" }}{% endif %}</summary>
+        <div class="form-grid">
+            {% for field in row %}<label class="field">{{ field.label }}{{ field }}</label>{% endfor %}
+        </div>
+        <button class="button small" type="submit" formaction="{{ request.path }}#native-{{ kind }}-entries" name="entry_action" value="{{ kind }}:remove:{{ forloop.counter0 }}" formnovalidate>Remove</button>
+    </details>
+    {% endfor %}
+    <aside class="experience-cv-preview"><p class="eyebrow">CV Preview</p>
+        {% for row in group.rows %}<div class="native-entry-preview">
+        {% if kind == 'experience' %}<strong>{{ row.position.value|default:"" }} — {{ row.company.value|default:"" }}</strong><p>{{ row.start_date.value|default:"" }}{% if row.current.value %} – Present{% elif row.end_date.value %} – {{ row.end_date.value }}{% endif %}</p><p>{{ row.achievements.value|default:""|linebreaksbr }}</p>
+        {% else %}<strong>{{ row.name.value|default:"" }}</strong><p>{{ row.issuer.value|default:"" }} · {{ row.issue_date.value|default:"" }}</p><p>Certificate ID: {{ row.credential_id.value|default:"Not provided" }}</p>{% endif %}
+        </div>{% empty %}<p class="muted">Add an entry, then save or update the preview.</p>{% endfor %}
+    </aside>
+</div>
+{% endif %}
+{% endfor %}

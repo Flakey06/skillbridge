@@ -115,7 +115,7 @@ class AdministrationTests(TestCase):
             reverse('administration_review_certificate', args=[submission.pk]),
             {'decision': 'approve'},
         )
-        self.assertRedirects(response, reverse('administration_dashboard') + '#certifications')
+        self.assertRedirects(response, reverse('administration_dashboard') + '?section=certifications')
         submission.refresh_from_db()
         self.assertEqual(submission.status, 'completed')
         self.assertEqual(submission.verification_method, 'admin_review')
@@ -160,23 +160,21 @@ class AdministrationTests(TestCase):
         self.assertTrue(self.candidate.is_active)
         self.assertEqual(AdminAuditLog.objects.filter(target_id=str(self.candidate.pk)).count(), 2)
 
-    def test_staff_can_review_company_job_and_report(self):
+    def test_staff_can_review_company_and_report(self):
         from employers.models import RecruiterProfile
         recruiter = User.objects.create_user(username='review-recruiter')
         UserProfile.objects.create(user=recruiter, role='recruiter')
         company = Company.objects.create(name='Review Company')
         RecruiterProfile.objects.create(user=recruiter, company=company)
-        job = Job.objects.create(title='Review Job', company=company, created_by=recruiter, employment_type='full_time', moderation_status='pending')
+        job = Job.objects.create(title='Review Job', company=company, created_by=recruiter, employment_type='full_time')
         report = ModerationReport.objects.create(reporter=self.candidate, subject_type='job', subject_id=str(job.pk), subject_label=str(job), reason='Possible scam')
         self.client.force_login(self.staff)
         self.client.post(reverse('administration_review_company', args=[company.pk]), {'decision': 'approve'})
-        self.client.post(reverse('administration_review_job', args=[job.pk]), {'decision': 'approve'})
         self.client.post(reverse('administration_review_report', args=[report.pk]), {'decision': 'resolve', 'comment': 'Listing reviewed.'})
         company.refresh_from_db(); job.refresh_from_db(); report.refresh_from_db()
         self.assertEqual(company.verification_status, 'verified')
-        self.assertEqual(job.moderation_status, 'approved')
         self.assertEqual(report.status, 'resolved')
-        self.assertEqual(AdminAuditLog.objects.count(), 3)
+        self.assertEqual(AdminAuditLog.objects.count(), 2)
 
     def test_candidate_can_report_an_approved_job(self):
         recruiter = User.objects.create_user(username='reported-recruiter')

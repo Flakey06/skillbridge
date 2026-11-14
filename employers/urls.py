@@ -1,8 +1,11 @@
 from django.urls import path
 from . import views
 from .views.comparison import compare_candidates
+from .views.interview_review import interview_review, interviews
 
 urlpatterns = [
+    path("interviews/", interviews, name="recruiter_interviews"),
+    path("interviews/<int:interview_id>/review/", interview_review, name="recruiter_interview_review"),
     path("applicants/<int:application_id>/compare/", compare_candidates, name="recruiter_compare_candidates"),
     path("", views.dashboard, name="recruiter_dashboard"),
     path("jobs/", views.listings, name="recruiter_listings"),

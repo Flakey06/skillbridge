@@ -1,0 +1,70 @@
+/* SkillBridge: recruiters/applicant-previews.css. Loaded in the order declared by skillbridge.css. */
+/* Keep desktop previews outside the table cell without clipping them. */
+.applicant-score-table-wrap { overflow: visible; }
+.applicant-score-preview { position: relative; display: inline-block; }
+.applicant-score-link { display: inline-block; text-decoration: none; border-radius: 8px; }
+.applicant-score-tooltip {
+    display: none; position: absolute; z-index: 50; top: 100%; left: 50%; transform: translateX(-50%);
+    width: 290px; max-width: calc(100vw - 48px); box-sizing: border-box; padding: 16px;
+    border: 1px solid #cfdbee; border-radius: 10px; background: #fff; color: #21344f;
+    box-shadow: 0 8px 24px #17244726; white-space: normal; text-align: left; font-size: 13px; line-height: 1.5;
+}
+.applicant-score-tooltip > span, .applicant-score-tooltip > strong { display: block; margin-bottom: 8px; }
+.applicant-score-tooltip-hint { color: #223e76; font-weight: 600; }
+.applicant-score-preview:hover .applicant-score-tooltip,
+.applicant-score-preview:focus-within .applicant-score-tooltip { display: block; }
+.applicant-score-preview:has(.applicant-score-link:focus-visible) .applicant-score-tooltip { display: block; }
+.applicant-score-preview:has(.applicant-score-link:active) .applicant-score-tooltip { display: none; }
+.applicant-score-detail { padding: 20px; margin: 20px 0; border: 1px solid #dce5f2; border-radius: 12px; scroll-margin-top: 100px; }
+.applicant-score-detail:target { border-color: #223e76; background: #f3f6fd; box-shadow: 0 0 0 2px #223e7620; }
+.applicant-score-detail > .compatibility-box { display: inline-flex; width: auto; min-width: 70px; padding: 10px 16px; }
+@media (max-width: 900px) { }
+
+.applicant-score-detail { padding: 18px; margin: 14px 0; }
+.applicant-score-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.applicant-score-detail-header h2 { margin: 0; }
+.applicant-score-detail-header .compatibility-box { display: inline-flex; flex: 0 0 auto; width: auto; min-width: 58px; min-height: 0; padding: 6px 12px; }
+.applicant-score-detail-header .compatibility-box strong { font-size: 24px; line-height: 1.2; }
+.applicant-score-detail > h3 { margin: 10px 0 4px; }
+.applicant-score-detail > p { margin: 8px 0; line-height: 1.5; }
+.applicant-score-detail .skill-summary-list { gap: 6px; margin: 0 0 8px; }
+@media (max-width: 550px) { .applicant-score-detail { padding: 18px; } .applicant-score-detail-header { gap: 12px; } }
+
+.applicant-score-detail-copy { min-width: 0; }
+.applicant-score-detail-copy > p { margin: 4px 0 0; line-height: 1.4; }
+
+/* More separation after the introduction, less trailing space at the bottom. */
+.applicant-score-detail { padding-bottom: 10px; }
+.applicant-score-detail > p:last-child { margin-bottom: 0; }
+.applicant-score-detail > .score-breakdown:last-child:empty { display: none; }
+
+.content-columns.applicant-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr); }
+.applicant-progress-card > h2 { margin: 0 0 16px; }
+.applicant-progress-controls { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(100px, 1fr) minmax(160px, 1.3fr); align-items: end; gap: 16px; }
+.applicant-progress-controls .field { margin: 0; min-width: 0; }
+.applicant-progress-controls select { width: 100%; min-width: 0; height: 44px; box-sizing: border-box; }
+.applicant-progress-controls > button, .applicant-progress-controls > .applicant-schedule-interview { display: inline-flex; align-items: center; justify-content: center; height: 44px; min-height: 44px; padding: 10px 16px; box-sizing: border-box; border: 1px solid #223e76; border-radius: 8px; text-decoration: none; }
+.applicant-progress-controls > button { background: #223e76; color: #fff; }
+.applicant-progress-controls > .applicant-schedule-interview { background: #fff; color: #223e76; }
+@media (max-width: 650px) { .applicant-progress-controls { grid-template-columns: minmax(0, 1fr); } }
+
+
+.applicant-progress-card { scroll-margin-top: 24px; }
+
+.candidate-applied-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.candidate-applied-actions > form { margin: 0; }
+.candidate-applied-actions .job-submit-button, .candidate-applied-actions .candidate-withdraw-button { width: 100%; height: 100%; min-height: 44px; box-sizing: border-box; }
+.candidate-withdraw-button { display: inline-flex; align-items: center; justify-content: center; padding: 10px 18px; border: 1px solid #223e76; border-radius: 8px; background: #fff; color: #223e76; font: inherit; font-weight: 600; cursor: pointer; }
+.candidate-withdraw-button:hover:not(:disabled) { background: #edf2fc; }
+.candidate-withdraw-button:disabled { color: #697586; border-color: #d5dce6; background: #f3f5f8; cursor: default; }
+.candidate-applications-table .candidate-withdraw-column { text-align: right; width: 1%; white-space: nowrap; }
+.candidate-applications-table tr { scroll-margin-top: 100px; }
+
+.candidate-application-outcome { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 12px 18px; border: 1px solid; border-radius: 10px; box-sizing: border-box; font-weight: 700; }
+.candidate-application-outcome.application-status-rejected { background: #fef0f0; color: #a52323; border-color: #efb4b4; }
+.candidate-application-outcome.application-status-offer { background: #eaf8ef; color: #1e703e; border-color: #acd8bc; }
+
+/* Human interview ratings are separate from skill/model scores. */
+.recruiter-applicants-table .applicant-interview-rating { text-align: center; }
+.applicant-interview-rating .interview-rating-value { display: inline-block; padding: 7px 8px; border: 1px solid #cbd7ed; border-radius: 8px; color: #233f78; background: #eef3fc; font-size: 14px; line-height: 1.4; overflow-wrap: normal; }
+.applicant-interview-rating small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.4; }

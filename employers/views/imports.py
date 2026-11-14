@@ -84,7 +84,6 @@ def import_listings(request):
                             job = form.save(commit=False)
                             job.company = recruiter.company
                             job.created_by = request.user
-                            job.moderation_status = "pending"
                             job.save()
                     request.session.pop("job_import_preview", None)
                     messages.success(request, f"Created {len(forms)} job listing(s).")

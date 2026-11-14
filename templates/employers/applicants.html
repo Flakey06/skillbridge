@@ -35,7 +35,7 @@
         </select>
     </label>
     <div class="field applicant-ats-filter">
-        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum ATS Score</label><button class="applicant-ats-info" type="button" data-ats-help-toggle aria-label="About the minimum ATS score" title="About the minimum ATS score" aria-expanded="false" aria-controls="ats-scoring-help"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v2"/></svg></button></span>
+        <span class="applicant-ats-label"><label for="applicant-ats-score">Minimum Skill Compatibility</label><a class="applicant-ats-info" href="#ats-scoring-help" aria-label="About the minimum Skill Compatibility">ⓘ</a></span>
         <select id="applicant-ats-score" name="min_ats_score">
             <option value="">Any score</option>
             <option value="50"{% if minimum_ats_score == '50' %} selected{% endif %}>50+</option>
@@ -49,49 +49,22 @@
     <button class="primary applicant-filter-submit" type="submit" aria-label="Filter Applicants" title="Filter Applicants"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
 </form>
 
-<aside class="card stack ats-help-dropdown" id="ats-scoring-help" data-ats-help tabindex="-1" hidden>
+<aside class="card stack ats-help-dropdown native-target-panel" id="ats-scoring-help" tabindex="-1">
     <div class="section-heading">
-        <div><p class="eyebrow">Automatic screening</p><h2>How the ATS score works</h2></div>
-        <button class="button small" type="button" data-ats-help-close>Close</button>
+        <div><p class="eyebrow">Automatic screening</p><h2>How Skill Compatibility Works</h2></div>
+        <a class="button small" href="#">Close</a>
     </div>
-    <p>The ATS score is calculated automatically when the candidate applies. It compares evidence saved in the candidate profile and résumé with the requirements of that specific job.</p>
+    <p>Skill Compatibility is calculated automatically when the candidate applies. It compares evidence saved in the candidate profile and résumé with the requirements of that specific job.</p>
     <ol>
-        <li><strong>Required skills:</strong> skills found in the candidate profile or résumé.</li>
-        <li><strong>Preferred skills:</strong> additional matching skills requested by the recruiter.</li>
-        <li><strong>Experience and evidence:</strong> relevant work, education, certifications, projects, and résumé content.</li>
-        <li><strong>Career alignment:</strong> how closely the candidate’s direction matches the role.</li>
+        <li><strong>Skill coverage (70 points):</strong> recruiter-weighted skills found in the profile or selected résumé.</li>
+        <li><strong>Evidence (30 points):</strong> projects, internships, and self-declared skills, using the recruiter’s evidence priorities.</li>
     </ol>
     <p>The result is saved with the application on a scale of <strong>0–100</strong>, so recruiters see the same submission-time assessment even if the candidate later edits their profile.</p>
-    <p class="sub">The minimum ATS filter now uses this automatic score. Recruiters can still complete a separate structured evaluation from the candidate detail page.</p>
+    <p class="sub">The minimum compatibility filter now uses this automatic score. Recruiters can still complete a separate structured evaluation from the candidate detail page.</p>
 </aside>
 
 <div class="card table-wrap applicant-score-table-wrap">
-    {% include "components/applicant_table.html" with applications=applications show_update=True show_company_history=True %}
+    {% include "components/applicant_table.html" with applications=applications show_update=True show_company_history=True show_interview_rating=True %}
 </div>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const panel = document.querySelector("[data-ats-help]");
-    const toggle = document.querySelector("[data-ats-help-toggle]");
-    const close = document.querySelector("[data-ats-help-close]");
-    if (!panel || !toggle) return;
-    panel.hidden = true;
-    toggle.setAttribute("aria-expanded", "false");
-    const setOpen = (open) => {
-        panel.hidden = !open;
-        toggle.setAttribute("aria-expanded", String(open));
-        if (open) {
-            panel.focus({preventScroll: true});
-            requestAnimationFrame(() => panel.scrollIntoView({behavior: "smooth", block: "nearest"}));
-        } else {
-            toggle.focus({preventScroll: true});
-            requestAnimationFrame(() => toggle.scrollIntoView({behavior: "smooth", block: "nearest"}));
-        }
-    };
-    toggle?.addEventListener("click", () => setOpen(panel.hidden));
-    close?.addEventListener("click", () => setOpen(false));
-    panel.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setOpen(false);
-    });
-});
-</script>
+
 {% endblock %}

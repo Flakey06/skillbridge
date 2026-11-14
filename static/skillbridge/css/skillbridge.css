@@ -1,0 +1,27 @@
+/* Shared stylesheet entry point. Edit the feature modules below.
+   Import order preserves the existing cascade; no JavaScript or build step is required. */
+@import url("shared/foundation.css");
+@import url("shared/navigation.css");
+@import url("shared/tables-and-dialogs.css");
+@import url("shared/theme.css");
+@import url("accounts/authentication.css");
+@import url("calendar/workspace.css?v=create-icon-3");
+@import url("calendar/desktop-layout.css");
+@import url("shared/dashboards.css");
+@import url("candidates/learning-and-resumes.css");
+@import url("shared/responsive.css");
+@import url("shared/presentation.css");
+@import url("shared/navigation-refinements.css");
+@import url("accounts/split-screen-auth.css");
+@import url("shared/navigation-collapse.css");
+@import url("accounts/forms-and-settings.css");
+@import url("candidates/certification-forms.css");
+@import url("jobs/jobs-and-applicants.css?v=compact-scores-2");
+@import url("recruiters/applicant-previews.css?v=interview-rating-1");
+@import url("jobs/detail-and-comparison.css");
+@import url("recruiters/reference-suggestions.css");
+@import url("shared/typography.css");
+@import url("shared/native-controls.css");
+@import url("administration/statistics-interactions.css");
+@import url("shared/notifications.css");
+@import url("recruiters/interview-review.css?v=9");

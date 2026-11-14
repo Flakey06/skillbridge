@@ -1,18 +1,18 @@
 """Applicant review and application status updates."""
 
 from matching.ml_model import predict_suitability
-from matching.services import calculate_overall_suitability
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.db.models import Count, Exists, F, OuterRef, Q
+from django.db.models import Count, Exists, F, OuterRef, Q, Prefetch
 from accounts.decorators import recruiter_required
 from accounts.notification_helpers import notify
 from applications.forms import ApplicantEvaluationForm, ApplicationStatusForm
 from applications.models import ApplicantEvaluation, ApplicationReviewEvent, CandidateCompanyBlacklist, Interview, JobApplication
 from jobs.models import Job
 from .common import _context, _recruiter
+from employers.interview_review.ratings import compile_interview_rating
 
 
 @recruiter_required
@@ -26,7 +26,9 @@ def applicants(request):
         else Job.objects.filter(created_by=request.user)
     )
     company_id = recruiter.company_id or jobs.values_list("company_id", flat=True).first()
-    applications = JobApplication.objects.filter(job__in=jobs).select_related("candidate", "job", "evaluation")
+    applications = JobApplication.objects.filter(job__in=jobs).select_related("candidate", "job", "evaluation").prefetch_related(
+        Prefetch("interviews", queryset=Interview.objects.select_related("review"))
+    )
     applications = applications.annotate(
         company_application_count=Count(
             "candidate__job_applications",
@@ -110,13 +112,13 @@ def applicants(request):
         status_form = ApplicationStatusForm()
     for application in applications:
         application.status_form = ApplicationStatusForm(instance=application)
+        application.interview_rating = compile_interview_rating([
+            interview.review for interview in application.interviews.all()
+            if getattr(interview, 'review', None) is not None
+        ])
     if has_pro:
         for application in applications:
             application.ml_prediction = predict_suitability(application.candidate, application.job)
-            application.overall_score = calculate_overall_suitability(
-                application.match_score,
-                application.ml_prediction["score"],
-            )
     return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro, history_filter=candidate_history, minimum_ats_score=minimum_ats_score))
 
 
@@ -151,10 +153,6 @@ def applicant_detail(request, application_id):
     candidate_profile = getattr(application.candidate, "candidate_profile", None)
     profile = getattr(application.candidate, "profile", None)
     ml_prediction = predict_suitability(application.candidate, application.job) if has_pro else None
-    overall_score = calculate_overall_suitability(
-        application.match_score,
-        ml_prediction["score"] if ml_prediction else None,
-    )
     if request.method == "POST" and request.POST.get("action") == "blacklist":
         reason = request.POST.get("blacklist_reason", "").strip()
         if blacklist_entry:
@@ -217,7 +215,6 @@ def applicant_detail(request, application_id):
             status_form=status_form,
             has_pro=has_pro,
             ml_prediction=ml_prediction,
-            overall_score=overall_score,
             company_applications=company_applications,
             company_application_count=company_application_count,
             company_rejection_count=company_rejection_count,

@@ -37,7 +37,7 @@ class JobForm(forms.ModelForm):
         required=False,
         label="Rank evidence",
         help_text="Drag and drop to rank the evidence recruiters value most.",
-        widget=forms.HiddenInput(),
+        widget=forms.TextInput(),
     )
 
     @staticmethod

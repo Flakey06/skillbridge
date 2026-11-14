@@ -1,0 +1,16 @@
+        <details class="card interview-transcript-setup"{% if form.errors or transcript_turn_count and not matching_ready %} open{% endif %}>
+            <summary>Transcript Upload{% if matching_ready %} · Answers matched{% endif %}</summary>
+            <div class="stack">
+            <div class="interview-panel-heading"><h2>Transcript</h2><details class="interview-inline-help"><summary aria-label="About transcript matching">ⓘ</summary><div>Upload a UTF-8 .txt transcript, select the candidate speaker, then match answers. Matching uses local text rules and may miss paraphrases. Check suggestions against the transcript. Existing answers are preserved.</div></details></div>
+            <p>Upload → Select speaker → Match answers</p>
+            <label class="field">{{ form.transcript_file.label }}{{ form.transcript_file }}{{ form.transcript_file.errors }}</label>
+            <button class="button" type="submit" name="action" value="load">Load Transcript</button>
+            {% if transcript_turn_count %}<p class="interview-transcript-status" role="status">Transcript loaded: {{ transcript_turn_count }} speaker turns. Text retained below. Save the review to keep it for later.</p>{% endif %}
+            {% if speaker_previews %}<details class="interview-speaker-previews"><summary>Check Who Is Speaking</summary>{% for speaker in speaker_previews %}<p><strong>{{ speaker.name }}:</strong> {{ speaker.example }}</p>{% endfor %}</details>{% endif %}
+            <small>Select the person answering the questions.</small>
+            <label class="field">{{ form.candidate_speaker.label }}{{ form.candidate_speaker }}{{ form.candidate_speaker.errors }}</label>
+            <details><summary>View Or Edit Transcript</summary><label class="field">Transcript{{ form.transcript }}{{ form.transcript.errors }}</label></details>
+            {% if form.transcript.errors %}<p class="errorlist">Check the transcript format above.</p>{% endif %}
+            <button class="primary button" type="submit" name="action" value="analyse">Match Answers</button>
+            </div>
+        </details>

@@ -1,7 +1,6 @@
 """Recruiter dashboard."""
 
 from matching.ml_model import predict_suitability
-from matching.services import calculate_overall_suitability
 from django.shortcuts import render
 from django.utils import timezone
 from accounts.dashboard_helpers import dashboard_greeting
@@ -23,10 +22,6 @@ def dashboard(request):
         for application in recent_applications:
             ml_prediction = predict_suitability(application.candidate, application.job)
             application.ml_prediction = ml_prediction
-            application.overall_score = calculate_overall_suitability(
-                application.match_score,
-                ml_prediction["score"],
-            )
     now = timezone.now()
     return render(
         request,

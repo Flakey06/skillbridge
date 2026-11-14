@@ -1,15 +1,17 @@
     <table class="recruiter-applicants-table{% if show_company_history and show_update %} recruiter-applicants-full-table{% endif %}">
-        {% if show_company_history and show_update %}<colgroup><col style="width:7%"><col style="width:8%"><col style="width:12%"><col style="width:10%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:20%"><col style="width:10%"></colgroup>{% endif %}
-        <thead><tr><th>Candidate</th><th>Role</th>{% if show_company_history %}<th>Company history</th><th class="applicant-ats-score-cell">ATS Score<small class="applicant-ats-caption">Automatic Application Match</small></th>{% endif %}<th>Skill Compatibility</th><th>Predicted Job Fit</th><th class="applicant-status-cell">Status</th>{% if show_update %}<th>Update</th>{% endif %}<th class="applicant-compare-cell">Compare</th></tr></thead>
+        {% if show_company_history and show_update %}<colgroup>{% if show_interview_rating %}<col style="width:7%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:10%"><col style="width:11%"><col style="width:10%"><col style="width:22%"><col style="width:9%">{% else %}<col style="width:8%"><col style="width:10%"><col style="width:15%"><col style="width:12%"><col style="width:12%"><col style="width:11%"><col style="width:22%"><col style="width:10%">{% endif %}</colgroup>{% endif %}
+        <thead><tr><th>Candidate</th><th>Role</th>{% if show_company_history %}<th>Company history</th>{% endif %}<th>Skill Compatibility</th><th>Predicted Job Fit</th>{% if show_interview_rating %}<th class="applicant-interview-rating">Interview Rating</th>{% endif %}<th class="applicant-status-cell">Status</th>{% if show_update %}<th>Update</th>{% endif %}<th class="applicant-compare-cell">Compare</th></tr></thead>
         <tbody>
             {% for application in applications %}
                 <tr>
                     <td><a href="{% url 'recruiter_applicant_detail' application.id %}">{{ application.candidate.username }}</a></td>
                     <td>{{ application.job.title }}</td>
                     {% if show_company_history %}<td><strong>{{ application.company_application_count }}</strong> application{{ application.company_application_count|pluralize }} · {{ application.company_rejection_count }} rejected{% if application.is_blacklisted %}<br><span class="pill">Blacklisted</span>{% endif %}</td>{% endif %}
-                    {% if show_company_history %}<td class="applicant-ats-score-cell">{% if application.match_score is not None %}<a class="applicant-ats-score-box {% if application.match_score < 40 %}compatibility-red{% elif application.match_score < 60 %}compatibility-orange{% else %}compatibility-yellow{% endif %}" href="{% url 'recruiter_applicant_detail' application.id %}#skill-compatibility" aria-label="ATS Score {{ application.match_score }} out of 100. View assessment."><strong>{{ application.match_score }}/100</strong></a>{% else %}<span class="muted">Not available</span>{% endif %}</td>{% endif %}
                     <td class="applicant-score-cell">{% if has_pro %}{% include "components/applicant_score_link.html" with application=application label="Skill Compatibility" score=application.match_score section="skill-compatibility" %}{% else %}<a href="{% url 'plans' %}">Pro Insights</a>{% endif %}</td>
                     <td class="applicant-score-cell">{% if has_pro %}{% include "components/applicant_score_link.html" with application=application label="Predicted Job Fit" score=application.ml_prediction.score section="predicted-job-fit" %}{% else %}<a href="{% url 'plans' %}">Pro Insights</a>{% endif %}</td>
+                    {% if show_interview_rating %}<td class="applicant-interview-rating">
+                        {% if application.interview_rating %}<strong class="interview-rating-value">{{ application.interview_rating.average }}/5 · {{ application.interview_rating.percentage }}%</strong><small>{{ application.interview_rating.rated_count }}/{{ application.interview_rating.question_count }} questions rated</small>{% else %}<span class="muted">Not rated</span>{% endif %}
+                    </td>{% endif %}
                     <td class="applicant-status-cell"><span class="pill application-status application-status-{{ application.status }}">{{ application.get_status_display }}</span></td>
                     {% if show_update %}
                     <td>
@@ -26,7 +28,7 @@
                     <td class="applicant-compare-cell"><a class="button candidate-compare-button" href="{% url 'recruiter_compare_candidates' application.id %}">Compare</a></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="{% if show_company_history %}{% if show_update %}9{% else %}8{% endif %}{% else %}{% if show_update %}7{% else %}6{% endif %}{% endif %}">No applicants match your filters.</td></tr>
+                <tr><td colspan="{% if show_interview_rating %}9{% elif show_company_history %}{% if show_update %}8{% else %}7{% endif %}{% else %}{% if show_update %}7{% else %}6{% endif %}{% endif %}">No applicants match your filters.</td></tr>
             {% endfor %}
         </tbody>
     </table>
