@@ -7,6 +7,7 @@ from .applicants import applicants, applicant_detail
 from .calendar import calendar
 from .company import company
 from .dashboard import dashboard
+from .interviews import interview_workspace
 
 __all__ = [
     "job_detail",
@@ -21,4 +22,5 @@ __all__ = [
     'calendar',
     'company',
     'dashboard',
+    'interview_workspace',
 ]

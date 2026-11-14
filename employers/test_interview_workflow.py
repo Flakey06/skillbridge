@@ -12,8 +12,10 @@ from jobs.models import Job
 class InterviewSchedulingRulesTests(TestCase):
     def setUp(self):
         recruiter = User.objects.create_user(username='interview-rule-recruiter')
+        self.recruiter = recruiter
         UserProfile.objects.create(user=recruiter, role='recruiter')
         candidate = User.objects.create_user(username='interview-rule-candidate', email='candidate@example.com')
+        self.candidate = candidate
         UserProfile.objects.create(user=candidate, role='candidate', profile_data={'phone': '+65 8123 4567', 'linkedin': 'https://www.linkedin.com/in/candidate'})
         company = Company.objects.create(name='Interview Company')
         job = Job.objects.create(title='Role', company=company, created_by=recruiter, employment_type='full_time')
@@ -54,6 +56,63 @@ class InterviewSchedulingRulesTests(TestCase):
         self.assertEqual(self.application.get_status_display(), 'Interview')
         self.assertEqual(Interview.objects.filter(application=self.application).count(), 1)
 
+    def test_candidate_can_accept_scheduled_interview(self):
+        self.application.status = 'interview'
+        self.application.save(update_fields=['status'])
+        interview = Interview.objects.create(
+            application=self.application,
+            created_by=self.recruiter,
+            scheduled_start='2026-12-01T14:00:00+08:00',
+            scheduled_end='2026-12-01T15:00:00+08:00',
+        )
+        self.client.force_login(self.candidate)
+
+        response = self.client.post(reverse('candidate_calendar'), {
+            'interview_id': interview.pk,
+            'action': 'accept',
+        })
+
+        self.assertRedirects(response, reverse('candidate_calendar'))
+        interview.refresh_from_db()
+        self.assertEqual(interview.response_status, 'accepted')
+
+    def test_candidate_reschedule_rejects_candidate_or_recruiter_conflict(self):
+        self.application.status = 'interview'
+        self.application.save(update_fields=['status'])
+        interview = Interview.objects.create(
+            application=self.application,
+            created_by=self.recruiter,
+            scheduled_start='2026-12-01T14:00:00+08:00',
+            scheduled_end='2026-12-01T15:00:00+08:00',
+        )
+        other_candidate = User.objects.create_user(username='other-interview-candidate')
+        other_application = JobApplication.objects.create(
+            candidate=other_candidate,
+            job=self.application.job,
+            status='interview',
+        )
+        Interview.objects.create(
+            application=other_application,
+            created_by=self.recruiter,
+            scheduled_start='2026-12-02T14:00:00+08:00',
+            scheduled_end='2026-12-02T15:00:00+08:00',
+        )
+        self.client.force_login(self.candidate)
+
+        response = self.client.post(reverse('candidate_calendar'), {
+            'interview_id': interview.pk,
+            'requested_start': '2026-12-02T14:30',
+            'requested_end': '2026-12-02T15:30',
+            'reschedule_reason': 'Need another time',
+            'candidate_notes': '',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'conflicts with another candidate or recruiter interview')
+        interview.refresh_from_db()
+        self.assertNotEqual(interview.reschedule_status, 'pending')
+        self.assertIsNone(interview.proposed_start)
+
     def test_cannot_schedule_non_shortlisted_application_via_direct_post(self):
         response = self.client.post(reverse('recruiter_calendar'), {
             'application_id': self.application.pk, 'scheduled_start': '2026-12-01T14:00',
@@ -89,6 +148,53 @@ class InterviewSchedulingRulesTests(TestCase):
         interview = Interview.objects.get(application=self.application)
         self.assertEqual(interview.contact_method, 'phone')
         self.assertEqual(interview.contact_details, '+65 8123 4567')
+
+    def test_video_interview_creates_in_app_jitsi_room(self):
+        self.application.status = 'shortlisted'
+        self.application.save(update_fields=['status'])
+        self.client.post(reverse('recruiter_calendar'), {
+            'application_id': self.application.pk,
+            'scheduled_start': '2026-12-01T14:00',
+            'contact_method': 'video',
+        })
+        interview = Interview.objects.get(application=self.application)
+        self.assertTrue(interview.meeting_url.startswith('https://meet.jit.si/skillbridge-'))
+
+        interview.response_status = 'accepted'
+        interview.save(update_fields=['response_status'])
+
+        calendar_page = self.client.get(reverse('recruiter_calendar'))
+        workspace_url = reverse('recruiter_interview_workspace', args=[interview.pk])
+        self.assertContains(calendar_page, workspace_url)
+        workspace = self.client.get(workspace_url)
+        self.assertContains(workspace, 'Embedded Jitsi Meet interview')
+        self.assertContains(workspace, interview.meeting_url)
+
+    def test_candidate_joins_inside_app_only_after_accepting(self):
+        self.application.status = 'interview'
+        self.application.save(update_fields=['status'])
+        interview = Interview.objects.create(
+            application=self.application,
+            created_by=self.recruiter,
+            scheduled_start='2026-12-01T14:00:00+08:00',
+            scheduled_end='2026-12-01T15:00:00+08:00',
+            meeting_url='https://meet.jit.si/skillbridge-test-room',
+        )
+        self.client.force_login(self.candidate)
+        room_url = reverse('candidate_interview_room', args=[interview.pk])
+        self.assertEqual(self.client.get(room_url).status_code, 404)
+
+        self.client.post(reverse('candidate_calendar'), {
+            'interview_id': interview.pk,
+            'action': 'accept',
+        })
+
+        calendar_page = self.client.get(reverse('candidate_calendar'))
+        self.assertContains(calendar_page, room_url)
+        room = self.client.get(room_url)
+        self.assertEqual(room.status_code, 200)
+        self.assertContains(room, 'Embedded Jitsi interview')
+        self.assertContains(room, interview.meeting_url)
 
     def test_candidate_interview_clash_requires_confirmation(self):
         other_job = Job.objects.create(

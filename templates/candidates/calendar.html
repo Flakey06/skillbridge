@@ -21,7 +21,18 @@
 <div class="calendar-page-layout">
 <aside class="calendar-sidebar">
 <div class="card selected-day"><h2>{{ calendar.selected_date|date:"l, d F Y" }}</h2>{% for interview in calendar.selected_events %}<div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }}{% if interview.application.job.company.name %} · {{ interview.application.job.company.name }}{% endif %}</span>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}{% if interview.calcom_event_url %}<a href="{{ interview.calcom_event_url }}" target="_blank" rel="noreferrer">Open Cal.com booking</a>{% endif %}</div>{% empty %}<p class="sub">No interview scheduled for this date.</p>{% endfor %}</div>
-<div class="card calendar-card"><h2>Upcoming interviews</h2>{% for interview in upcoming_interviews %}<div class="notification-item"><div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">Interview</span></div><p>{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.application.job.company.name }}</p><button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}" data-notes="{{ interview.candidate_notes }}">Reschedule / notes</button>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}</div>{% empty %}<p class="sub">No upcoming interviews.</p>{% endfor %}</div>
+<div class="card calendar-card"><h2>Upcoming interviews</h2>
+{% for interview in upcoming_interviews %}
+    <div class="notification-item">
+        <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">{{ interview.get_response_status_display }}</span></div>
+        <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.application.job.company.name }}</p>
+        <div class="row">
+            {% if interview.response_status == 'awaiting' %}<form method="post">{% csrf_token %}<input type="hidden" name="interview_id" value="{{ interview.id }}"><button class="primary small" name="action" value="accept">Accept interview</button></form>{% endif %}
+            {% if interview.response_status == 'accepted' and interview.contact_method == 'video' %}<a class="primary button small" href="{% url 'candidate_interview_room' interview.id %}">Join interview</a>{% endif %}
+            <button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}" data-notes="{{ interview.candidate_notes }}">Reschedule / notes</button>
+        </div>
+    </div>
+{% empty %}<p class="sub">No upcoming interviews.</p>{% endfor %}</div>
 <details class="card calendar-card past-interviews"><summary><h2>Past Interviews</h2></summary>{% for interview in past_interviews %}<div class="notification-item"><div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.scheduled_start|date:"d M Y, H:i" }}</span></div><p>{{ interview.application.job.company.name }}</p><button class="button small" type="button" data-reschedule-interview data-interview-id="{{ interview.id }}" data-start="{{ interview.scheduled_start|date:'Y-m-d\TH:i' }}" data-end="{{ interview.scheduled_end|date:'Y-m-d\TH:i' }}" data-notes="{{ interview.candidate_notes }}">Add notes / reschedule</button></div>{% empty %}<p class="sub">No past interviews.</p>{% endfor %}</details>
 </aside>
 <div class="cal-board" id="calendar">

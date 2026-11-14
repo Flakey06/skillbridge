@@ -146,6 +146,11 @@ class ApplicantEvaluation(models.Model):
 
 
 class Interview(models.Model):
+    RESPONSE_STATUS_CHOICES = [
+        ("awaiting", "Awaiting applicant response"),
+        ("accepted", "Accepted by applicant"),
+        ("reschedule_requested", "Reschedule requested"),
+    ]
     ATTENDANCE_CHOICES = [
         ("scheduled", "Scheduled"),
         ("attended", "Attended"),
@@ -174,6 +179,11 @@ class Interview(models.Model):
     contact_method = models.CharField(max_length=20, choices=CONTACT_METHOD_CHOICES, default="video")
     contact_details = models.CharField(max_length=300, blank=True)
     attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_CHOICES, default="scheduled")
+    response_status = models.CharField(
+        max_length=24,
+        choices=RESPONSE_STATUS_CHOICES,
+        default="awaiting",
+    )
     recruiter_feedback = models.TextField(blank=True)
     serious_concern = models.BooleanField(default=False)
     calcom_event_url = models.URLField(blank=True)

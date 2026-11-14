@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Live interview · SkillBridge{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><p class="eyebrow">Live interview workspace</p><h1>{{ application.candidate.username }} · {{ application.job.title }}</h1><p class="sub">{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.get_contact_method_display }}</p></div>
+    <div class="static-page-actions"><a class="button" href="{% url 'recruiter_calendar' %}">Calendar</a><a class="button" href="{% url 'recruiter_applicant_detail' application.pk %}">Applicant profile</a></div>
+</div>
+
+<div class="interview-live-layout">
+    <aside class="interview-context-pane">
+        <section class="card"><h2>Candidate context</h2><p><b>Career:</b> {{ profile.profile_data.career|default:"Not provided" }}</p><p><b>Specialisation:</b> {{ profile.profile_data.specialisation|default:"Not provided" }}</p><p><b>Skills:</b> {{ profile.profile_data.skills|default:"Not provided" }}</p><p><b>Experience:</b> {{ profile.profile_data.experience|default:"Not provided"|linebreaksbr }}</p></section>
+        <section class="card"><h2>Role requirements</h2><p><b>Required skills:</b> {{ application.job.required_skills|default:"Not specified" }}</p><p>{{ application.job.description|linebreaksbr }}</p></section>
+        <section class="card"><h2>Suggested interview flow</h2><ol><li>Confirm the candidate’s understanding of the role.</li><li>Ask for one concrete example for each important skill.</li><li>Clarify individual contribution, tools used, and measurable result.</li><li>Invite candidate questions and explain next steps.</li></ol></section>
+    </aside>
+
+    <main class="interview-working-pane">
+        <section class="card interview-call-panel" data-call-panel>
+            <div class="section-heading"><div><p class="eyebrow">Interview call</p><h2>{{ meeting_provider }}</h2></div>{% if meeting_url and not meeting_embed_url %}<button class="button" type="button" data-open-call data-call-url="{{ meeting_url }}">Open call window</button>{% endif %}</div>
+            {% if meeting_embed_url %}
+                <div class="interview-video-frame"><iframe src="{{ meeting_embed_url }}#config.prejoinPageEnabled=false" title="Embedded {{ meeting_provider }} interview" allow="camera; microphone; fullscreen; display-capture; autoplay" referrerpolicy="no-referrer" allowfullscreen></iframe></div>
+                <p class="sub">The call stays inside SkillBridge beside the notes workspace. Allow camera and microphone access when prompted.</p>
+            {% elif meeting_url %}
+                <div class="interview-external-call"><strong>{{ meeting_provider }} opens outside the SkillBridge panel</strong><p>Google Meet, Zoom, and Teams normally prevent their meeting pages from being embedded. Open the call window and keep this workspace visible for concurrent notes and transcription.</p></div>
+            {% else %}
+                <div class="interview-external-call"><strong>No video meeting link was added</strong><p>Add a meeting URL when scheduling the interview. Jitsi links can appear inside this panel; Meet, Zoom, and Teams open in a separate call window.</p></div>
+            {% endif %}
+        </section>
+        <form method="post" class="card interview-notes-workspace" data-interview-notes-form>
+            {% csrf_token %}<input type="hidden" name="action" value="autosave_notes">
+            <div class="section-heading"><div><h2>Live transcript and notes</h2><p class="sub" data-interview-save-status>Changes save automatically</p></div><button class="button" type="button" data-transcription-toggle>Start transcription</button></div>
+            <p class="sub">Start only after informing the candidate and obtaining any consent required for recording or transcription. Audio is handled by the browser; SkillBridge saves the resulting text.</p>
+            <p class="profile-message" data-transcription-support hidden>Live transcription is not supported by this browser. You can still type or paste a transcript.</p>
+            <label class="field">Transcript<textarea name="transcript" rows="13" placeholder="Live speech or typed transcript appears here…">{{ interview.transcript }}</textarea></label>
+            <label class="field">Private recruiter notes<textarea name="notes" rows="7" placeholder="Record factual observations, examples, and follow-up questions…">{{ interview.notes }}</textarea></label>
+            <label class="field">Interview summary<textarea name="summary" rows="5" placeholder="Summarise evidence, concerns, and recommended next step…">{{ interview.summary }}</textarea></label>
+        </form>
+
+        <section class="card" id="interview-rating">
+            <div class="section-heading"><div><h2>Structured recruiter rating</h2><p class="sub">Prompts update as you score and write.</p></div>{% if evaluation %}<span class="pill progress-green">{{ evaluation.total_score }}/100</span>{% endif %}</div>
+            <div class="interview-rating-prompts" data-rating-prompts role="status" aria-live="polite"><strong>Writing prompts</strong><ul><li>Describe observable evidence from the interview.</li><li>Separate what the candidate said from your interpretation.</li></ul></div>
+            <form method="post" class="form-grid" data-interview-rating-form>
+                {% csrf_token %}<input type="hidden" name="action" value="save_evaluation">
+                {% for field in evaluation_form %}<label class="field{% if field.name == 'notes' %} span2{% endif %}" data-rating-field="{{ field.name }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>{% endfor %}
+                <div class="static-page-actions span2"><button class="primary" type="submit">Save recruiter rating</button></div>
+            </form>
+        </section>
+    </main>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelector("[data-open-call]")?.addEventListener("click", (event) => {
+        const url = event.currentTarget.dataset.callUrl;
+        const width = Math.max(720, Math.floor(window.screen.availWidth * .55));
+        const callWindow = window.open(url, "skillbridge-interview-call", `popup=yes,width=${width},height=${window.screen.availHeight},left=0,top=0,resizable=yes`);
+        if (!callWindow) window.location.assign(url);
+    });
+    const notesForm = document.querySelector("[data-interview-notes-form]");
+    const saveStatus = document.querySelector("[data-interview-save-status]");
+    let saveTimer;
+    const saveNotes = async () => {
+        saveStatus.textContent = "Saving notes…";
+        try {
+            const response = await fetch(window.location.href, {method: "POST", body: new FormData(notesForm), headers: {"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"}, credentials: "same-origin"});
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || "Notes could not be saved.");
+            saveStatus.textContent = payload.message;
+        } catch (error) { saveStatus.textContent = error.message || "Notes could not be saved."; }
+    };
+    notesForm.addEventListener("input", () => { window.clearTimeout(saveTimer); saveStatus.textContent = "Waiting to save…"; saveTimer = window.setTimeout(saveNotes, 700); });
+    notesForm.addEventListener("focusout", () => { window.clearTimeout(saveTimer); saveTimer = window.setTimeout(saveNotes, 50); });
+
+    const transcript = notesForm.elements.transcript;
+    const transcriptionButton = document.querySelector("[data-transcription-toggle]");
+    const supportMessage = document.querySelector("[data-transcription-support]");
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let listening = false;
+    if (!Recognition) { transcriptionButton.disabled = true; supportMessage.hidden = false; }
+    else {
+        recognition = new Recognition(); recognition.continuous = true; recognition.interimResults = true;
+        let committed = transcript.value;
+        recognition.onresult = (event) => {
+            let interim = "";
+            for (let i = event.resultIndex; i < event.results.length; i += 1) {
+                const text = event.results[i][0].transcript;
+                if (event.results[i].isFinal) committed += `${committed && !committed.endsWith(" ") ? " " : ""}${text.trim()}`;
+                else interim += text;
+            }
+            transcript.value = `${committed}${interim ? ` ${interim}` : ""}`;
+            transcript.dispatchEvent(new Event("input", {bubbles: true}));
+        };
+        recognition.onend = () => { if (listening) recognition.start(); };
+        transcriptionButton.addEventListener("click", () => { listening = !listening; transcriptionButton.textContent = listening ? "Stop transcription" : "Start transcription"; if (listening) recognition.start(); else recognition.stop(); });
+    }
+
+    const ratingForm = document.querySelector("[data-interview-rating-form]");
+    const promptBox = document.querySelector("[data-rating-prompts] ul");
+    const updatePrompts = () => {
+        const prompts = [];
+        const values = Object.fromEntries(new FormData(ratingForm));
+        if (Number(values.skills_score || 0) <= 2) prompts.push("Which required skill lacked convincing evidence? Quote a concrete example.");
+        else if (values.skills_score) prompts.push("Name the strongest role-specific skill and the example that demonstrated it.");
+        if (Number(values.experience_score || 0) <= 2) prompts.push("What experience gap would require training or supervision?");
+        else if (values.experience_score) prompts.push("Which past responsibility most closely matches this role?");
+        if (Number(values.evidence_score || 0) <= 2) prompts.push("What follow-up evidence or portfolio item should be requested?");
+        if (Number(values.role_readiness_score || 0) <= 2) prompts.push("What would need to improve before this candidate is role-ready?");
+        if (!String(values.notes || "").trim()) prompts.push("Add factual notes supporting the ratings before saving.");
+        promptBox.innerHTML = (prompts.length ? prompts : ["Summarise the strongest evidence and recommended next step."]).map((prompt) => `<li>${prompt}</li>`).join("");
+    };
+    ratingForm.addEventListener("input", updatePrompts); ratingForm.addEventListener("change", updatePrompts); updatePrompts();
+});
+</script>
+{% endblock %}
