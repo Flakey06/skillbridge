@@ -78,9 +78,23 @@
                     <label class="field">{% include "components/field_label.html" with field=form.specialisation %}{{ form.specialisation }}{{ form.specialisation.errors }}</label>
                     <label class="field span2">{% include "components/field_label.html" with field=form.career_stage %}{{ form.career_stage }}{{ form.career_stage.errors }}<small class="muted">This helps us order your pathway. You can change it anytime.</small></label>
                     <fieldset class="field span2 choice-fieldset">
-                        <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>{{ form.career_interests }}
-                        <p class="muted">Choose your main faculty interests first. Add interests from another faculty when you want to explore a cross-faculty path.</p>
-                        {% if form.career_interests.help_text %}<small class="muted">{{ form.career_interests.help_text }}</small>{% endif %}
+                        <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>
+                        <p class="muted">Choose interests from any faculty. Shared interests appear once; you can select across sections.</p>
+                        <div class="profile-interest-groups">
+                            {% for group in interest_groups %}
+                                <fieldset class="profile-interest-group">
+                                    <legend>{{ group.label }}</legend>
+                                    <div class="profile-interest-options">
+                                        {% for value, label in group.choices %}
+                                            <label for="profile-interest-{{ value }}">
+                                                <input id="profile-interest-{{ value }}" type="checkbox" name="career_interests" value="{{ value }}"{% if value in selected_interests %} checked{% endif %}>
+                                                {{ label }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </fieldset>
+                            {% endfor %}
+                        </div>
                         {{ form.career_interests.errors }}
                     </fieldset>
                     <label class="field">{% include "components/field_label.html" with field=form.education %}{{ form.education }}{{ form.education.errors }}</label>

@@ -36,3 +36,28 @@
 .experience-cv-preview .native-entry-preview strong { display: block; margin: 0; font-weight: 600; }
 .experience-cv-preview .native-entry-preview p { margin: 3px 0 0; }
 .experience-cv-preview .native-entry-preview + .native-entry-preview { margin-top: 10px; padding-top: 10px; }
+
+/* Keep a checkbox and its own label text on the same centred row. */
+label:has(> input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+}
+label > input[type="checkbox"] {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    vertical-align: middle;
+}
+
+/* Faculty sections make the long profile interest list easier to scan. */
+.profile-interest-groups { display: grid; gap: 24px; margin: 20px 0 12px; }
+.profile-interest-group { min-width: 0; margin: 0; padding: 18px 20px 22px; border: 1px solid var(--line); border-radius: 12px; }
+.profile-interest-group > legend { padding: 0 8px; font-weight: 600; color: #233f78; }
+.profile-interest-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; }
+.profile-interest-options label { padding: 6px 0; }
+@media (max-width: 650px) { .profile-interest-options { grid-template-columns: 1fr; } }
