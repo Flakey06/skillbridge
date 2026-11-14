@@ -1,0 +1,15 @@
+<div class="profile-interest-groups">
+    {% for group in interest_groups %}
+        <fieldset class="profile-interest-group">
+            <legend>{{ group.label }}</legend>
+            <div class="profile-interest-options">
+                {% for value, label in group.choices %}
+                    <label for="profile-interest-{{ value }}">
+                        <input id="profile-interest-{{ value }}" type="checkbox" name="career_interests" value="{{ value }}"{% if value in selected_interests %} checked{% endif %}>
+                        <span>{{ label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+    {% endfor %}
+</div>

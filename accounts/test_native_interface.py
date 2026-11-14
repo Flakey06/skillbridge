@@ -48,3 +48,20 @@ class NativeInterfaceTests(TestCase):
         UserProfile.objects.create(user=outsider, role="candidate")
         self.client.force_login(outsider)
         self.assertEqual(self.client.get(reverse("candidate_calendar"), {"edit": interview.pk}).status_code, 404)
+
+    def test_profile_groups_every_interest_once_and_preserves_checked_values(self):
+        from accounts.choices import CAREER_INTEREST_CHOICES
+        user = User.objects.create_user(username='faculty-interest-test')
+        UserProfile.objects.create(user=user, role='candidate', profile_data={
+            'career': 'technology', 'career_interests': ['fintech', 'marketing']})
+        self.client.force_login(user)
+        response = self.client.get(reverse('candidate_profile'))
+        groups = response.context['interest_groups']
+        values = [value for group in groups for value, _ in group['choices']]
+        self.assertEqual(len(values), len(set(values)))
+        self.assertEqual(set(values), {value for value, _ in CAREER_INTEREST_CHOICES})
+        for group in groups:
+            self.assertContains(response, f'<legend>{group["label"]}</legend>', html=True)
+        self.assertContains(response, 'value="fintech" checked')
+        self.assertContains(response, 'value="marketing" checked')
+        self.assertNotContains(response, 'id="id_career_interests"')

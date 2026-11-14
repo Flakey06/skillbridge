@@ -184,6 +184,13 @@ def profile(request):
         }
         for career_area in CAREER_INTERESTS_BY_AREA
     }
+    interest_groups = []
+    assigned = set()
+    for group in career_choice_map.values():
+        choices = [(value, label) for value, label in group["interests"] if value not in assigned]
+        assigned.update(value for value, _ in choices)
+        if choices:
+            interest_groups.append({"label": group["label"], "choices": choices})
     selected_interests = form["career_interests"].value() or []
     if isinstance(selected_interests, str):
         selected_interests = [selected_interests]
@@ -193,6 +200,7 @@ def profile(request):
         "profile": profile,
         "completion_percent": _completion_percent(profile),
         "career_choice_map": career_choice_map,
+        "interest_groups": interest_groups,
         "selected_interests": selected_interests,
         "guided_resume": request.GET.get("guided") == "1",
     })
