@@ -122,7 +122,8 @@ def interview_review(request, interview_id):
     return render(request, 'employers/interview_review.html', _context(request,
         interview=interview, form=form, question_formset=formset,
         transcript_turn_count=len(turns), speaker_previews=speaker_previews,
-        stage=stage, additional_questions=additional_questions))
+        stage=stage, additional_questions=additional_questions,
+        matching_ready=any(row.get('answer') and row.get('source_question') for row in visible_rows)))
 
 
 @recruiter_required

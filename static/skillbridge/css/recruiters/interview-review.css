@@ -66,3 +66,22 @@ main:has(.interview-workspace-page) { max-width: none; padding: 16px 20px; }
 .interview-question-status { flex: 0 0 auto; max-width: 85px; padding: 5px 7px; border-radius: 6px; background: #edf2fc; color: #233f78; font-size: 11px; text-transform: none; }
 .interview-question-card > fieldset { padding: 16px 0 0; margin: 16px 0 0; border: 0; border-top: 1px solid #dce4f2; }
 .interview-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Questions and flags during the meeting; answer review afterwards. */
+.interview-flag-toggle { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.interview-flag-toggle input { flex: 0 0 auto; width: 16px; height: 16px; }
+.interview-transcript-setup > summary, .interview-resume-disclosure > summary { cursor: pointer; font-weight: 700; }
+.interview-transcript-setup[open] > summary, .interview-resume-disclosure[open] > summary { margin-bottom: 16px; }
+@media (min-width: 1100px) {
+    .interview-workspace-after .interview-workspace-columns { grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); }
+}
+
+.interview-answer-comparison.interview-answer-single { grid-template-columns: minmax(0, 1fr); }
+
+/* After-interview reference column follows the live notes → upload → resume flow. */
+.interview-workspace-after .interview-workspace-questions { display: flex; flex-direction: column; gap: 24px; }
+.interview-live-notes-panel .interview-live-answer { margin-bottom: 0; max-height: 160px; overflow-y: auto; }
+.interview-after-resume { flex: 1 0 220px; overflow-y: auto; }
+.interview-after-resume h2 { margin-bottom: 12px; }
+.interview-workspace-page .interview-question-flagged { border-color: #c18a22; border-left: 4px solid #c18a22; background: #fffdf6; }
+.interview-question-flagged .interview-question-status { background: #fff0c9; color: #6c4700; }

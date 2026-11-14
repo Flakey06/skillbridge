@@ -5,13 +5,14 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.db.models import Count, Exists, F, OuterRef, Q
+from django.db.models import Count, Exists, F, OuterRef, Q, Prefetch
 from accounts.decorators import recruiter_required
 from accounts.notification_helpers import notify
 from applications.forms import ApplicantEvaluationForm, ApplicationStatusForm
 from applications.models import ApplicantEvaluation, ApplicationReviewEvent, CandidateCompanyBlacklist, Interview, JobApplication
 from jobs.models import Job
 from .common import _context, _recruiter
+from employers.interview_review.ratings import compile_interview_rating
 
 
 @recruiter_required
@@ -25,7 +26,9 @@ def applicants(request):
         else Job.objects.filter(created_by=request.user)
     )
     company_id = recruiter.company_id or jobs.values_list("company_id", flat=True).first()
-    applications = JobApplication.objects.filter(job__in=jobs).select_related("candidate", "job", "evaluation")
+    applications = JobApplication.objects.filter(job__in=jobs).select_related("candidate", "job", "evaluation").prefetch_related(
+        Prefetch("interviews", queryset=Interview.objects.select_related("review"))
+    )
     applications = applications.annotate(
         company_application_count=Count(
             "candidate__job_applications",
@@ -109,6 +112,10 @@ def applicants(request):
         status_form = ApplicationStatusForm()
     for application in applications:
         application.status_form = ApplicationStatusForm(instance=application)
+        application.interview_rating = compile_interview_rating([
+            interview.review for interview in application.interviews.all()
+            if getattr(interview, 'review', None) is not None
+        ])
     if has_pro:
         for application in applications:
             application.ml_prediction = predict_suitability(application.candidate, application.job)

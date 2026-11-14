@@ -1,4 +1,6 @@
-        <section class="card stack">
+        <details class="card interview-transcript-setup"{% if form.errors or transcript_turn_count and not matching_ready %} open{% endif %}>
+            <summary>Transcript Upload{% if matching_ready %} · Answers matched{% endif %}</summary>
+            <div class="stack">
             <div class="interview-panel-heading"><h2>Transcript</h2><details class="interview-inline-help"><summary aria-label="About transcript matching">ⓘ</summary><div>Upload a UTF-8 .txt transcript, select the candidate speaker, then match answers. Matching uses local text rules and may miss paraphrases. Check suggestions against the transcript. Existing answers are preserved.</div></details></div>
             <p>Upload → Select speaker → Match answers</p>
             <label class="field">{{ form.transcript_file.label }}{{ form.transcript_file }}{{ form.transcript_file.errors }}</label>
@@ -10,9 +12,5 @@
             <details><summary>View Or Edit Transcript</summary><label class="field">Transcript{{ form.transcript }}{{ form.transcript.errors }}</label></details>
             {% if form.transcript.errors %}<p class="errorlist">Check the transcript format above.</p>{% endif %}
             <button class="primary button" type="submit" name="action" value="analyse">Match Answers</button>
-        </section>
-        <section class="card stack">
-            <div class="interview-panel-heading"><h2>Summary And Notes</h2><details class="interview-inline-help"><summary aria-label="About the summary and notes">ⓘ</summary><div>The summary contains excerpts of matched answers. Overall notes are written by you. Edit both before saving; neither changes application status or matching scores.</div></details></div>
-            <label class="field">{{ form.summary.label }}{{ form.summary }}{{ form.summary.errors }}</label>
-            <label class="field">Overall notes{{ form.overall_notes }}{{ form.overall_notes.errors }}</label>
-        </section>
+            </div>
+        </details>

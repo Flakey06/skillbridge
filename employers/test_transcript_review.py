@@ -242,3 +242,35 @@ Sarah Chen: I compared revenue files and found cancelled orders in one total. Th
         response = self.client.post(self.url, data)
         self.assertContains(response, 'How would you validate a new requirement?')
         self.assertContains(response, 'No following candidate answer detected')
+
+    def test_during_interview_has_flags_instead_of_answer_and_rating_editors(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Questions And Follow-Up')
+        self.assertContains(response, 'Flag for follow-up')
+        self.assertNotContains(response, 'Answer recorded during the interview')
+        self.assertNotContains(response, '<select name="questions-0-rating"')
+        self.assertNotContains(response, '<textarea name="questions-0-live_answer"')
+        data = self.payload('stage_after')
+        data['stage'] = 'during'
+        data['questions-0-flagged'] = 'on'
+        data['questions-0-flag_note'] = 'Check ownership of the reported result'
+        self.client.post(self.url, data)
+        saved = InterviewReview.objects.get(interview=self.interview)
+        self.assertTrue(saved.questions[0]['flagged'])
+        self.assertEqual(saved.questions[0]['flag_note'], 'Check ownership of the reported result')
+        after = self.client.get(self.url, {'stage': 'after'})
+        self.assertContains(after, 'Check ownership of the reported result')
+        self.assertContains(after, 'interview-workspace-after')
+        self.assertContains(after, 'Rating (1–5)')
+
+    def test_applicants_table_combines_saved_interview_reviews(self):
+        InterviewReview.objects.create(interview=self.interview,
+            questions=[{'question': 'One', 'rating': 5}, {'question': 'Two', 'rating': None}])
+        other = Interview.objects.create(application=self.interview.application,
+            created_by=self.recruiter, scheduled_start=timezone.now() - timedelta(days=2))
+        InterviewReview.objects.create(interview=other, questions=[{'question': 'Three', 'rating': 3}])
+        response = self.client.get(reverse('recruiter_applicants'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Interview Rating')
+        self.assertContains(response, '4.0/5 · 80%')
+        self.assertContains(response, '2/3 questions rated')

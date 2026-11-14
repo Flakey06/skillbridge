@@ -63,3 +63,8 @@
 .candidate-application-outcome { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 12px 18px; border: 1px solid; border-radius: 10px; box-sizing: border-box; font-weight: 700; }
 .candidate-application-outcome.application-status-rejected { background: #fef0f0; color: #a52323; border-color: #efb4b4; }
 .candidate-application-outcome.application-status-offer { background: #eaf8ef; color: #1e703e; border-color: #acd8bc; }
+
+/* Human interview ratings are separate from skill/model scores. */
+.recruiter-applicants-table .applicant-interview-rating { text-align: center; }
+.applicant-interview-rating .interview-rating-value { display: inline-block; padding: 7px 8px; border: 1px solid #cbd7ed; border-radius: 8px; color: #233f78; background: #eef3fc; font-size: 14px; line-height: 1.4; overflow-wrap: normal; }
+.applicant-interview-rating small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.4; }
