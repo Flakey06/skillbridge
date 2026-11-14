@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Account Settings · SkillBridge{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Account Settings</h1><p class="sub">Update your personal details and password.</p></div><a href="{% url profile_url %}">← Back To Profile</a></div>
+<div class="page-head">
+    <div>
+        <h1>Account Settings</h1>
+        <p class="sub">Update your personal details and password.</p>
+    </div>
+    <a href="{% url profile_url %}">← Back To Profile</a>
+</div>
 {% for message in messages %}<p class="card profile-message" role="status">{{ message }}</p>{% endfor %}
 <form method="post" class="card account-settings-card">
     {% csrf_token %}
@@ -18,17 +24,28 @@
     <h2>Change Password</h2>
     <p class="sub">Leave the new password fields blank to keep your password. Enter your current password when changing your email address or password.</p>
     <div class="account-settings-grid">
-        {% for field in password_form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}{% if field.help_text %}<small class="muted">{{ field.help_text|safe }}</small>{% endif %}</label>{% endfor %}
+        {% for field in password_form %}
+        <label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}{% if field.help_text %}<small class="muted">{{ field.help_text|safe }}</small>{% endif %}</label>
+        {% endfor %}
     </div>
     <div class="static-page-actions"><button type="submit" class="primary">Confirm Changes</button></div>
 </form>
 
 <section class="card account-settings-card payment-method-card" id="payment-method">
     <h2>Payment Method</h2>
-    {% if billing_demo %}<div class="payment-demo-prompt"><h3>Add Payment Details</h3><p>You are using the seven-day free trial. Add a test card to prepare your payment method. Adding a card does not start a paid plan.</p></div>{% endif %}
+    {% if billing_demo %}
+    <div class="payment-demo-prompt">
+        <h3>Add Payment Details</h3>
+        <p>You are using the seven-day free trial. Add a test card to prepare your payment method. Adding a card does not start a paid plan.</p>
+    </div>
+    {% endif %}
     <p class="sub">Add or update your card through Stripe’s hosted form. SkillBridge stores the customer reference, not your card number or security code.</p>
-    {% if stripe_enabled %}<form method="post" action="{% url 'manage_payment_method' %}">{% csrf_token %}<button type="submit" class="primary">Add / Update Card</button></form><p class="sub">Test mode only. Use Stripe test payment details.</p>
-    {% else %}<button class="primary" type="button" disabled>Add / Update Card</button><p class="sub">Card entry is unavailable until Stripe test mode is connected.</p>{% endif %}
+    {% if stripe_enabled %}
+    <form method="post" action="{% url 'manage_payment_method' %}">{% csrf_token %}<button type="submit" class="primary">Add / Update Card</button></form>
+    <p class="sub">Test mode only. Use Stripe test payment details.</p>
+    {% else %}<button class="primary" type="button" disabled>Add / Update Card</button>
+    <p class="sub">Card entry is unavailable until Stripe test mode is connected.</p>
+    {% endif %}
     <a class="button" href="{% url 'plans' %}#manage-plan">Manage Or Cancel Plan</a>
 </section>
 {% endblock %}

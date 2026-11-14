@@ -6,10 +6,18 @@
     <p class="auth-error">Too many incorrect attempts. Try again in approximately {{ retry_minutes }} minute{{ retry_minutes|pluralize }}.</p>
 {% elif lookup_form %}
     <p>Enter your username. If three recovery questions are configured, answer them correctly to see your password hint.</p>
-    <form method="post">{% csrf_token %}{{ lookup_form.non_field_errors }}{% for field in lookup_form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>{% endfor %}<button class="primary full" type="submit">Continue</button></form>
+    <form method="post">
+        {% csrf_token %}{{ lookup_form.non_field_errors }}{% for field in lookup_form %}
+        <label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>
+        {% endfor %}<button class="primary full" type="submit">Continue</button>
+    </form>
 {% elif answer_form %}
     <p>Answer all three questions exactly as you configured them. Answers are not displayed or revealed.</p>
-    <form method="post">{% csrf_token %}{{ answer_form.non_field_errors }}{% for field in answer_form %}<label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>{% endfor %}<button class="primary full" type="submit">Verify answers</button></form>
+    <form method="post">
+        {% csrf_token %}{{ answer_form.non_field_errors }}{% for field in answer_form %}
+        <label class="field" for="{{ field.id_for_label }}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>
+        {% endfor %}<button class="primary full" type="submit">Verify answers</button>
+    </form>
 {% endif %}
 <p><a href="{% url 'password_reset' %}">Use optional email recovery instead</a></p>
 <p><a href="{% url 'login' %}">Back to sign in</a></p>

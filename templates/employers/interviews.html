@@ -1,9 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Interviews · SkillBridge{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Interviews</h1><p class="sub">Prepare questions, take notes beside the submitted resume, and review transcripts after the meeting.</p></div><a class="button" href="{% url 'recruiter_calendar' %}">Open Calendar</a></div>
+<div class="page-head">
+    <div>
+        <h1>Interviews</h1>
+        <p class="sub">Prepare questions, take notes beside the submitted resume, and review transcripts after the meeting.</p>
+    </div>
+    <a class="button" href="{% url 'recruiter_calendar' %}">Open Calendar</a>
+</div>
 <div class="card table-wrap"><table><thead><tr><th>Candidate</th><th>Job</th><th>Interview Time</th><th>Workspace</th></tr></thead><tbody>
-{% for interview in interviews %}<tr><td>{{ interview.application.candidate.username }}</td><td>{{ interview.application.job.title }}</td><td>{{ interview.scheduled_start|date:"d M Y, H:i" }}</td><td><a class="button small" href="{% url 'recruiter_interview_review' interview.pk %}">Open Workspace</a></td></tr>
+{% for interview in interviews %}
+<tr>
+    <td>{{ interview.application.candidate.username }}</td>
+    <td>{{ interview.application.job.title }}</td>
+    <td>{{ interview.scheduled_start|date:"d M Y, H:i" }}</td>
+    <td><a class="button small" href="{% url 'recruiter_interview_review' interview.pk %}">Open Workspace</a></td>
+</tr>
 {% empty %}<tr><td colspan="4">No interviews scheduled. Schedule an interview from a shortlisted candidate’s application.</td></tr>{% endfor %}
 </tbody></table></div>
 {% endblock %}

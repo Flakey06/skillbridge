@@ -149,7 +149,9 @@
     <section class="job-application-panel">
     <h2 id="job-application-title">Apply for this job</h2>
     {% if application %}
-        {% if application.status != 'rejected' and application.status != 'offer' %}<p><span class="pill">{{ application.get_status_display }}</span></p>{% endif %}
+        {% if application.status != 'rejected' and application.status != 'offer' %}
+        <p><span class="pill">{{ application.get_status_display }}</span></p>
+        {% endif %}
         <p class="sub">You applied for this job on {{ application.created_at|date:"d M Y" }}.</p>
     {% else %}
         {% if tailored_draft %}
@@ -196,7 +198,9 @@
     {% else %}
     <div class="candidate-applied-actions">
         <button class="job-submit-button" type="button" disabled>Already Applied</button>
-        {% if application.status != 'withdrawn' and application.status != 'rejected' and application.status != 'offer' %}<form method="post" action="{% url 'candidate_withdraw_application' application.id %}">{% csrf_token %}<input type="hidden" name="return_to" value="job"><button class="candidate-withdraw-button" type="submit">Withdraw</button></form>{% elif application.status == 'withdrawn' %}<button class="candidate-withdraw-button" type="button" disabled>Withdrawn</button>{% endif %}
+        {% if application.status != 'withdrawn' and application.status != 'rejected' and application.status != 'offer' %}
+        <form method="post" action="{% url 'candidate_withdraw_application' application.id %}">{% csrf_token %}<input type="hidden" name="return_to" value="job"><button class="candidate-withdraw-button" type="submit">Withdraw</button></form>
+        {% elif application.status == 'withdrawn' %}<button class="candidate-withdraw-button" type="button" disabled>Withdrawn</button>{% endif %}
     </div>
     {% endif %}
     <a class="text-link" href="{% url 'candidate_applications' %}">View My Applications →</a>{% else %}<button class="primary job-submit-button" type="submit" form="job-application-form"{% if is_blacklisted %} disabled{% endif %}>{% if is_blacklisted %}Applications unavailable{% else %}Submit application →{% endif %}</button>{% endif %}

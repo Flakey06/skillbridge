@@ -12,16 +12,38 @@
 </div>
 
 <section class="stats dashboard-stats">
-    <div class="card stat"><span class="stat-label">Active listings</span><div class="stat-number">{{ active_jobs }}</div><p class="stat-foot">Roles currently open</p></div>
-    <div class="card stat"><span class="stat-label">Applicants</span><div class="stat-number">{{ applicant_count }}</div><p class="stat-foot">Across all roles</p></div>
-    <div class="card stat"><span class="stat-label">Shortlisted</span><div class="stat-number">{{ shortlisted_count }}</div><p class="stat-foot">Ready for review</p></div>
-    <div class="card stat"><span class="stat-label">Interviews</span><div class="stat-number">{{ interview_count }}</div><p class="stat-foot">Upcoming interviews</p></div>
+    <div class="card stat">
+        <span class="stat-label">Active listings</span>
+        <div class="stat-number">{{ active_jobs }}</div>
+        <p class="stat-foot">Roles currently open</p>
+    </div>
+    <div class="card stat">
+        <span class="stat-label">Applicants</span>
+        <div class="stat-number">{{ applicant_count }}</div>
+        <p class="stat-foot">Across all roles</p>
+    </div>
+    <div class="card stat">
+        <span class="stat-label">Shortlisted</span>
+        <div class="stat-number">{{ shortlisted_count }}</div>
+        <p class="stat-foot">Ready for review</p>
+    </div>
+    <div class="card stat">
+        <span class="stat-label">Interviews</span>
+        <div class="stat-number">{{ interview_count }}</div>
+        <p class="stat-foot">Upcoming interviews</p>
+    </div>
 </section>
 
 <div class="content-columns dashboard-columns">
     <section class="stack">
         <div class="card">
-            <div class="section-heading"><div><h2>Recent applicants</h2><p class="section-description">Candidates who need your attention.</p></div><a class="text-link" href="{% url 'recruiter_applicants' %}">View all →</a></div>
+            <div class="section-heading">
+                <div>
+                    <h2>Recent applicants</h2>
+                    <p class="section-description">Candidates who need your attention.</p>
+                </div>
+                <a class="text-link" href="{% url 'recruiter_applicants' %}">View all →</a>
+            </div>
             <div class="table-wrap applicant-score-table-wrap dashboard-applicant-table">
                 {% include "components/applicant_table.html" with applications=recent_applications show_update=False %}
             </div>
@@ -29,7 +51,18 @@
     </section>
 
     <aside class="aside dashboard-aside">
-        <div class="card"><div class="section-heading"><h2>Upcoming Interviews</h2><svg class="section-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-label="Calendar" role="img"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h2M14 13h2M8 17h2"/></svg></div>{% for interview in upcoming_interviews %}<h3>{{ interview.application.job.title }}</h3><p class="section-description">{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>{% empty %}<p class="section-description">No upcoming interviews.</p>{% endfor %}<a class="button small" href="{% url 'recruiter_calendar' %}">Open Calendar</a></div>
+        <div class="card">
+            <div class="section-heading">
+                <h2>Upcoming Interviews</h2>
+                <svg class="section-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-label="Calendar" role="img"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h2M14 13h2M8 17h2"/></svg>
+            </div>
+            {% for interview in upcoming_interviews %}
+            <h3>{{ interview.application.job.title }}</h3>
+            <p class="section-description">{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>
+            {% empty %}
+            <p class="section-description">No upcoming interviews.</p>
+            {% endfor %}<a class="button small" href="{% url 'recruiter_calendar' %}">Open Calendar</a>
+        </div>
         {% if pending_reschedules %}
         <div class="card">
             <h2>Reschedule requests</h2>

@@ -28,7 +28,10 @@
             {{ form.transcript.as_hidden }}{{ form.candidate_speaker.as_hidden }}{{ form.overall_notes.as_hidden }}
             {% else %}
             {{ form.loose_notes.as_hidden }}
-            <section class="card interview-live-notes-panel"><h2>Live Notes</h2><p class="interview-live-answer">{{ form.loose_notes.value|default:"No loose notes recorded." }}</p></section>
+            <section class="card interview-live-notes-panel">
+                <h2>Live Notes</h2>
+                <p class="interview-live-answer">{{ form.loose_notes.value|default:"No loose notes recorded." }}</p>
+            </section>
             {% include "employers/_interview_transcript.html" %}
             <section class="card interview-after-resume"><h2>Submitted Resume</h2>{% include "employers/_interview_resume.html" %}</section>
             {% endif %}
@@ -37,7 +40,8 @@
                 {% include "employers/_interview_questions.html" %}
                 {% if stage == 'after' %}{% include "employers/_interview_notes.html" %}{% endif %}
             </section>
-            {% if stage == 'during' %}<aside class="card interview-workspace-column interview-workspace-resume" aria-labelledby="interview-resume-title" tabindex="0">
+            {% if stage == 'during' %}
+            <aside class="card interview-workspace-column interview-workspace-resume" aria-labelledby="interview-resume-title" tabindex="0">
         <h2 id="interview-resume-title">Submitted Resume</h2>
         {% include "employers/_interview_resume.html" %}
             </aside>{% endif %}

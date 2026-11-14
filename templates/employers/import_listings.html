@@ -1,13 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Import job listings · SkillBridge{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Upload job listings with a template</h1><p class="sub">Download the SkillBridge CSV or Excel template, fill it in, then upload the same file to create your listings.</p></div><a class="button" href="{% url 'recruiter_listings' %}">Back to listings</a></div>
+<div class="page-head">
+    <div>
+        <h1>Upload job listings with a template</h1>
+        <p class="sub">Download the SkillBridge CSV or Excel template, fill it in, then upload the same file to create your listings.</p>
+    </div>
+    <a class="button" href="{% url 'recruiter_listings' %}">Back to listings</a>
+</div>
 {% for message in messages %}<p class="card profile-message" role="status">{{ message }}</p>{% endfor %}
 <section class="card stack">
     <h2>1. Download the job-listing template</h2>
     <div class="row wrap"><a class="button" href="{% url 'recruiter_job_template' %}?format=csv">Download CSV template</a><a class="button" href="{% url 'recruiter_job_template' %}?format=xlsx">Download Excel template</a></div>
     <p>Required: <strong>title <span class="required-marker">*</span>, description <span class="required-marker">*</span>, employment_type <span class="required-marker">*</span></strong>. Replace or delete the example row.</p>
-    <details><summary>Column instructions and accepted values</summary><dl>{% for label, detail in instructions %}<dt><strong>{{ label }}</strong></dt><dd>{{ detail }}</dd>{% endfor %}</dl></details>
+    <details>
+        <summary>Column instructions and accepted values</summary>
+        <dl>{% for label, detail in instructions %}<dt><strong>{{ label }}</strong></dt><dd>{{ detail }}</dd>{% endfor %}</dl>
+    </details>
     {% if company %}
     <h2>2. Upload your completed template for {{ company.name }}</h2>
     <form method="post" enctype="multipart/form-data" class="stack">{% csrf_token %}
@@ -17,10 +26,35 @@
     </form>
     {% else %}<p>Complete your <a href="{% url 'recruiter_company' %}">company profile</a> first.</p>{% endif %}
 </section>
-{% if errors %}<section class="card" role="alert"><h2>Correct these rows and upload again</h2><p>No listings have been created.</p>{% for error in errors %}<h3>Row {{ error.row }}</h3><ul>{% for field, messages in error.fields.items %}{% for message in messages %}<li>{{ field }}: {{ message }}</li>{% endfor %}{% endfor %}</ul>{% endfor %}</section>{% endif %}
+{% if errors %}
+<section class="card" role="alert">
+    <h2>Correct these rows and upload again</h2>
+    <p>No listings have been created.</p>
+    {% for error in errors %}
+    <h3>Row {{ error.row }}</h3>
+    <ul>
+        {% for field, messages in error.fields.items %}{% for message in messages %}
+        <li>{{ field }}: {{ message }}</li>
+        {% endfor %}{% endfor %}
+    </ul>
+    {% endfor %}
+</section>
+{% endif %}
 {% if preview %}
-<section class="card stack"><h2>3. Review {{ preview|length }} listing{{ preview|length|pluralize }}</h2><p>All listings will belong to {{ company.name }} and your recruiter account. Open listings become visible to candidates.</p>
-{% for job in preview %}<article class="card"><h3>{{ job.title }}</h3><p>{{ job.get_employment_type_display }} · {{ job.location }} · {{ job.get_status_display }}</p><p>{{ job.description|linebreaksbr }}</p><p>Role: {{ job.get_role_type_display }} · Industry: {{ job.get_industry_display }} · Experience: {{ job.get_experience_level_display }}</p><p>Salary: {{ job.salary_display|default:"Not specified" }}</p><p>Skills: {{ job.required_skills|default:"None specified" }}</p><p>Evidence weights: {% for label, weight in job.evidence_weights.items %}{{ label }} {{ weight|floatformat:1 }}%{% if not forloop.last %} · {% endif %}{% endfor %}</p></article>{% endfor %}
+<section class="card stack">
+    <h2>3. Review {{ preview|length }} listing{{ preview|length|pluralize }}</h2>
+    <p>All listings will belong to {{ company.name }} and your recruiter account. Open listings become visible to candidates.</p>
+{% for job in preview %}
+<article class="card">
+    <h3>{{ job.title }}</h3>
+    <p>{{ job.get_employment_type_display }} · {{ job.location }} · {{ job.get_status_display }}</p>
+    <p>{{ job.description|linebreaksbr }}</p>
+    <p>Role: {{ job.get_role_type_display }} · Industry: {{ job.get_industry_display }} · Experience: {{ job.get_experience_level_display }}</p>
+    <p>Salary: {{ job.salary_display|default:"Not specified" }}</p>
+    <p>Skills: {{ job.required_skills|default:"None specified" }}</p>
+    <p>Evidence weights: {% for label, weight in job.evidence_weights.items %}{{ label }} {{ weight|floatformat:1 }}%{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+</article>
+{% endfor %}
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="confirm"><input type="hidden" name="token" value="{{ token }}"><button class="primary" type="submit">Confirm and create {{ preview|length }} listing{{ preview|length|pluralize }}</button></form>
 <a href="{% url 'recruiter_import_listings' %}">Discard preview</a>
 </section>

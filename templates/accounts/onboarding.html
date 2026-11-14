@@ -44,13 +44,27 @@
                 <p class="eyebrow">Resume preview</p>
                 <h2>{{ preview_answers.name|default:"Your name" }}</h2>
                 <p>{{ request.user.email }}{% if preview_answers.phone %} · {{ preview_answers.phone }}{% endif %}</p>
-                {% if preview_answers.education or preview_answers.institution %}<h3>Education</h3><p>{{ preview_answers.education }}{% if preview_answers.institution %}<br>{{ preview_answers.institution }}{% endif %}</p>{% endif %}
-                {% if preview_answers.career %}<h3>Career Direction</h3><p>{{ preview_answers.career }}{% if preview_answers.specialisation %} · {{ preview_answers.specialisation }}{% endif %}</p>{% endif %}
+                {% if preview_answers.education or preview_answers.institution %}
+                <h3>Education</h3>
+                <p>{{ preview_answers.education }}{% if preview_answers.institution %}<br>{{ preview_answers.institution }}{% endif %}</p>
+                {% endif %}
+                {% if preview_answers.career %}
+                <h3>Career Direction</h3>
+                <p>{{ preview_answers.career }}{% if preview_answers.specialisation %} · {{ preview_answers.specialisation }}{% endif %}</p>
+                {% endif %}
                 {% if preview_answers.visa %}<h3>Work Authorisation</h3><p>{{ preview_answers.visa }}</p>{% endif %}
-                {% if preview_answers.experience %}<h3>Experience</h3><div class="resume-preview-copy">{{ preview_answers.experience|linebreaksbr }}</div>{% endif %}
-                {% if preview_answers.certifications %}<h3>Certifications</h3><div class="resume-preview-copy">{{ preview_answers.certifications|linebreaksbr }}</div>{% endif %}
+                {% if preview_answers.experience %}
+                <h3>Experience</h3>
+                <div class="resume-preview-copy">{{ preview_answers.experience|linebreaksbr }}</div>
+                {% endif %}
+                {% if preview_answers.certifications %}
+                <h3>Certifications</h3>
+                <div class="resume-preview-copy">{{ preview_answers.certifications|linebreaksbr }}</div>
+                {% endif %}
                 {% if preview_answers.skills %}<h3>Skills</h3><p>{{ preview_answers.skills }}</p>{% endif %}
-                {% if not preview_answers.experience and not preview_answers.education and not preview_answers.skills %}<p class="resume-preview-empty">Save the guided form and your formatted resume will appear here.</p>{% endif %}
+                {% if not preview_answers.experience and not preview_answers.education and not preview_answers.skills %}
+                <p class="resume-preview-empty">Save the guided form and your formatted resume will appear here.</p>
+                {% endif %}
             </section>
             {% endif %}
 
@@ -103,7 +117,10 @@
                     <div class="resume-methods" aria-label="Choose how to build your resume">
                         <section class="resume-method-card" data-resume-upload-card>
                             <span class="resume-method-number">1</span>
-                            <div><h3>Submit resume and auto-fill</h3><p>Select one PDF, DOCX, or TXT file up to 5 MB. Sandy validates it before filling the editable fields. Uploading another resume replaces the current one.</p></div>
+                            <div>
+                                <h3>Submit resume and auto-fill</h3>
+                                <p>Select one PDF, DOCX, or TXT file up to 5 MB. Sandy validates it before filling the editable fields. Uploading another resume replaces the current one.</p>
+                            </div>
                             <div data-resume-upload-controls{% if profile.resume %} hidden{% endif %}>
                                 {{ resume_form.resume }}
                                 <button class="button" type="submit" name="action" value="extract_resume">Submit resume &amp; auto-fill</button>
@@ -116,12 +133,17 @@
                         </section>
                         <section class="resume-method-card">
                             <span class="resume-method-number">2</span>
-                            <div><h3>Fill it in myself</h3><p>No resume yet? Complete the guided fields below. You do not need to choose or upload a file.</p></div>
+                            <div>
+                                <h3>Fill it in myself</h3>
+                                <p>No resume yet? Complete the guided fields below. You do not need to choose or upload a file.</p>
+                            </div>
                             <a class="button" href="#guided-resume-fields">Start Guided Resume ↓</a>
                         </section>
                     </div>
                     {{ resume_form.resume.errors }}
-                    {% if resume_form.errors %}<div class="auth-error resume-save-errors"><b>Please fix the highlighted resume details:</b>{{ resume_form.errors }}</div>{% endif %}
+                    {% if resume_form.errors %}
+                    <div class="auth-error resume-save-errors"><b>Please fix the highlighted resume details:</b>{{ resume_form.errors }}</div>
+                    {% endif %}
                     <div id="guided-resume-fields">{% include "candidates/_guided_resume_fields.html" %}</div>
                     <p class="resume-autosave-status" data-resume-autosave-status aria-live="polite">Use Save Resume &amp; Continue to save your changes.</p>
                     <div class="auth-error">{{ resume_form.non_field_errors }}</div>

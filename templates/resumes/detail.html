@@ -62,9 +62,23 @@
         <h2>Complete the job context</h2>
         <p class="muted">These checks compare skill wording with your saved draft. They do not establish proficiency or full coverage of the job. Add a relevant project, task, or result only if it reflects your experience.</p>
         <h3>Skills not mentioned</h3>
-        <ul>{% for skill in review.missing_skills %}<li>{{ skill }} — add a concrete example if you have used it.</li>{% empty %}<li>{% if review.has_skill_requirements %}All detected job skills are mentioned; check that you have explained how you used them.{% else %}No skill requirements could be identified from this listing.{% endif %}</li>{% endfor %}</ul>
+        <ul>
+            {% for skill in review.missing_skills %}
+            <li>{{ skill }} — add a concrete example if you have used it.</li>
+            {% empty %}
+            <li>{% if review.has_skill_requirements %}All detected job skills are mentioned; check that you have explained how you used them.{% else %}No skill requirements could be identified from this listing.{% endif %}</li>
+            {% endfor %}
+        </ul>
         {% if review.mentioned_skills %}<h3>Skills mentioned</h3><p>{{ review.mentioned_skills|join:", " }}</p>{% endif %}
-        {% if review.priorities %}<h3>Job description priorities</h3><p class="muted">For each responsibility below, check whether your resume explains your own relevant contribution. These are recruiter statements, not suggested claims to copy.</p><ul>{% for priority in review.priorities %}<li>{{ priority }}</li>{% endfor %}</ul>{% endif %}
+        {% if review.priorities %}
+        <h3>Job description priorities</h3>
+        <p class="muted">For each responsibility below, check whether your resume explains your own relevant contribution. These are recruiter statements, not suggested claims to copy.</p>
+        <ul>
+            {% for priority in review.priorities %}
+            <li>{{ priority }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </section>
     {% endif %}
 </aside>

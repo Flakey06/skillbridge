@@ -1,2 +1,6 @@
         <p>This is the resume attached to this application.</p>
-        {% if interview.application.tailored_resume %}<div class="interview-submitted-resume">{{ interview.application.tailored_resume }}</div>{% else %}<p>No submitted resume text is available for this application.</p>{% endif %}
+        {% if interview.application.tailored_resume %}
+        <div class="interview-submitted-resume">{{ interview.application.tailored_resume }}</div>
+        {% else %}
+        <p>No submitted resume text is available for this application.</p>
+        {% endif %}

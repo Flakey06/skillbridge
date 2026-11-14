@@ -20,19 +20,64 @@
 <div class="calendar-timezone-notice" role="note"><strong>Interview timing follows your calendar</strong><span>Download the calendar event to display it in your configured timezone and keep the timing available in your calendar.</span></div>
 <div class="calendar-page-layout">
 <aside class="calendar-sidebar">
-<div class="card selected-day"><h2>{{ calendar.selected_date|date:"l, d F Y" }}</h2>{% for interview in calendar.selected_events %}<div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }}{% if interview.application.job.company.name %} · {{ interview.application.job.company.name }}{% endif %}</span>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}{% if interview.calcom_event_url %}<a href="{{ interview.calcom_event_url }}" target="_blank" rel="noreferrer">Open Cal.com booking</a>{% endif %}</div>{% empty %}<p class="sub">No interview scheduled for this date.</p>{% endfor %}</div>
-<div class="card calendar-card"><h2>Upcoming interviews</h2>{% for interview in upcoming_interviews %}<div class="notification-item"><div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">Interview</span></div><p>{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.application.job.company.name }}</p><a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule / notes</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}</div>{% empty %}<p class="sub">No upcoming interviews.</p>{% endfor %}</div>
-<details class="card calendar-card past-interviews"><summary><h2>Past Interviews</h2></summary>{% for interview in past_interviews %}<div class="notification-item"><div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.scheduled_start|date:"d M Y, H:i" }}</span></div><p>{{ interview.application.job.company.name }}</p><a class="button small" href="?edit={{ interview.id }}#interview-editor">Add notes / reschedule</a></div>{% empty %}<p class="sub">No past interviews.</p>{% endfor %}</details>
+<div class="card selected-day">
+    <h2>{{ calendar.selected_date|date:"l, d F Y" }}</h2>
+    {% for interview in calendar.selected_events %}
+    <div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }}{% if interview.application.job.company.name %} · {{ interview.application.job.company.name }}{% endif %}</span>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}{% if interview.calcom_event_url %}<a href="{{ interview.calcom_event_url }}" target="_blank" rel="noreferrer">Open Cal.com booking</a>{% endif %}</div>
+    {% empty %}
+    <p class="sub">No interview scheduled for this date.</p>
+    {% endfor %}
+</div>
+<div class="card calendar-card">
+    <h2>Upcoming interviews</h2>
+    {% for interview in upcoming_interviews %}
+    <div class="notification-item">
+        <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">Interview</span></div>
+        <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.application.job.company.name }}</p>
+        <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule / notes</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}
+    </div>
+    {% empty %}
+    <p class="sub">No upcoming interviews.</p>
+    {% endfor %}
+</div>
+<details class="card calendar-card past-interviews">
+    <summary>
+        <h2>Past Interviews</h2>
+    </summary>
+    {% for interview in past_interviews %}
+    <div class="notification-item">
+        <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.scheduled_start|date:"d M Y, H:i" }}</span></div>
+        <p>{{ interview.application.job.company.name }}</p>
+        <a class="button small" href="?edit={{ interview.id }}#interview-editor">Add notes / reschedule</a>
+    </div>
+    {% empty %}
+    <p class="sub">No past interviews.</p>
+    {% endfor %}
+</details>
 </aside>
 <div class="cal-board" id="calendar">
-    <div class="cal-toolbar"><div class="cal-arrows"><a class="button small" href="{% url 'candidate_calendar' %}?month={{ calendar.previous_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Previous month">‹</a><a class="button small" href="{% url 'candidate_calendar' %}?month={{ calendar.next_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Next month">›</a></div><h2>{{ calendar.month_label }}</h2><div class="cal-toolbar-actions"><a class="button small preserve-case" href="{% url 'candidate_calendar' %}?download=ics" download="skillbridge-interviews.ics">Download .ics</a>
+    <div class="cal-toolbar">
+        <div class="cal-arrows"><a class="button small" href="{% url 'candidate_calendar' %}?month={{ calendar.previous_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Previous month">‹</a><a class="button small" href="{% url 'candidate_calendar' %}?month={{ calendar.next_month|date:'Y-m' }}&date={{ calendar.selected_date|date:'Y-m-d' }}" aria-label="Next month">›</a></div>
+        <h2>{{ calendar.month_label }}</h2>
+        <div class="cal-toolbar-actions">
+            <a class="button small preserve-case" href="{% url 'candidate_calendar' %}?download=ics" download="skillbridge-interviews.ics">Download .ics</a>
             <a class="button small" href="{% url 'candidate_calendar' %}">Today</a></div></div>
     <div class="cal-weekdays">{% for weekday in calendar.weekdays %}<div>{{ weekday }}</div>{% endfor %}</div>
-    <div class="cal-month cal-rows-{{ calendar.row_count }}">{% for week in calendar.weeks %}<div class="cal-week">{% for day in week %}<div class="cal-day{% if not day.in_month %} outside{% endif %}{% if day.is_selected %} selected{% endif %}"><a class="cal-date{% if day.is_today %} today{% endif %}" href="{% url 'candidate_calendar' %}?month={{ calendar.month|date:'Y-m' }}&amp;date={{ day.date|date:'Y-m-d' }}">{{ day.day }}</a>{% for interview in day.events %}<a class="cal-event" href="{% url 'candidate_calendar' %}?month={{ calendar.month|date:'Y-m' }}&amp;date={{ day.date|date:'Y-m-d' }}&amp;edit={{ interview.id }}#interview-editor" title="{{ interview.application.job.title }}">{{ interview.scheduled_start|date:"H:i" }} · {{ interview.application.job.title }}</a>{% endfor %}</div>{% endfor %}</div>{% endfor %}</div>
+    <div class="cal-month cal-rows-{{ calendar.row_count }}">
+        {% for week in calendar.weeks %}
+        <div class="cal-week">
+            {% for day in week %}
+            <div class="cal-day{% if not day.in_month %} outside{% endif %}{% if day.is_selected %} selected{% endif %}"><a class="cal-date{% if day.is_today %} today{% endif %}" href="{% url 'candidate_calendar' %}?month={{ calendar.month|date:'Y-m' }}&amp;date={{ day.date|date:'Y-m-d' }}">{{ day.day }}</a>{% for interview in day.events %}<a class="cal-event" href="{% url 'candidate_calendar' %}?month={{ calendar.month|date:'Y-m' }}&amp;date={{ day.date|date:'Y-m-d' }}&amp;edit={{ interview.id }}#interview-editor" title="{{ interview.application.job.title }}">{{ interview.scheduled_start|date:"H:i" }} · {{ interview.application.job.title }}</a>{% endfor %}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
 </div>
 </div>
 </div>
-{% if editor_open %}<section class="native-dialog-overlay"><section class="interview-dialog native-interview-dialog" id="interview-editor" role="dialog" aria-modal="true" aria-label="Interview Editor">
+{% if editor_open %}
+<section class="native-dialog-overlay">
+    <section class="interview-dialog native-interview-dialog" id="interview-editor" role="dialog" aria-modal="true" aria-label="Interview Editor">
     <form method="post" class="stack">
         {% csrf_token %}
         <input type="hidden" name="interview_id" value="{{ editing_interview.pk|default:'' }}">
