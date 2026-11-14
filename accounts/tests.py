@@ -58,6 +58,25 @@ class AccountOnboardingTests(TestCase):
         self.assertNotIn("first_name", SignupForm.base_fields)
         self.assertNotIn("last_name", SignupForm.base_fields)
 
+    def test_recruiter_company_logo_lookup_works_without_javascript(self):
+        response = self.client.post(reverse("signup"), {
+            "role": "recruiter",
+            "company_name": "Shopee",
+            "signup_action": "find_company",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "https://shopee.sg")
+        self.assertContains(response, "google.com/s2/favicons")
+        self.assertNotContains(response, "<script")
+
+        response = self.client.post(reverse("signup"), {
+            "role": "recruiter",
+            "company_name": "Shopee",
+            "selected_company": "https://shopee.sg",
+        })
+        self.assertContains(response, "Selected company")
+        self.assertContains(response, 'name="company_website" value="https://shopee.sg"')
+
     def test_candidate_onboarding_starts_with_resume_upload(self):
         response = self.client.post(
             reverse("signup"),
@@ -84,7 +103,6 @@ class AccountOnboardingTests(TestCase):
         self.assertContains(response, "Save resume &amp; continue")
         self.assertContains(response, "Work experience")
         self.assertContains(response, "Resume preview")
-        self.assertContains(response, "Update Specialisations")
         self.assertContains(response, "Software engineering")
         self.assertContains(response, "Human resources")
 
@@ -179,7 +197,8 @@ class AccountOnboardingTests(TestCase):
 
         response = self.client.get(reverse("onboarding"))
         self.assertContains(response, "Auto-fill from current resume")
-        self.assertNotContains(response, "<script")
+        self.assertContains(response, "typeMessage")
+        self.assertContains(response, "data-question-text")
 
         response = self.client.post(reverse("onboarding"), {"action": "extract_existing_resume"})
         self.assertRedirects(response, reverse("onboarding"))
@@ -423,7 +442,8 @@ class AccountOnboardingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "SkillBridge Pro")
-        self.assertContains(response, "sk_test_")
+        self.assertContains(response, 'type="button" disabled')
+        self.assertNotContains(response, "Add a Stripe")
 
     def test_pro_plan_entitlement_is_active(self):
         user = self._create_user("pro_plan")

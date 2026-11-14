@@ -11,10 +11,10 @@ from accounts.calendar import build_month_calendar, calendar_download_or_reminde
 from applications.forms import InterviewForm
 from applications.models import Interview, JobApplication
 from jobs.models import Job
-from .common import _context
+from .common import _context, _recruiter
 
 
-def _scheduling_conflicts(application, recruiter, start, end):
+def _scheduling_conflicts(application, recruiter, start, end, exclude_interview=None):
     """Return candidate/recruiter interviews overlapping a proposed slot."""
     proposed_end = end or start + timedelta(hours=1)
     candidate_interviews = Interview.objects.filter(
@@ -23,6 +23,9 @@ def _scheduling_conflicts(application, recruiter, start, end):
     recruiter_interviews = Interview.objects.filter(
         created_by=recruiter,
     ).select_related("application__candidate", "application__job")
+    if exclude_interview:
+        candidate_interviews = candidate_interviews.exclude(pk=exclude_interview.pk)
+        recruiter_interviews = recruiter_interviews.exclude(pk=exclude_interview.pk)
     conflicts = []
     seen = set()
     for kind, existing in [
@@ -44,7 +47,8 @@ def _scheduling_conflicts(application, recruiter, start, end):
 
 @recruiter_required
 def calendar(request):
-    jobs = Job.objects.filter(created_by=request.user)
+    recruiter = _recruiter(request)
+    jobs = Job.objects.filter(company=recruiter.company) if recruiter.company_id else Job.objects.filter(created_by=request.user)
     applications = JobApplication.objects.filter(
         job__in=jobs,
         status__in=["shortlisted", "interview"],
@@ -83,20 +87,32 @@ def calendar(request):
         if interview.reschedule_status != "pending":
             messages.error(request, "That reschedule request is no longer pending.")
         elif action == "accept_reschedule" and interview.proposed_start:
+            conflicts = _scheduling_conflicts(
+                interview.application,
+                request.user,
+                interview.proposed_start,
+                interview.proposed_end,
+                exclude_interview=interview,
+            )
+            if conflicts:
+                messages.error(request, "That proposed time is no longer available. Ask the candidate to choose another time.")
+                return redirect("recruiter_calendar")
             interview.scheduled_start = interview.proposed_start
             interview.scheduled_end = interview.proposed_end
             interview.reschedule_status = "accepted"
+            interview.candidate_response = "accepted"
             interview.reschedule_message = "The recruiter accepted the proposed interview time."
             interview.save(update_fields=[
                 "scheduled_start",
                 "scheduled_end",
                 "reschedule_status",
                 "reschedule_message",
+                "candidate_response",
             ])
             notify(
                 interview.application.candidate,
                 "Interview reschedule accepted",
-                f"Your interview for {interview.application.job.title} was moved to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M}.",
+                f"Your interview for {interview.application.job.title} was moved to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
                 "interview",
             )
             messages.success(request, "Reschedule accepted and the calendar was updated.")
@@ -122,26 +138,28 @@ def calendar(request):
             interview.created_by = request.user
         else:
             application = interview.application
-        if not interview_id:
-            schedule_conflicts = _scheduling_conflicts(
-                application,
-                request.user,
-                form.cleaned_data["scheduled_start"],
-                form.cleaned_data.get("scheduled_end"),
-            )
-        if schedule_conflicts and request.POST.get("confirm_conflict") != "yes":
+        schedule_conflicts = _scheduling_conflicts(
+            application,
+            request.user,
+            form.cleaned_data["scheduled_start"],
+            form.cleaned_data.get("scheduled_end"),
+            exclude_interview=interview if interview.pk else None,
+        )
+        if schedule_conflicts:
             selected_application = application
-            messages.warning(request, "This interview may clash with another approved interview. Review the overlap before continuing.")
+            messages.error(request, "This time is unavailable because it overlaps another interview. Choose a different time.")
         else:
+            if interview_id:
+                interview.candidate_response = "pending"
             interview.save()
             if interview_id:
                 interview.reschedule_status = "accepted"
                 interview.reschedule_message = "The recruiter changed the interview time."
-                interview.save(update_fields=["reschedule_status", "reschedule_message"])
+                interview.save(update_fields=["reschedule_status", "reschedule_message", "candidate_response"])
                 notify(
                     application.candidate,
                     "Interview time updated",
-                    f"The recruiter changed your interview for {application.job.title} to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M}.",
+                    f"The recruiter changed your interview for {application.job.title} to {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.",
                     "interview",
                 )
             application.status = "interview"
@@ -154,7 +172,7 @@ def calendar(request):
                 notify(
                     application.candidate,
                     "Interview scheduled",
-                    f"An interview for {application.job.title} is scheduled for {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M}.{contact_copy}",
+                    f"An interview for {application.job.title} is scheduled for {timezone.localtime(interview.scheduled_start):%d %b %Y, %H:%M} SGT.{contact_copy}",
                     "interview",
                 )
             messages.success(request, "Interview rescheduled." if interview_id else "Interview scheduled and added to the candidate's SkillBridge calendar.")

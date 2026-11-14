@@ -13,7 +13,7 @@
 <tr>
     <td>{{ interview.application.candidate.username }}</td>
     <td>{{ interview.application.job.title }}</td>
-    <td>{{ interview.scheduled_start|date:"d M Y, H:i" }}</td>
+    <td>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</td>
     <td><a class="button small" href="{% url 'recruiter_interview_review' interview.pk %}">Open Workspace</a></td>
 </tr>
 {% empty %}<tr><td colspan="4">No interviews scheduled. Schedule an interview from a shortlisted candidate’s application.</td></tr>{% endfor %}

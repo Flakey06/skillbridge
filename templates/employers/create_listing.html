@@ -21,12 +21,33 @@
                 {% if field.is_hidden %}{{ field }}{% else %}
                 <label class="field {% if field.name == 'description' or field.name == 'required_skill_choices' or field.name == 'skill_weights' or field.name == 'evidence_weights' %}span2{% endif %}">
                     {% include "components/field_label.html" with field=field %}
-                    {% if field.name == 'required_skill_choices' %}
+                    {% if field.name == 'evidence_rank_order' %}
+                        {{ field.as_hidden }}
+                        <div class="evidence-ranker-heading">
+                            <small class="muted">Drag the evidence types into order from most important to least important.</small>
+                            <details class="evidence-weight-help">
+                                <summary aria-label="How evidence weighting works" title="How evidence weighting works">ⓘ</summary>
+                                <div>
+                                    <strong>How evidence weighting works</strong>
+                                    <p>Evidence contributes up to 30 points of the candidate’s 100-point match score. Skills contribute the other 70 points.</p>
+                                    <ol>
+                                        <li><b>1st:</b> 50% of the evidence score — up to 15 points.</li>
+                                        <li><b>2nd:</b> 33.3% — up to 10 points.</li>
+                                        <li><b>3rd:</b> 16.7% — up to 5 points.</li>
+                                    </ol>
+                                    <p>A candidate earns each portion when that evidence is found in their profile or résumé. Ranking changes importance; it does not guarantee that points are awarded.</p>
+                                </div>
+                            </details>
+                        </div>
+                        <ol class="evidence-ranker-list" data-evidence-ranker>
+                            <li draggable="true" data-evidence="Projects"><span class="drag-handle" aria-hidden="true">☰</span><span>Projects</span></li>
+                            <li draggable="true" data-evidence="Internship"><span class="drag-handle" aria-hidden="true">☰</span><span>Internship</span></li>
+                            <li draggable="true" data-evidence="Self-proclaimed skills"><span class="drag-handle" aria-hidden="true">☰</span><span>Self-proclaimed skills</span></li>
+                        </ol>
+                        <noscript><p class="muted">Enter the order separated by commas:</p>{{ field }}</noscript>
+                    {% elif field.name == 'required_skills' %}
                         {{ field }}
                         <small class="muted">{{ field.help_text }}</small>
-                    {% elif field.name == 'evidence_rank_order' %}
-                        {{ field }}
-                        <small class="muted">Enter Projects, Internship, Self-proclaimed skills in order of importance, separated by commas.</small>
                     {% else %}
                         {{ field }}
                     {% endif %}
@@ -75,4 +96,41 @@
 {% if company %}
 
 {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+    const list = document.querySelector('[data-evidence-ranker]');
+    const input = document.querySelector('#id_evidence_rank_order');
+    if (!list || !input) return;
+
+    const items = new Map([...list.children].map(item => [item.dataset.evidence, item]));
+    const savedOrder = input.value.split(',').map(value => value.trim()).filter(value => items.has(value));
+    savedOrder.forEach(value => list.append(items.get(value)));
+
+    const saveOrder = () => {
+        input.value = [...list.children].map(item => item.dataset.evidence).join(',');
+    };
+    saveOrder();
+
+    let dragged = null;
+    list.addEventListener('dragstart', event => {
+        dragged = event.target.closest('li');
+        if (dragged) dragged.classList.add('is-dragging');
+    });
+    list.addEventListener('dragover', event => {
+        event.preventDefault();
+        const target = event.target.closest('li');
+        if (!dragged || !target || target === dragged) return;
+        const box = target.getBoundingClientRect();
+        list.insertBefore(dragged, event.clientY < box.top + box.height / 2 ? target : target.nextSibling);
+    });
+    list.addEventListener('dragend', () => {
+        if (dragged) dragged.classList.remove('is-dragging');
+        dragged = null;
+        saveOrder();
+    });
+})();
+</script>
 {% endblock %}

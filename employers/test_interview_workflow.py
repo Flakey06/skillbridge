@@ -5,8 +5,31 @@ from django.urls import reverse
 from accounts.models import UserProfile
 from applications.forms import ApplicationStatusForm
 from applications.models import JobApplication, Interview
-from employers.models import Company
+from employers.models import Company, RecruiterProfile
 from jobs.models import Job
+
+
+class CompanyRecruiterWorkflowTests(TestCase):
+    def test_company_colleague_can_open_applicant_calendar_and_interview_workspace(self):
+        owner = User.objects.create_user(username="job-owner")
+        colleague = User.objects.create_user(username="company-colleague")
+        candidate = User.objects.create_user(username="shared-candidate")
+        UserProfile.objects.create(user=owner, role="recruiter")
+        UserProfile.objects.create(user=colleague, role="recruiter")
+        UserProfile.objects.create(user=candidate, role="candidate")
+        company = Company.objects.create(name="Shared Hiring Company")
+        RecruiterProfile.objects.create(user=owner, company=company)
+        RecruiterProfile.objects.create(user=colleague, company=company)
+        job = Job.objects.create(title="Shared Role", company=company, created_by=owner, employment_type="full_time")
+        application = JobApplication.objects.create(candidate=candidate, job=job, status="shortlisted")
+        interview = Interview.objects.create(
+            application=application, created_by=owner, scheduled_start="2026-12-01T14:00:00+08:00",
+        )
+        self.client.force_login(colleague)
+        self.assertEqual(self.client.get(reverse("recruiter_applicant_detail", args=[application.pk])).status_code, 200)
+        calendar = self.client.get(reverse("recruiter_calendar"))
+        self.assertContains(calendar, "Shared Role")
+        self.assertEqual(self.client.get(reverse("recruiter_interview_review", args=[interview.pk])).status_code, 200)
 
 
 class InterviewSchedulingRulesTests(TestCase):
@@ -52,7 +75,8 @@ class InterviewSchedulingRulesTests(TestCase):
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, 'interview')
         self.assertEqual(self.application.get_status_display(), 'Interview')
-        self.assertEqual(Interview.objects.filter(application=self.application).count(), 1)
+        interview = Interview.objects.get(application=self.application)
+        self.assertEqual(interview.candidate_response, 'pending')
 
     def test_cannot_schedule_non_shortlisted_application_via_direct_post(self):
         response = self.client.post(reverse('recruiter_calendar'), {
@@ -90,7 +114,22 @@ class InterviewSchedulingRulesTests(TestCase):
         self.assertEqual(interview.contact_method, 'phone')
         self.assertEqual(interview.contact_details, '+65 8123 4567')
 
-    def test_candidate_interview_clash_requires_confirmation(self):
+    def test_candidate_accepts_scheduled_date(self):
+        interview = Interview.objects.create(
+            application=self.application,
+            created_by=self.application.job.created_by,
+            scheduled_start='2026-12-01T14:00:00+08:00',
+        )
+        self.client.force_login(self.application.candidate)
+        response = self.client.post(reverse('candidate_calendar'), {
+            'interview_id': interview.pk,
+            'action': 'accept_date',
+        })
+        self.assertRedirects(response, reverse('candidate_calendar'))
+        interview.refresh_from_db()
+        self.assertEqual(interview.candidate_response, 'accepted')
+
+    def test_candidate_interview_clash_is_blocked(self):
         other_job = Job.objects.create(
             title='Other interview role', company=self.application.job.company,
             created_by=self.application.job.created_by, employment_type='full_time',
@@ -117,5 +156,6 @@ class InterviewSchedulingRulesTests(TestCase):
         self.assertContains(response, 'Potential interview clash')
         self.assertEqual(Interview.objects.filter(application=self.application).count(), 0)
         response = self.client.post(url, {**data, 'confirm_conflict': 'yes'})
-        self.assertRedirects(response, url)
-        self.assertEqual(Interview.objects.filter(application=self.application).count(), 1)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Time unavailable')
+        self.assertEqual(Interview.objects.filter(application=self.application).count(), 0)

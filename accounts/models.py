@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 def generate_referral_code():
@@ -174,6 +175,33 @@ class ModerationReport(models.Model):
 
     def __str__(self):
         return f"{self.reason} · {self.subject_label}"
+
+
+class SiteFeedback(models.Model):
+    CATEGORY_CHOICES = [
+        ("general", "General feedback"),
+        ("job", "Job listing feedback"),
+        ("bug", "Something is not working"),
+        ("feature", "Feature request"),
+    ]
+    STATUS_CHOICES = [("new", "New"), ("reviewed", "Reviewed"), ("closed", "Closed")]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="site_feedback")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    job = models.ForeignKey("jobs.Job", on_delete=models.SET_NULL, blank=True, null=True, related_name="feedback")
+    rating = models.PositiveSmallIntegerField(blank=True, null=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    message = models.TextField(max_length=3000)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    staff_response = models.TextField(blank=True, max_length=2000)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="reviewed_site_feedback")
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_category_display()} · {self.user.username}"
 
 
 class Referral(models.Model):

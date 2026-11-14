@@ -55,6 +55,13 @@ class JobFormTests(TestCase):
         self.assertGreater(weights["Internship"], weights["Projects"])
         self.assertGreater(weights["Projects"], weights["Self-proclaimed skills"])
 
+    def test_new_listing_starts_with_draggable_evidence_order(self):
+        form = JobForm()
+        self.assertEqual(
+            form["evidence_rank_order"].value(),
+            "Projects,Internship,Self-proclaimed skills",
+        )
+
     def test_duplicate_and_unknown_ranks_keep_all_valid_evidence_types_once(self):
         form = self.ranking_form("Internship,Internship,Unknown")
         self.assertTrue(form.is_valid(), form.errors)

@@ -17,14 +17,14 @@
     </div>
 </div>
 
-<div class="calendar-timezone-notice" role="note"><strong>Choose the interview timing that works for both parties</strong><span>Calendar downloads sync it to the timezone configured in Google Calendar, Outlook, or Apple Calendar.</span></div>
+<div class="calendar-timezone-notice" role="note"><strong>All interview times are shown and entered in SGT</strong><span>Singapore Time is UTC+8. Calendar downloads sync it to the timezone configured in Google Calendar, Outlook, or Apple Calendar.</span></div>
 
 <div class="calendar-page-layout">
     <aside class="calendar-sidebar">
         <div class="card selected-day">
             <h2>{{ calendar.selected_date|date:"l, d F Y" }}</h2>
             {% for interview in calendar.selected_events %}
-            <div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }} · {{ interview.application.candidate.username }}</span><a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}</div>
+            <div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }} SGT · {{ interview.application.candidate.username }}</span><a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}</div>
             {% empty %}
             <p class="sub">No interview scheduled for this date.</p>
             {% endfor %}
@@ -37,7 +37,7 @@
             {% for pending in pending_reschedules %}
             <div class="notification-item">
                 <b>Reschedule request: {{ pending.application.candidate.username }}</b>
-                <p>{{ pending.application.job.title }} · {{ pending.proposed_start|date:"d M Y, H:i" }}</p>
+                <p>{{ pending.application.job.title }} · {{ pending.proposed_start|date:"d M Y, H:i" }} SGT</p>
                 {% if pending.reschedule_reason %}
                 <p class="sub"><b>Reason:</b> {{ pending.reschedule_reason }}</p>
                 {% endif %}
@@ -46,8 +46,11 @@
             {% endfor %}{% for interview in upcoming_interviews %}
             <div class="notification-item">
                 <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">{{ interview.application.candidate.username }}</span></div>
-                <p>{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>
-                <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}
+                <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</p>
+                <p class="sub">{% if interview.candidate_response == "accepted" %}Candidate accepted this date{% else %}Awaiting candidate approval{% endif %}</p>
+                <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule</a>
+                <a class="button small" href="{% url 'recruiter_interview_review' interview.id %}">Open Interview Workspace</a>
+                {% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Join external call</a>{% endif %}
             </div>
             {% empty %}
             <p class="sub">No upcoming interviews.</p>
@@ -60,7 +63,7 @@
             {% for interview in past_interviews %}
             <div class="notification-item">
                 <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.application.candidate.username }}</span></div>
-                <p>{{ interview.scheduled_start|date:"d M Y, H:i" }}</p>
+                <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</p>
                 <a class="button small" href="{% url 'recruiter_interview_review' interview.id %}">Review Interview</a>
             </div>
             {% empty %}
@@ -99,11 +102,10 @@
             <p>The proposed time overlaps with:</p>
             <ul>
                 {% for conflict in schedule_conflicts %}
-                <li><b>{{ conflict.kind }} conflict:</b> {{ conflict.title }} with {{ conflict.candidate }}, {{ conflict.start|date:"d M Y, H:i" }}–{{ conflict.end|date:"H:i" }}</li>
+                <li><b>{{ conflict.kind }} conflict:</b> {{ conflict.title }} with {{ conflict.candidate }}, {{ conflict.start|date:"d M Y, H:i" }}–{{ conflict.end|date:"H:i" }} SGT</li>
                 {% endfor %}
             </ul>
-            <p>Choose another time, or confirm that both parties can still attend.</p>
-            <input type="hidden" name="confirm_conflict" value="yes">
+            <p>This time is blocked. Choose another available time.</p>
         </div>
         {% endif %}
         <input type="hidden" name="interview_id" value="{{ editing_interview.pk|default:'' }}">
@@ -121,10 +123,10 @@
         </div>
         <h3>Interview Timing</h3>
         <div class="interview-reschedule-fields" data-reschedule-fields>
-            <label class="field">{% include "components/field_label.html" with field=form.scheduled_start %}{{ form.scheduled_start }}<small class="muted">This will use the timezone configured in the connected calendar.</small>{{ form.scheduled_start.errors }}</label>
+            <label class="field">{% include "components/field_label.html" with field=form.scheduled_start %}{{ form.scheduled_start }}<small class="muted">Singapore Time (SGT, UTC+8).</small>{{ form.scheduled_start.errors }}</label>
             <label class="field">{% include "components/field_label.html" with field=form.scheduled_end %}{{ form.scheduled_end }}<small class="muted">Optional. The timing can be changed later.</small>{{ form.scheduled_end.errors }}</label>
         </div>
-        <div class="row between"><a class="button" href="?">Cancel</a><button class="primary" type="submit" data-submit-interview>{% if schedule_conflicts %}Schedule anyway{% else %}Schedule interview{% endif %}</button></div>
+        <div class="row between"><a class="button" href="?">Cancel</a><button class="primary" type="submit" data-submit-interview{% if schedule_conflicts %} disabled{% endif %}>{% if schedule_conflicts %}Time unavailable{% else %}Schedule interview{% endif %}</button></div>
     </form>
  </section></section>{% endif %}
 

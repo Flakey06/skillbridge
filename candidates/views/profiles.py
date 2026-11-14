@@ -22,8 +22,8 @@ from ..services import autofill_from_resume, sync_candidate_profile
 from .common import _context, _completion_percent
 
 
-def _sync_main_resume(user):
-    """Keep the candidate's editable main resume aligned with saved profile data."""
+def _sync_main_resume(user, create_version=False):
+    """Sync profile content, preserving a timeline version on explicit saves."""
     from resumes.models import TailoredResume
     from resumes.services import build_profile_resume
 
@@ -35,6 +35,17 @@ def _sync_main_resume(user):
     ).first()
     if profile_resume:
         if profile_resume.content != content:
+            if create_version:
+                was_main = profile_resume.is_main
+                if was_main:
+                    profile_resume.is_main = False
+                    profile_resume.save(update_fields=["is_main"])
+                return TailoredResume.objects.create(
+                    candidate=user,
+                    title="My resume",
+                    content=content,
+                    is_main=was_main,
+                )
             profile_resume.content = content
             profile_resume.save(update_fields=["content", "updated_at"])
         return profile_resume
@@ -115,7 +126,7 @@ def profile(request):
                     profile.profile_data = data
                     profile.save(update_fields=["profile_data"])
                     sync_candidate_profile(request.user, data)
-                    _sync_main_resume(request.user)
+                    _sync_main_resume(request.user, create_version=True)
                     notify(request.user, "Profile auto-filled", f"Sandy auto-filled {len(updates)} profile field(s) from your resume.", "profile")
                 else:
                     messages.error(request, reason)
@@ -144,7 +155,7 @@ def profile(request):
         profile.profile_data = data
         profile.save(update_fields=changed_fields)
         sync_candidate_profile(request.user, data)
-        _sync_main_resume(request.user)
+        _sync_main_resume(request.user, create_version=not is_async_save)
         if is_async_save:
             message = "File uploaded and all changes saved" if is_auto_upload else "All changes saved automatically"
             required_fields = ("name", "career", "specialisation")
@@ -173,13 +184,6 @@ def profile(request):
         }
         for career_area in CAREER_INTERESTS_BY_AREA
     }
-    interest_groups = []
-    assigned_interests = set()
-    for area, group in career_choice_map.items():
-        choices = [(value, label) for value, label in group["interests"] if value not in assigned_interests]
-        assigned_interests.update(value for value, _ in choices)
-        if choices:
-            interest_groups.append({"label": group["label"], "choices": choices})
     selected_interests = form["career_interests"].value() or []
     if isinstance(selected_interests, str):
         selected_interests = [selected_interests]
@@ -189,7 +193,6 @@ def profile(request):
         "profile": profile,
         "completion_percent": _completion_percent(profile),
         "career_choice_map": career_choice_map,
-        "interest_groups": interest_groups,
         "selected_interests": selected_interests,
         "guided_resume": request.GET.get("guided") == "1",
     })

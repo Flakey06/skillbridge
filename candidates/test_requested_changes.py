@@ -112,7 +112,7 @@ class RequestedWorkflowTests(TestCase):
             content="Job-specific resume",
         )
         resume_page = self.client.get(reverse("candidate_resume"))
-        self.assertContains(resume_page, "Edit resume")
+        self.assertNotContains(resume_page, ">Edit resume</a>")
         self.assertNotContains(resume_page, "Resume type and version")
         selector_page = self.client.get(reverse("candidate_resume_select"), {
             "resume_id": job_resume.id,

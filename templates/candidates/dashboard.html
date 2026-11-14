@@ -75,7 +75,7 @@
             </div>
             {% for interview in upcoming_interviews %}
                 <h3>{{ interview.application.job.title }}</h3>
-                <p class="section-description">{{ interview.application.job.company.name }} · {{ interview.scheduled_start|date:"d M Y, H:i" }}</p>
+                <p class="section-description">{{ interview.application.job.company.name }} · {{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</p>
             {% empty %}
                 <p class="section-description">No upcoming interviews.</p>
             {% endfor %}

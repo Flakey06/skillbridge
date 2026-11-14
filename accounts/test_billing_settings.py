@@ -25,7 +25,7 @@ class BillingSettingsTests(TestCase):
     def test_unconfigured_stripe_explains_unavailability_without_trial_prompt(self, customer):
         response = self.client.get(reverse('account_settings'))
         self.assertNotContains(response, 'payment-demo-prompt')
-        self.assertContains(response, 'Card entry is unavailable')
+        self.assertContains(response, 'Stripe checkout is currently unavailable')
         response = self.client.post(reverse('manage_payment_method'))
         self.assertEqual(response.status_code, 302)
         customer.assert_not_called()
@@ -34,6 +34,11 @@ class BillingSettingsTests(TestCase):
     @patch('accounts.views.payments.create_stripe_card_portal', return_value={'url': 'https://billing.stripe.com/p/session-example'})
     @patch('accounts.views.payments.stripe_customer_for_user', return_value='cus_own')
     def test_card_update_uses_signed_in_customer_not_posted_id(self, customer, portal):
+        self.profile.plan = 'pro'
+        self.profile.save(update_fields=['plan'])
+        plans = self.client.get(reverse('plans'))
+        self.assertContains(plans, 'Manage Payment Method')
+        self.assertContains(plans, f'action="{reverse("manage_payment_method")}"')
         response = self.client.post(reverse('manage_payment_method'), {'customer': 'cus_someone_else'})
         self.assertEqual(response['Location'], 'https://billing.stripe.com/p/session-example')
         customer.assert_called_once_with(self.user)
@@ -65,12 +70,25 @@ class BillingSettingsTests(TestCase):
         self.assertEqual(request.call_args.kwargs['data']['customer'], 'cus_existing')
         self.assertNotIn('customer_email', request.call_args.kwargs['data'])
 
+    @patch('accounts.payment_services._stripe_request', return_value={'url': 'https://checkout.stripe.com/example'})
+    def test_checkout_without_account_email_lets_stripe_collect_it(self, request):
+        self.user.email = ''
+        self.user.save(update_fields=['email'])
+        create_stripe_checkout(
+            user=self.user,
+            payment_id=1,
+            success_url='http://testserver/success',
+            cancel_url='http://testserver/cancel',
+        )
+        self.assertNotIn('customer_email', request.call_args.kwargs['data'])
+
     @patch('accounts.views.payments.cancel_stripe_subscription')
     def test_paid_plan_cancellation_remains_available_and_cancels_subscription(self, cancel):
         self.profile.plan = 'pro'
         self.profile.save(update_fields=['plan'])
         payment = Payment.objects.create(user=self.user, provider='stripe', status='paid', amount=9, metadata={'subscription': 'sub_own'})
         self.assertContains(self.client.get(reverse('plans')), 'Cancel Plan')
+        self.assertContains(self.client.get(reverse('account_settings')), f'href="{reverse("cancel_pro_confirm")}"')
         self.assertEqual(self.client.get(reverse('cancel_pro')).status_code, 405)
         response = self.client.post(reverse('cancel_pro'))
         self.assertRedirects(response, reverse('plans'))
@@ -88,8 +106,8 @@ class BillingSettingsTests(TestCase):
         self.profile.plan_expires_at = now + timedelta(days=7)
         self.profile.save()
         response = self.client.get(reverse('account_settings'))
-        self.assertContains(response, 'Add Payment Details')
-        self.assertContains(response, 'seven-day free trial')
+        self.assertContains(response, 'free trial does not require a card')
+        self.assertNotContains(response, 'Add / Update Card')
         self.profile.plan_expires_at = now - timedelta(seconds=1)
         self.profile.save()
         self.assertNotContains(self.client.get(reverse('account_settings')), 'payment-demo-prompt')

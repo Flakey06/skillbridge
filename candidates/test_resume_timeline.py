@@ -6,6 +6,7 @@ from accounts.models import UserProfile
 from employers.models import Company
 from jobs.models import Job
 from resumes.models import TailoredResume
+from candidates.views.profiles import _sync_main_resume
 
 
 class ResumeTimelineDisplayTests(TestCase):
@@ -36,3 +37,23 @@ class ResumeTimelineDisplayTests(TestCase):
         self.client.force_login(user)
         response = self.client.get(reverse('candidate_resume'))
         self.assertContains(response, 'Your first dated version will appear')
+
+    def test_explicit_profile_saves_create_clickable_read_only_versions(self):
+        user = User.objects.create_user(username='versioned-profile-candidate')
+        profile = UserProfile.objects.create(
+            user=user, role='candidate', profile_data={'name': 'Alex', 'skills': 'Python'},
+        )
+        first = _sync_main_resume(user, create_version=True)
+        profile.profile_data = {'name': 'Alex', 'skills': 'Python, SQL'}
+        profile.save(update_fields=['profile_data'])
+        second = _sync_main_resume(user, create_version=True)
+
+        self.assertNotEqual(first.pk, second.pk)
+        self.assertEqual(TailoredResume.objects.filter(candidate=user, title='My resume').count(), 2)
+        self.client.force_login(user)
+        timeline = self.client.get(reverse('candidate_resume'))
+        self.assertContains(timeline, reverse('resume_detail', args=[first.pk]))
+        self.assertContains(timeline, reverse('resume_detail', args=[second.pk]))
+        history = self.client.get(reverse('resume_detail', args=[first.pk]))
+        self.assertContains(history, 'Read-only profile version')
+        self.assertNotContains(history, 'name="content"')

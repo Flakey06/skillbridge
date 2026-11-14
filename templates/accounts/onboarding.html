@@ -145,7 +145,6 @@
                     <div class="auth-error resume-save-errors"><b>Please fix the highlighted resume details:</b>{{ resume_form.errors }}</div>
                     {% endif %}
                     <div id="guided-resume-fields">{% include "candidates/_guided_resume_fields.html" %}</div>
-                    <p class="resume-autosave-status" data-resume-autosave-status aria-live="polite">Use Save Resume &amp; Continue to save your changes.</p>
                     <div class="auth-error">{{ resume_form.non_field_errors }}</div>
                 {% else %}
                     {% if step.id == "career_interests" %}
@@ -198,7 +197,7 @@
                         {% if step_number > 0 %}<button class="button" type="submit" name="back" value="1" formnovalidate>← Back</button>{% endif %}
                         <button class="button" type="submit" name="skip" value="1" formnovalidate>Skip for now</button>
                     </div>
-                    {% if step.id == 'resume' %}<button class="button" type="submit" name="action" value="save_resume_draft" formnovalidate>Save And Update Preview</button>{% endif %}
+                    {% if step.id == 'resume' %}<button class="button" type="submit" name="action" value="save_resume_draft" formnovalidate>Save Resume Draft</button>{% endif %}
                     <button class="primary" type="submit"{% if step.id == "resume" %} name="action" value="save_resume" formnovalidate{% endif %}>
                         {% if step.id == "resume" %}
                             Save resume &amp; continue
@@ -219,4 +218,75 @@
 
 
 {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const intro = document.querySelector('[data-sandy-intro]');
+    const introText = document.querySelector('[data-sandy-text]');
+    const question = document.querySelector('[data-sandy-question]');
+    const questionText = document.querySelector('[data-question-text]');
+    const questionMessage = questionText ? questionText.textContent.trim() : '';
+
+    if (reducedMotion) {
+        if (intro) intro.classList.remove('is-speaking');
+        return;
+    }
+
+    // Keep the upcoming question hidden until Sandy has finished her welcome.
+    if (questionText) questionText.textContent = '';
+
+    const typeMessage = (element, message, speaker, cursor) => new Promise((resolve) => {
+        if (!element || !message) {
+            resolve();
+            return;
+        }
+
+        element.textContent = '';
+        if (cursor) cursor.style.display = 'inline-block';
+        if (speaker) speaker.classList.add('sandy-question-speaking', 'is-speaking');
+
+        let index = 0;
+        const typeNextCharacter = () => {
+            element.textContent += message[index];
+            index += 1;
+            if (index < message.length) {
+                window.setTimeout(typeNextCharacter, 28);
+                return;
+            }
+
+            if (speaker) speaker.classList.remove('sandy-question-speaking', 'is-speaking');
+            if (cursor) cursor.style.display = 'none';
+            resolve();
+        };
+        typeNextCharacter();
+    });
+
+    const typeQuestion = () => {
+        if (!questionText) return Promise.resolve();
+        return typeMessage(
+            questionText,
+            questionMessage,
+            question,
+            question.querySelector('.sandy-question-cursor')
+        );
+    };
+
+    if (intro && introText) {
+        const welcome = introText.dataset.message || introText.textContent.trim();
+        typeMessage(
+            introText,
+            welcome,
+            intro,
+            intro.querySelector('.sandy-cursor')
+        ).then(() => new Promise((resolve) => window.setTimeout(resolve, 300)))
+         .then(typeQuestion);
+    } else {
+        typeQuestion();
+    }
+})();
+</script>
 {% endblock %}

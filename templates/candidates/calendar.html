@@ -17,13 +17,13 @@
     </div>
 </div>
 
-<div class="calendar-timezone-notice" role="note"><strong>Interview timing follows your calendar</strong><span>Download the calendar event to display it in your configured timezone and keep the timing available in your calendar.</span></div>
+<div class="calendar-timezone-notice" role="note"><strong>SkillBridge displays interview times in SGT</strong><span>Singapore Time is UTC+8. Download the calendar event to convert it to your personal calendar timezone.</span></div>
 <div class="calendar-page-layout">
 <aside class="calendar-sidebar">
 <div class="card selected-day">
     <h2>{{ calendar.selected_date|date:"l, d F Y" }}</h2>
     {% for interview in calendar.selected_events %}
-    <div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }}{% if interview.application.job.company.name %} · {{ interview.application.job.company.name }}{% endif %}</span>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}{% if interview.calcom_event_url %}<a href="{{ interview.calcom_event_url }}" target="_blank" rel="noreferrer">Open Cal.com booking</a>{% endif %}</div>
+    <div class="calendar-banner"><b>{{ interview.application.job.title }}</b><span>{{ interview.scheduled_start|date:"H:i" }} SGT{% if interview.application.job.company.name %} · {{ interview.application.job.company.name }}{% endif %}</span>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}{% if interview.calcom_event_url %}<a href="{{ interview.calcom_event_url }}" target="_blank" rel="noreferrer">Open Cal.com booking</a>{% endif %}</div>
     {% empty %}
     <p class="sub">No interview scheduled for this date.</p>
     {% endfor %}
@@ -33,8 +33,11 @@
     {% for interview in upcoming_interviews %}
     <div class="notification-item">
         <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill progress-green">Interview</span></div>
-        <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} · {{ interview.application.job.company.name }}</p>
-        <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule / notes</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Open meeting link</a>{% endif %}
+        <p>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT · {{ interview.application.job.company.name }}</p>
+        {% if interview.candidate_response == "pending" %}
+        <form method="post">{% csrf_token %}<input type="hidden" name="interview_id" value="{{ interview.id }}"><button class="primary small" name="action" value="accept_date">Accept interview date</button></form>
+        {% else %}<span class="pill progress-green">Date accepted</span>{% endif %}
+        <a class="button small" href="?edit={{ interview.id }}#interview-editor">Reschedule / notes</a>{% if interview.meeting_url %}<a href="{{ interview.meeting_url }}" target="_blank" rel="noreferrer">Join external call</a>{% endif %}
     </div>
     {% empty %}
     <p class="sub">No upcoming interviews.</p>
@@ -46,7 +49,7 @@
     </summary>
     {% for interview in past_interviews %}
     <div class="notification-item">
-        <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.scheduled_start|date:"d M Y, H:i" }}</span></div>
+        <div class="row between"><b>{{ interview.application.job.title }}</b><span class="pill">{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</span></div>
         <p>{{ interview.application.job.company.name }}</p>
         <a class="button small" href="?edit={{ interview.id }}#interview-editor">Add notes / reschedule</a>
     </div>

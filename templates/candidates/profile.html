@@ -72,29 +72,15 @@
                 </div>
             </section>
             <section class="profile-form-section" id="profile-career">
-                <div class="profile-form-section-heading"><h3>Career path</h3><p>Shape the career directions and experience shown in your profile.</p></div>
+                <div class="profile-form-section-heading"><h3>Career path</h3></div>
                 <div class="form-grid">
-                    <label class="field">{% include "components/field_label.html" with field=form.career %}{{ form.career }}{{ form.career.errors }}<button class="button small" type="submit" name="entry_action" value="preview" formnovalidate>Update Specialisations</button></label>
+                    <label class="field">{% include "components/field_label.html" with field=form.career %}{{ form.career }}{{ form.career.errors }}</label>
                     <label class="field">{% include "components/field_label.html" with field=form.specialisation %}{{ form.specialisation }}{{ form.specialisation.errors }}</label>
                     <label class="field span2">{% include "components/field_label.html" with field=form.career_stage %}{{ form.career_stage }}{{ form.career_stage.errors }}<small class="muted">This helps us order your pathway. You can change it anytime.</small></label>
                     <fieldset class="field span2 choice-fieldset">
-                        <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>
-                        <p class="muted">Choose interests from any faculty. Shared interests appear once; you can select across sections.</p>
-                        <div class="profile-interest-groups">
-                            {% for group in interest_groups %}
-                                <fieldset class="profile-interest-group">
-                                    <legend>{{ group.label }}</legend>
-                                    <div class="profile-interest-options">
-                                        {% for value, label in group.choices %}
-                                            <label for="profile-interest-{{ value }}">
-                                                <input id="profile-interest-{{ value }}" type="checkbox" name="career_interests" value="{{ value }}"{% if value in selected_interests %} checked{% endif %}>
-                                                {{ label }}
-                                            </label>
-                                        {% endfor %}
-                                    </div>
-                                </fieldset>
-                            {% endfor %}
-                        </div>
+                        <legend>{% include "components/field_label.html" with field=form.career_interests %}</legend>{{ form.career_interests }}
+                        <p class="muted">Choose your main faculty interests first. Add interests from another faculty when you want to explore a cross-faculty path.</p>
+                        {% if form.career_interests.help_text %}<small class="muted">{{ form.career_interests.help_text }}</small>{% endif %}
                         {{ form.career_interests.errors }}
                     </fieldset>
                     <label class="field">{% include "components/field_label.html" with field=form.education %}{{ form.education }}{{ form.education.errors }}</label>
@@ -110,7 +96,7 @@
                 </div>
             </section>
             <section class="profile-form-section" id="profile-connections">
-                <div class="profile-form-section-heading"><h3>Connections</h3><p>Share relevant links and work preferences.</p></div>
+                <div class="profile-form-section-heading"><h3>Connections</h3></div>
                 <div class="form-grid">
                     <label class="field span2">{% include "components/field_label.html" with field=form.portfolio %}{{ form.portfolio }}{{ form.portfolio.errors }}</label>
                     <label class="field span2">{% include "components/field_label.html" with field=form.awards %}{{ form.awards }}{{ form.awards.errors }}</label>
@@ -120,10 +106,9 @@
             </section>
         </div>
 
-        <div class="static-page-actions">
+        <div class="static-page-actions profile-floating-actions">
             <button class="primary" type="submit" name="action" value="save">Save Profile</button>
-            <button class="button" type="submit" name="entry_action" value="preview" formnovalidate>Update Preview</button>
-            {% if profile.resume %}<a class="button" href="{% url 'candidate_resume' %}">Review resume</a>{% endif %}
+            <a class="button" href="{% url 'candidate_resume' %}">Preview Resume</a>
         </div>
     </form>
 </section>

@@ -30,8 +30,7 @@ class JobForm(forms.ModelForm):
         required=False,
         label="Skills needed",
         choices=skill_choices,
-        widget=forms.SelectMultiple(attrs={"size": 8}),
-        help_text="Select the skills candidates should have. Add custom skills below if needed.",
+        widget=forms.MultipleHiddenInput(),
     )
     evidence_rank_order = forms.CharField(
         required=False,
@@ -51,29 +50,6 @@ class JobForm(forms.ModelForm):
             )
         return "\n".join(f"{label}: {weight:g}" for label, weight in (value or {}).items())
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
-            # Older listings may have preferred skills. Present them in the
-            # single skills picker so editing does not silently lose them.
-            existing = list(dict.fromkeys([
-                *self.instance.required_skill_list,
-                *self.instance.preferred_skill_list,
-            ]))
-            field = self.fields["required_skill_choices"]
-            known = {value.casefold() for value, _ in field.choices}
-            field.choices = [
-                *field.choices,
-                *((value, value) for value in existing if value.casefold() not in known),
-            ]
-        if self.instance and self.instance.pk and not self.is_bound:
-            existing_order = sorted(
-                self.instance.evidence_weights or {},
-                key=(self.instance.evidence_weights or {}).get,
-                reverse=True,
-            )
-            self.initial["evidence_rank_order"] = ",".join(existing_order or self.evidence_types)
-            self.initial["required_skill_choices"] = existing
     class Meta:
         model = Job
         fields = [
@@ -94,8 +70,40 @@ class JobForm(forms.ModelForm):
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 6}),
-            "required_skills": forms.Textarea(attrs={"rows": 3}),
+            "required_skills": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Enter skills separated by commas, for example Python, Django, SQL",
+                "autocomplete": "off",
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["required_skills"].label = "Skills needed"
+        self.fields["required_skills"].help_text = "Enter only the skills required for this job, separated by commas."
+        if not self.is_bound and not (self.instance and self.instance.pk):
+            self.initial["evidence_rank_order"] = ",".join(self.evidence_types)
+        if self.instance and self.instance.pk:
+            # Older listings may have preferred skills. Present them in the
+            # single skills field so editing does not silently lose them.
+            existing = list(dict.fromkeys([
+                *self.instance.required_skill_list,
+                *self.instance.preferred_skill_list,
+            ]))
+            field = self.fields["required_skill_choices"]
+            known = {value.casefold() for value, _ in field.choices}
+            field.choices = [
+                *field.choices,
+                *((value, value) for value in existing if value.casefold() not in known),
+            ]
+        if self.instance and self.instance.pk and not self.is_bound:
+            existing_order = sorted(
+                self.instance.evidence_weights or {},
+                key=(self.instance.evidence_weights or {}).get,
+                reverse=True,
+            )
+            self.initial["evidence_rank_order"] = ",".join(existing_order or self.evidence_types)
+            self.initial["required_skill_choices"] = existing
 
     def save(self, commit=True):
         job = super().save(commit=False)

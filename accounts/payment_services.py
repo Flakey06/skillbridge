@@ -56,12 +56,13 @@ def create_stripe_checkout(*, user, payment_id, success_url, cancel_url):
         "success_url": success_url,
         "cancel_url": cancel_url,
         "client_reference_id": str(user.id),
-        "customer_email": user.email,
         "metadata[payment_id]": str(payment_id),
         "metadata[user_id]": str(user.id),
         "subscription_data[metadata][payment_id]": str(payment_id),
         "line_items[0][quantity]": "1",
     }
+    if user.email:
+        data["customer_email"] = user.email
     customer = (user.profile.profile_data or {}).get("stripe_customer_id")
     if customer:
         data.pop("customer_email", None)

@@ -33,19 +33,24 @@
 
 <section class="card account-settings-card payment-method-card" id="payment-method">
     <h2>Payment Method</h2>
-    {% if billing_demo %}
-    <div class="payment-demo-prompt">
-        <h3>Add Payment Details</h3>
-        <p>You are using the seven-day free trial. Add a test card to prepare your payment method. Adding a card does not start a paid plan.</p>
-    </div>
-    {% endif %}
-    <p class="sub">Add or update your card through Stripe’s hosted form. SkillBridge stores the customer reference, not your card number or security code.</p>
-    {% if stripe_enabled %}
+    {% if has_pro and not profile.plan_expires_at and stripe_enabled %}
+    <p class="sub">Update the card for your active subscription through Stripe’s hosted form. SkillBridge never stores your card number or security code.</p>
     <form method="post" action="{% url 'manage_payment_method' %}">{% csrf_token %}<button type="submit" class="primary">Add / Update Card</button></form>
     <p class="sub">Test mode only. Use Stripe test payment details.</p>
-    {% else %}<button class="primary" type="button" disabled>Add / Update Card</button>
-    <p class="sub">Card entry is unavailable until Stripe test mode is connected.</p>
+    {% elif billing_demo %}
+    <p class="sub">Your free trial does not require a card. When the trial ends, subscribe from My Plans to start a paid Pro plan.</p>
+    <a class="button" href="{% url 'plans' %}">View My Plans</a>
+    {% elif stripe_enabled %}
+    <p class="sub">You do not have a paid subscription yet. Stripe will collect your test card when you subscribe.</p>
+    <a class="primary button" href="{% url 'pro_checkout_confirm' %}">Subscribe to Pro</a>
+    {% else %}
+    <button class="primary" type="button" disabled>Subscribe to Pro</button>
+    <p class="sub">Stripe checkout is currently unavailable.</p>
     {% endif %}
-    <a class="button" href="{% url 'plans' %}#manage-plan">Manage Or Cancel Plan</a>
+    {% if has_pro %}
+    <a class="button button-danger" href="{% url 'cancel_pro_confirm' %}">Cancel Plan</a>
+    {% else %}
+    <a class="button" href="{% url 'plans' %}">View Pro Plans</a>
+    {% endif %}
 </section>
 {% endblock %}

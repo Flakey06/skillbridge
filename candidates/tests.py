@@ -590,8 +590,9 @@ class CareerProgressTests(TestCase):
         letter = build_tailored_cover_letter(user, job)
 
         self.assertIn("Business Analyst Intern", letter)
-        self.assertIn("business-facing projects and experience", letter)
+        self.assertIn("practical business decisions", letter)
         self.assertIn("marketing dashboard", letter)
+        self.assertNotIn("\n- Built a marketing dashboard", letter)
 
         tailored_resume = build_tailored_resume(user, job)
         self.assertIn("marketing dashboard", tailored_resume)

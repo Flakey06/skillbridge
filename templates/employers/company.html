@@ -24,6 +24,9 @@
         </div>
         <div class="company-identity-fields">
 {% include "employers/company_field.html" with field=form.name %}
+<button class="button" type="submit" name="action" value="find_company" formnovalidate>Find Company And Logo</button>
+{% if lookup_match %}<p class="sub">Found {{ lookup_match.name }}. Review the website and logo, then save the profile.</p>
+{% elif lookup_attempted %}<p class="auth-error">No matching company was found. Enter the website manually and the logo will be generated when you save.</p>{% endif %}
 {% include "employers/company_field.html" with field=form.industry %}
         </div>
     </div>

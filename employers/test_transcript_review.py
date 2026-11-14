@@ -65,15 +65,12 @@ class InterviewReviewWorkflowTests(TestCase):
         self.assertFalse(InterviewReview.objects.exists())
         data = self.payload('save')
         data['questions-0-answer'] = 'Checked answer'
-        self.interview.summary = 'Historical summary'
-        self.interview.save(update_fields=['summary'])
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 302)
         review = InterviewReview.objects.get(interview=self.interview)
         self.assertEqual(review.questions[0]['rating'], 4)
         self.assertEqual(review.questions[0]['answer'], 'Checked answer')
         self.interview.refresh_from_db()
-        self.assertEqual(self.interview.summary, 'Historical summary')
         self.assertEqual(self.interview.application.status, 'submitted')
         self.assertContains(self.client.get(self.url), 'Checked answer')
 

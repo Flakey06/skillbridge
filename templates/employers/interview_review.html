@@ -5,7 +5,7 @@
     <header class="interview-workspace-header">
         <div><a class="interview-workspace-back" href="{% url 'recruiter_interviews' %}">← Back To Interviews</a>
         <h1 id="interview-review-title">Interview Workspace</h1>
-        <p>{{ interview.application.candidate.username }} · {{ interview.application.job.title }} · {{ interview.scheduled_start|date:"d M Y, H:i" }}</p></div>
+        <p>{{ interview.application.candidate.username }} · {{ interview.application.job.title }} · {{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</p></div>
         <button class="primary button" form="interview-workspace-form" name="action" value="save" type="submit">{% if stage == 'during' %}Save Interview Notes{% else %}Save Post-Interview Review{% endif %}</button>
     </header>
     <nav class="interview-stage-tabs" aria-label="Interview stage">

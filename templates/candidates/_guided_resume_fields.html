@@ -15,7 +15,7 @@
             <label class="field">{% include "components/field_label.html" with field=resume_form.institution %}{{ resume_form.institution }}{{ resume_form.institution.errors }}</label>
             <div class="field guided-career-field">
                 <label for="{{ resume_form.career.id_for_label }}">{% include "components/field_label.html" with field=resume_form.career %}</label>
-                {{ resume_form.career }}{{ resume_form.career.errors }}<button class="button small" type="submit" name="entry_action" value="preview" formnovalidate>Update Specialisations</button>
+                {{ resume_form.career }}{{ resume_form.career.errors }}
             </div>
             <div class="field guided-specialisation-field">
                 <label for="{{ resume_form.specialisation.id_for_label }}">{% include "components/field_label.html" with field=resume_form.specialisation %}</label>

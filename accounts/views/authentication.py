@@ -38,7 +38,32 @@ def login_view(request):
 
 
 def signup_view(request):
-    form = SignupForm(request.POST or None)
+    company_results = []
+    selected_company = None
+    form_data = request.POST.copy() if request.method == "POST" else None
+
+    company_lookup_action = "select_company" if request.POST.get("selected_company") else request.POST.get("signup_action")
+    if form_data is not None and company_lookup_action in {"find_company", "select_company"}:
+        from employers.services import company_matches
+        query = form_data.get("company_name", "").strip()
+        company_results = company_matches(query)
+
+        selected_website = request.POST.get("selected_company", "")
+        if company_lookup_action == "select_company":
+            selected_company = next((item for item in company_results if item["website"] == selected_website), None)
+            if selected_company:
+                form_data["company_name"] = selected_company["name"]
+                form_data["company_website"] = selected_company["website"]
+                form_data["company_logo_url"] = selected_company["logo_url"]
+
+        form = SignupForm(form_data)
+        return render(request, "accounts/signup.html", {
+            "form": form,
+            "company_results": company_results,
+            "selected_company": selected_company,
+        })
+
+    form = SignupForm(form_data)
     if request.method == "POST" and form.is_valid():
         user = form.save()
         form.save_security_answers(user)

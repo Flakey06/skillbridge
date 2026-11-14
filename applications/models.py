@@ -146,6 +146,10 @@ class ApplicantEvaluation(models.Model):
 
 
 class Interview(models.Model):
+    CANDIDATE_RESPONSE_CHOICES = [
+        ("pending", "Awaiting candidate response"),
+        ("accepted", "Accepted by candidate"),
+    ]
     ATTENDANCE_CHOICES = [
         ("scheduled", "Scheduled"),
         ("attended", "Attended"),
@@ -179,6 +183,11 @@ class Interview(models.Model):
     calcom_event_url = models.URLField(blank=True)
     notes = models.TextField(blank=True)
     candidate_notes = models.TextField(blank=True)
+    candidate_response = models.CharField(
+        max_length=20,
+        choices=CANDIDATE_RESPONSE_CHOICES,
+        default="pending",
+    )
     proposed_start = models.DateTimeField(blank=True, null=True)
     proposed_end = models.DateTimeField(blank=True, null=True)
     reschedule_status = models.CharField(
@@ -196,7 +205,6 @@ class Interview(models.Model):
     reschedule_message = models.TextField(blank=True)
     reschedule_reason = models.TextField(blank=True)
     transcript = models.TextField(blank=True)
-    summary = models.TextField(blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

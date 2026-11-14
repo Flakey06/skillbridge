@@ -944,12 +944,12 @@ input:focus,textarea:focus,select:focus {
 
 .dashboard-applicant-table { margin-top: 18px; }
 
-/* Four main filters above the ATS threshold, sort, and submit controls. */
+/* Four main filters above the skill threshold, sort, and submit controls. */
 .filterbar.recruiter-applicant-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.recruiter-applicant-filters .applicant-ats-filter { grid-column: 1; }
-.applicant-ats-label { display: flex; align-items: center; gap: 8px; }
-.applicant-ats-info { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border: 0; padding: 2px; background: transparent; color: #233f78; cursor: pointer; }
-.applicant-ats-info:focus-visible { outline: 2px solid #285db0; outline-offset: 2px; border-radius: 50%; }
+.recruiter-applicant-filters .applicant-skill-filter { grid-column: 1; }
+.applicant-skill-label { display: flex; align-items: center; gap: 8px; }
+.applicant-skill-info { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border: 0; padding: 2px; background: transparent; color: #233f78; cursor: pointer; }
+.applicant-skill-info:focus-visible { outline: 2px solid #285db0; outline-offset: 2px; border-radius: 50%; }
 @media (max-width: 900px) { .filterbar.recruiter-applicant-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 550px) { .filterbar.recruiter-applicant-filters { grid-template-columns: minmax(0, 1fr); } }
 

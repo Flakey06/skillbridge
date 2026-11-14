@@ -152,13 +152,32 @@ class AdministrationTests(TestCase):
     def test_staff_can_suspend_and_restore_user_with_audit_log(self):
         self.client.force_login(self.staff)
         url = reverse('administration_manage_user', args=[self.candidate.pk])
-        self.client.post(url, {'action': 'suspend'})
+        response = self.client.post(url, {'action': 'suspend', 'comment': 'Repeated prohibited job postings.'}, follow=True)
         self.candidate.refresh_from_db()
         self.assertFalse(self.candidate.is_active)
-        self.client.post(url, {'action': 'restore'})
+        self.assertContains(response, self.candidate.username)
+        self.assertContains(response, 'Suspended')
+        self.assertContains(response, 'Restore')
+        self.assertEqual(response.context['active_section'], 'users')
+        response = self.client.post(url, {'action': 'restore'}, follow=True)
         self.candidate.refresh_from_db()
         self.assertTrue(self.candidate.is_active)
+        self.assertContains(response, self.candidate.username)
+        self.assertContains(response, 'Active')
+        self.assertContains(response, 'Suspend')
         self.assertEqual(AdminAuditLog.objects.filter(target_id=str(self.candidate.pk)).count(), 2)
+        self.assertEqual(AdminAuditLog.objects.filter(action='user_suspend').get().details, 'Repeated prohibited job postings.')
+
+    def test_suspension_requires_reason_and_keeps_user_active(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            reverse('administration_manage_user', args=[self.candidate.pk]),
+            {'action': 'suspend'}, follow=True,
+        )
+        self.candidate.refresh_from_db()
+        self.assertTrue(self.candidate.is_active)
+        self.assertContains(response, 'Enter a reason before suspending this user.')
+        self.assertFalse(AdminAuditLog.objects.filter(action='user_suspend').exists())
 
     def test_staff_can_review_company_and_report(self):
         from employers.models import RecruiterProfile
@@ -175,6 +194,38 @@ class AdministrationTests(TestCase):
         self.assertEqual(company.verification_status, 'verified')
         self.assertEqual(report.status, 'resolved')
         self.assertEqual(AdminAuditLog.objects.count(), 2)
+
+    def test_admin_spam_detector_flags_bulk_and_repeated_job_posts(self):
+        recruiter = User.objects.create_user(username='spam-review-recruiter')
+        UserProfile.objects.create(user=recruiter, role='recruiter')
+        company = Company.objects.create(name='Spam Review Company')
+        repeated_description = 'Build and maintain Python services, review code, test releases, and work with product teams.'
+        for index in range(5):
+            Job.objects.create(
+                title=f'Software Engineer {index}', company=company, created_by=recruiter,
+                employment_type='full_time', description=repeated_description,
+                required_skills='Python, Django, SQL', location='Singapore',
+            )
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('administration_dashboard') + '?section=reports')
+        self.assertEqual(len(response.context['spam_alerts']), 1)
+        alert = response.context['spam_alerts'][0]
+        self.assertEqual(alert['recruiter'], recruiter)
+        self.assertTrue(any('High posting frequency' in reason for reason in alert['reasons']))
+        self.assertTrue(any('Repeated content' in reason for reason in alert['reasons']))
+        self.assertContains(response, 'spam-review-recruiter')
+
+    def test_admin_spam_detector_does_not_flag_normal_posting(self):
+        recruiter = User.objects.create_user(username='normal-recruiter')
+        UserProfile.objects.create(user=recruiter, role='recruiter')
+        company = Company.objects.create(name='Normal Company')
+        Job.objects.create(
+            title='Accountant', company=company, created_by=recruiter,
+            employment_type='full_time', description='Prepare monthly accounts and statutory reports.',
+        )
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse('administration_dashboard') + '?section=reports')
+        self.assertEqual(response.context['spam_alerts'], [])
 
     def test_candidate_can_report_an_approved_job(self):
         recruiter = User.objects.create_user(username='reported-recruiter')

@@ -17,6 +17,7 @@ def queue_interview_reminders(request):
         Q(application__candidate=request.user) | Q(created_by=request.user),
         scheduled_start__gt=now, scheduled_start__lte=now + timedelta(minutes=30),
         attendance_status='scheduled',
+        candidate_response='accepted',
     ).exclude(application__status__in=['withdrawn', 'rejected', 'offer']).select_related('application__job')
     for interview in due:
         _, created = InterviewReminder.objects.get_or_create(

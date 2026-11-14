@@ -27,18 +27,10 @@ class ResumeReviewTests(TestCase):
         self.assertEqual(result["issue_count"], 2)
         self.assertEqual(len(result["lines"][-1]["suggestions"]), 2)
 
-    def test_my_resume_always_has_edit_action_and_creates_main_draft(self):
+    def test_my_resume_is_generated_from_profile_without_edit_action(self):
         response = self.client.get(reverse("candidate_resume"))
-        self.assertContains(response, "Edit resume")
-
-        response = self.client.post(reverse("candidate_resume"), {"action": "edit_resume"})
-        draft = TailoredResume.objects.get(candidate=self.user, is_main=True)
-        self.assertRedirects(response, reverse("resume_detail", args=[draft.pk]))
-        self.assertIn("Candidate", draft.content)
-        self.assertIn("Python", draft.content)
-
-        response = self.client.get(reverse("candidate_resume"))
-        self.assertContains(response, "Edit resume")
+        self.assertNotContains(response, ">Edit resume</a>")
+        self.assertContains(response, "Automatically updated from My Profile")
 
     def test_quantified_specific_bullet_has_no_writing_warning(self):
         result = review_draft("EXPERIENCE\n- Built Python scripts to process 200 records for customers.", self.job)

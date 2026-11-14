@@ -103,11 +103,14 @@
 .payment-demo-prompt p { margin: 0; line-height: 1.5; }
 
 .plan-management-card { margin-top: 15px; display: flex; align-items: center; justify-content: space-between; gap: 28px; width: 100%; max-width: none; box-sizing: border-box; }
+.payment-history-card { margin-top: 28px; }
 .plan-management-copy { min-width: 0; flex: 1; }
 .plan-management-copy h2 { margin: 0 0 10px; }
 .plan-management-copy .sub { margin: 0; }
 .plan-management-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0; margin-left: auto; }
-.plan-management-actions > a { display: inline-flex; align-items: center; justify-content: center; padding: 11px 20px; min-height: 44px; border: 1px solid; border-radius: 8px; box-sizing: border-box; color: #fff; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.plan-management-actions > form { margin: 0; }
+.plan-management-actions > a,
+.plan-management-actions > form > button { display: inline-flex; align-items: center; justify-content: center; padding: 11px 20px; min-height: 44px; border: 1px solid; border-radius: 8px; box-sizing: border-box; color: #fff; font: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .plan-management-actions .plan-manage-button { background: #223e76; border-color: #223e76; }
 .plan-management-actions .plan-cancel-button { background: #b42332; border-color: #b42332; }
 .plan-management-actions .plan-manage-button:hover { background: #172f5b; }

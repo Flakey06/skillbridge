@@ -108,14 +108,14 @@ class RecruiterCandidateHistoryTests(TestCase):
 
         application.match_score = 85
         application.save(update_fields=["match_score"])
-        response = self.client.get(reverse("recruiter_applicants"), {"min_ats_score": "80"})
+        response = self.client.get(reverse("recruiter_applicants"), {"min_skill_score": "80"})
         applications = list(response.context["applications"])
         self.assertEqual(applications, [application])
         self.assertContains(response, "Pro Insights")
         self.assertNotContains(response, "85%")
         self.recruiter.profile.plan = "pro"
         self.recruiter.profile.save(update_fields=["plan"])
-        response = self.client.get(reverse("recruiter_applicants"), {"min_ats_score": "80"})
+        response = self.client.get(reverse("recruiter_applicants"), {"min_skill_score": "80"})
         self.assertContains(response, "85%")
         self.assertContains(response, "Skill Compatibility")
 

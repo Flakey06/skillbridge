@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Feedback · SkillBridge{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="eyebrow">Help improve SkillBridge</p><h1>Feedback</h1><p>Share a suggestion, report a problem, or comment on a job listing.</p></div></div>
+<section class="card stack" style="max-width:760px">
+    <h2>Send Feedback</h2>
+    <p class="sub">Your account type and username are included automatically so our team can follow up. Do not include passwords, card details, or other sensitive information.</p>
+    <form method="post" class="stack">{% csrf_token %}{{ form.non_field_errors }}
+        <label class="field">{{ form.category.label }}{{ form.category }}{{ form.category.errors }}</label>
+        <label class="field">{{ form.job.label }}{{ form.job }}{{ form.job.errors }}</label>
+        <label class="field">{{ form.rating.label }}{{ form.rating }}{{ form.rating.errors }}</label>
+        <label class="field">{{ form.message.label }}{{ form.message }}{{ form.message.errors }}</label>
+        <button class="primary button" type="submit">Send Feedback</button>
+    </form>
+</section>
+{% if feedback_history %}<section class="card stack" style="max-width:760px"><h2>Your Previous Feedback</h2>{% for item in feedback_history %}<article><strong>{{ item.get_category_display }}</strong> · {{ item.get_status_display }} · {{ item.created_at|date:"d M Y, H:i" }} SGT{% if item.job %}<p class="sub">{{ item.job }}</p>{% endif %}<p>{{ item.message }}</p>{% if item.staff_response %}<p><strong>SkillBridge response:</strong> {{ item.staff_response }}</p>{% endif %}</article>{% endfor %}</section>{% endif %}
+{% endblock %}

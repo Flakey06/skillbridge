@@ -105,23 +105,23 @@
         {% if application.interviews.exists %}<div class="card" id="interview-outcomes">
             <div class="section-heading">
                 <div>
-                    <h2>Interview attendance and feedback</h2>
-                    <p class="sub">Record attendance after an interview. A no-show can still be rescheduled from the calendar.</p>
+                    <h2>Interview attendance</h2>
+                    <p class="sub">Record attendance here. Use the Interview Workspace for questions, answers, transcript review, ratings and general notes.</p>
                 </div>
                 <a class="button small" href="{% url 'recruiter_calendar' %}">Open calendar / reschedule</a>
             </div>
             {% for interview in application.interviews.all %}
             <form method="post" action="{% url 'recruiter_calendar' %}" class="form-grid interview-outcome-form">
                 {% csrf_token %}<input type="hidden" name="action" value="record_outcome"><input type="hidden" name="interview_id" value="{{ interview.pk }}">
-                <p class="span2"><strong>{{ interview.scheduled_start|date:"d M Y, H:i" }}</strong>{% if interview.attendance_status == 'no_show' %} · <span class="pill">No-show</span>{% elif interview.attendance_status == 'attended' %} · <span class="pill progress-green">Attended</span>{% endif %}</p>
+                <p class="span2"><strong>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</strong>{% if interview.attendance_status == 'no_show' %} · <span class="pill">No-show</span>{% elif interview.attendance_status == 'attended' %} · <span class="pill progress-green">Attended</span>{% endif %}</p>
                 <label class="field">Attendance<select name="attendance_status"><option value="scheduled"{% if interview.attendance_status == 'scheduled' %} selected{% endif %}>Scheduled</option><option value="attended"{% if interview.attendance_status == 'attended' %} selected{% endif %}>Attended</option><option value="no_show"{% if interview.attendance_status == 'no_show' %} selected{% endif %}>No-show</option></select></label>
-                <label class="field span2">Recruiter feedback<textarea name="recruiter_feedback" rows="3" placeholder="Record factual interview feedback">{{ interview.recruiter_feedback }}</textarea></label>
+                <label class="field span2">Attendance or serious-concern note<textarea name="recruiter_feedback" rows="3" placeholder="Only add context about attendance or a serious concern">{{ interview.recruiter_feedback }}</textarea></label>
                 <label class="experience-current span2"><input type="checkbox" name="serious_concern" value="yes"{% if interview.serious_concern %} checked{% endif %}> Record a serious interview concern for blacklist review</label>
-                <div class="static-page-actions span2"><button class="button" type="submit">Save interview outcome</button></div>
+                <div class="static-page-actions span2"><button class="button" type="submit">Save attendance</button><a class="button" href="{% url 'recruiter_interview_review' interview.pk %}">Open Interview Workspace</a></div>
             </form>{% endfor %}
         </div>{% endif %}
 
-        <div class="card" id="ats-evaluation">
+        <div class="card" id="recruiter-evaluation">
             <div class="section-heading">
                 <div><h2>Structured recruiter evaluation</h2><p class="sub">Use the same four job-related questions for every candidate.</p></div>
                 {% if evaluation %}<span class="pill progress-green">{{ evaluation.total_score }}/100</span>{% endif %}
@@ -132,7 +132,7 @@
                 {% for field in evaluation_form %}
                     <label class="field{% if field.name == 'notes' %} span2{% endif %}">{% include "components/field_label.html" with field=field %}{{ field }}{{ field.errors }}</label>
                 {% endfor %}
-                <div class="static-page-actions span2"><button class="primary" type="submit">Save ATS evaluation</button></div>
+                <div class="static-page-actions span2"><button class="primary" type="submit">Save recruiter evaluation</button></div>
             </form>
             {% if evaluation %}
             <p class="muted">Last reviewed {{ evaluation.updated_at|date:"d M Y, H:i" }}{% if evaluation.reviewed_by %} by {{ evaluation.reviewed_by.username }}{% endif %}.</p>

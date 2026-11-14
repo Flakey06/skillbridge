@@ -22,7 +22,7 @@ class InterviewReminderTests(TestCase):
             created_by=self.recruiter, employment_type='full_time')
         self.application = JobApplication.objects.create(candidate=self.candidate, job=job, status='interview')
         self.interview = Interview.objects.create(application=self.application, created_by=self.recruiter,
-            scheduled_start=self.now + timedelta(minutes=30))
+            scheduled_start=self.now + timedelta(minutes=30), candidate_response='accepted')
 
     def page(self, user):
         self.client.force_login(user)

@@ -233,11 +233,11 @@
     </section>
     <section class="card administration-payment-details" data-admin-section="users"{% if active_section != "users" %} hidden{% endif %}>
         <h2>User Management</h2><p class="sub">Search non-staff accounts and temporarily suspend or restore access.</p>
-        <form method="get" action="{% url 'administration_dashboard' %}#users" class="administration-search"><input type="search" name="user_q" value="{{ user_query }}" placeholder="Search username, name, or email"><button class="button" type="submit">Search</button></form>
+        <form method="get" action="{% url 'administration_dashboard' %}#users" class="administration-search"><input type="hidden" name="section" value="users"><input type="search" name="user_q" value="{{ user_query }}" placeholder="Search username, name, or email"><button class="button" type="submit">Search</button></form>
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr>
+                    <tr id="user-{{ managed_user.pk }}">
                         <th>User</th>
                         <th>Role</th>
                         <th>Joined</th>
@@ -253,7 +253,7 @@
                         <td>{{ managed_user.date_joined|date:"j M Y" }}</td>
                         <td>{% if managed_user.is_active %}Active{% else %}Suspended{% endif %}</td>
                         <td>
-                            <form method="post" action="{% url 'administration_manage_user' managed_user.pk %}">{% csrf_token %}<input type="hidden" name="action" value="{% if managed_user.is_active %}suspend{% else %}restore{% endif %}"><button class="button{% if managed_user.is_active %} button-danger{% endif %}" type="submit">{% if managed_user.is_active %}Suspend{% else %}Restore{% endif %}</button></form>
+                            <form method="post" action="{% url 'administration_manage_user' managed_user.pk %}" class="moderation-action-form">{% csrf_token %}<input type="hidden" name="action" value="{% if managed_user.is_active %}suspend{% else %}restore{% endif %}"><input type="hidden" name="user_q" value="{{ user_query }}"><input name="comment" maxlength="500" placeholder="{% if managed_user.is_active %}Required suspension reason{% else %}Optional restoration note{% endif %}"{% if managed_user.is_active %} required aria-required="true"{% endif %}><button class="button{% if managed_user.is_active %} button-danger{% endif %}" type="submit">{% if managed_user.is_active %}Suspend{% else %}Restore{% endif %}</button></form>
                         </td>
                     </tr>
                     {% empty %}
@@ -327,6 +327,40 @@
     </section>
     <section class="card administration-payment-details" data-admin-section="reports"{% if active_section != "reports" %} hidden{% endif %}>
         <h2>Reports and Moderation</h2><p class="sub">Review reports submitted by users and record the outcome.</p>
+        <section class="moderation-history" aria-labelledby="spam-alerts-title">
+            <h3 id="spam-alerts-title">Recruiter Spam Alerts</h3>
+            <p class="sub">Automatic signals for staff review only. Listings and recruiter accounts are not restricted automatically.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Recruiter</th><th>Why flagged</th><th>Recent listings</th><th>Review</th></tr></thead>
+                    <tbody>
+                    {% for alert in spam_alerts %}
+                    <tr>
+                        <td><strong>{{ alert.recruiter.username }}</strong><br><span class="sub">{{ alert.company.name }}</span></td>
+                        <td>{% for reason in alert.reasons %}{{ reason }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                        <td>{{ alert.recent_count }} in 30 days</td>
+                        <td>{% for job in alert.sample_jobs %}<a href="{% url 'job_detail' job.pk %}" target="_blank" rel="noopener">{{ job.title }}</a>{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4">No recruiter posting patterns are currently flagged.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="moderation-history" aria-labelledby="user-feedback-title">
+            <h3 id="user-feedback-title">User Feedback</h3>
+            <p class="sub">Suggestions and job comments submitted by candidates and recruiters.</p>
+            <div class="table-wrap"><table>
+                <thead><tr><th>User</th><th>Type</th><th>Feedback</th><th>Status and response</th></tr></thead>
+                <tbody>{% for item in site_feedback %}<tr>
+                    <td><strong>{{ item.user.username }}</strong><br><span class="sub">{{ item.user.profile.get_role_display|default:"User" }} · {{ item.created_at|date:"d M Y, H:i" }} SGT</span></td>
+                    <td>{{ item.get_category_display }}{% if item.rating %}<br>{{ item.rating }}/5{% endif %}{% if item.job %}<br><a href="{% url 'job_detail' item.job.pk %}" target="_blank" rel="noopener">{{ item.job.title }}</a>{% endif %}</td>
+                    <td>{{ item.message }}</td>
+                    <td><form method="post" action="{% url 'administration_review_feedback' item.pk %}" class="moderation-action-form">{% csrf_token %}<textarea name="response" rows="2" maxlength="2000" placeholder="Optional reply to the user">{{ item.staff_response }}</textarea><span>{% if item.status != 'new' %}<button class="button" name="decision" value="new">Reopen</button>{% endif %}{% if item.status != 'reviewed' %}<button class="button" name="decision" value="reviewed">Mark Reviewed</button>{% endif %}{% if item.status != 'closed' %}<button class="button" name="decision" value="closed">Close</button>{% endif %}</span></form><span class="sub">Current status: {{ item.get_status_display }}</span></td>
+                </tr>{% empty %}<tr><td colspan="4">No user feedback submitted yet.</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </section>
         <div class="table-wrap">
             <table>
                 <thead>

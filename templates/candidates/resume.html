@@ -9,7 +9,6 @@
         <p class="sub">Review your generated resume and feedback from the uploaded source file.</p>
         {% if main_resume %}<a class="text-link" href="#resume-fit">Change resume type ↓</a>{% endif %}
     </div>
-    <a class="primary button" href="{% url 'candidate_resume_select' %}">Edit resume</a>
 </div>
 
 <div class="profile-autosave-box resume-profile-sync-note" role="status">
@@ -112,7 +111,7 @@
                         <span>{{ item.category }}</span>
                         <span>{{ item.version }}</span>
                         <span>Updated: {{ item.updated_at|date:"j M Y, g:i A" }} SGT</span>
-                        <span>Click To Open Version</span>
+                        <span>{% if not item.resume.job_id and item.resume.title == 'My resume' %}Click To View This Saved Profile Version{% else %}Click To Open Version{% endif %}</span>
                     </span>
                 </a>
                 {% endfor %}

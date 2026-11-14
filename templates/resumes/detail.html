@@ -13,6 +13,21 @@
 
 {% for message in messages %}<p class="card profile-message" role="status">{{ message }}</p>{% endfor %}
 <div class="resume-review-layout">
+{% if is_profile_resume %}
+<article class="resume-paper candidate-resume-document">
+    <header class="resume-document-header">
+        <h2 class="resume-document-name preserve-case">{{ resume_document.name }}</h2>
+        {% if resume_document.contacts %}<div class="resume-document-contact">{% for line in resume_document.contacts %}<span>{{ line }}</span>{% endfor %}</div>{% endif %}
+    </header>
+    {% for section in resume_document.sections %}
+    <section class="resume-document-section">
+        {% if section.heading %}<h3>{{ section.heading }}</h3>{% endif %}
+        {% for line in section.lines %}<p{% if line.bullet %} class="resume-entry-bullet"{% endif %}>{{ line.text }}</p>{% endfor %}
+    </section>
+    {% endfor %}
+    <p class="muted">Saved {{ tailored_resume.created_at|date:"j M Y, g:i A" }} SGT · Read-only profile version</p>
+</article>
+{% else %}
 <article class="card resume-paper">
     <h2>Edit resume</h2>
     <p class="muted">Save your changes to refresh the underlined review and job requirements.</p>
@@ -41,6 +56,7 @@
     </div>
     <small class="muted">Auto-format improves headings, bullets, spacing, and consistency. It does not invent or rewrite your experience.</small>
 </article>
+{% endif %}
 <aside class="resume-review-sidebar">
     <section class="card">
         <h2>Review preview</h2>

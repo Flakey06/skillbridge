@@ -151,7 +151,7 @@ def detail(request, job_id):
                 application.candidate = request.user
                 application.job = job
                 # Every submitted application receives a persisted recruiter-facing
-                # ATS score. Candidate plan access only controls whether the
+                # Skill Compatibility score. Candidate plan access only controls whether the
                 # candidate can see insights; it must not leave recruiter data blank.
                 score, matched, missing, breakdown, assessment = calculate_match(
                     request.user, job, resume_text=selected_resume.clean_content,

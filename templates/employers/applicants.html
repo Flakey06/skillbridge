@@ -34,17 +34,17 @@
             <option value="blacklisted"{% if history_filter == 'blacklisted' %} selected{% endif %}>Permanently blacklisted</option>
         </select>
     </label>
-    <div class="field applicant-ats-filter">
-        <span class="applicant-ats-label">
-        <label for="applicant-ats-score">Minimum Skill Compatibility</label>
-        <a class="applicant-ats-info" href="#ats-scoring-help" aria-label="About the minimum Skill Compatibility">ⓘ</a></span>
-        <select id="applicant-ats-score" name="min_ats_score">
+    <div class="field applicant-skill-filter">
+        <span class="applicant-skill-label">
+        <label for="applicant-skill-score">Minimum Skill Compatibility</label>
+        <a class="applicant-skill-info" href="#skill-scoring-help" aria-label="About the minimum Skill Compatibility">ⓘ</a></span>
+        <select id="applicant-skill-score" name="min_skill_score">
             <option value="">Any score</option>
-            <option value="50"{% if minimum_ats_score == '50' %} selected{% endif %}>50+</option>
-            <option value="60"{% if minimum_ats_score == '60' %} selected{% endif %}>60+</option>
-            <option value="70"{% if minimum_ats_score == '70' %} selected{% endif %}>70+</option>
-            <option value="80"{% if minimum_ats_score == '80' %} selected{% endif %}>80+</option>
-            <option value="90"{% if minimum_ats_score == '90' %} selected{% endif %}>90+</option>
+            <option value="50"{% if minimum_skill_score == '50' %} selected{% endif %}>50+</option>
+            <option value="60"{% if minimum_skill_score == '60' %} selected{% endif %}>60+</option>
+            <option value="70"{% if minimum_skill_score == '70' %} selected{% endif %}>70+</option>
+            <option value="80"{% if minimum_skill_score == '80' %} selected{% endif %}>80+</option>
+            <option value="90"{% if minimum_skill_score == '90' %} selected{% endif %}>90+</option>
         </select>
     </div>
     {% if has_pro %}
@@ -53,7 +53,7 @@
     <button class="primary applicant-filter-submit" type="submit" aria-label="Filter Applicants" title="Filter Applicants"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
 </form>
 
-<aside class="card stack ats-help-dropdown native-target-panel" id="ats-scoring-help" tabindex="-1">
+<aside class="card stack skill-help-dropdown native-target-panel" id="skill-scoring-help" tabindex="-1">
     <div class="section-heading">
         <div><p class="eyebrow">Automatic screening</p><h2>How Skill Compatibility Works</h2></div>
         <a class="button small" href="#">Close</a>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Confirm Pro checkout · SkillBridge{% endblock %}
+{% block title %}Confirm Pro subscription · SkillBridge{% endblock %}
 
 {% block content %}
 <article class="card static-page">
@@ -19,7 +19,7 @@
         <form method="post" action="{% url 'start_pro_checkout' %}">
             {% csrf_token %}
             <input type="hidden" name="provider" value="stripe">
-            <button class="primary button" type="submit"{% if not stripe_enabled %} disabled{% endif %}>I understand — continue to Stripe →</button>
+            <button class="primary button" type="submit"{% if not stripe_enabled %} disabled{% endif %}>Subscribe to Pro →</button>
         </form>
         <a class="button" href="{% url 'plans' %}">Go back</a>
     </div>

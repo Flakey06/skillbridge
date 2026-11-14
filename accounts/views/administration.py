@@ -5,12 +5,14 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.db.models import Count, Q, Sum
+from django.db.models import Case, Count, IntegerField, Q, Sum, Value, When
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from urllib.parse import quote
 
 from applications.models import Interview, JobApplication
 from candidates.models import CandidateMilestone
@@ -18,9 +20,10 @@ from candidates.services import add_verified_certificate_to_resume
 from employers.models import Company
 from jobs.models import Job
 from accounts.notification_helpers import notify
-from ..models import AdminAuditLog, ModerationReport, Payment, UserProfile
+from ..models import AdminAuditLog, ModerationReport, Payment, SiteFeedback, UserProfile
 from ..statistics_presentation import member_charts
 from ..administration_stats import onboarding_statistics, successful_match_statistics
+from ..spam_detection import recruiter_spam_alerts
 
 
 class StaffAuthenticationForm(AuthenticationForm):
@@ -127,7 +130,13 @@ def administration_dashboard(request):
         'user_query': user_query,
         'companies_for_review': Company.objects.filter(verification_status='pending').order_by('name'),
         'company_history': Company.objects.exclude(reviewed_at=None).select_related('reviewed_by').order_by('-reviewed_at')[:30],
-        'moderation_reports': ModerationReport.objects.select_related('reporter', 'moderator').order_by('status', '-created_at')[:50],
+        'moderation_reports': ModerationReport.objects.select_related('reporter', 'moderator').annotate(
+            status_priority=Case(When(status='open', then=Value(0)), default=Value(1), output_field=IntegerField())
+        ).order_by('status_priority', '-created_at')[:50],
+        'site_feedback': SiteFeedback.objects.select_related('user', 'user__profile', 'job', 'reviewed_by').annotate(
+            status_priority=Case(When(status='new', then=Value(0)), When(status='reviewed', then=Value(1)), default=Value(2), output_field=IntegerField())
+        ).order_by('status_priority', '-created_at')[:100],
+        'spam_alerts': recruiter_spam_alerts(now),
         'audit_logs': AdminAuditLog.objects.select_related('actor')[:100],
         'member_statistics': member_statistics,
         'payments': paid_records.order_by().values('currency').annotate(total=Sum('amount'), count=Count('pk')).order_by('currency'),
@@ -190,11 +199,27 @@ def manage_user(request, user_id):
     action = request.POST.get('action')
     if action not in {'suspend', 'restore'}:
         return _dashboard_section('users')
+    comment = request.POST.get('comment', '').strip()
+    query = request.POST.get('user_q', '').strip() or user.username
+    return_url = f"{reverse_lazy('administration_dashboard')}?section=users&user_q={quote(query)}#user-{user.pk}"
+    if action == 'suspend' and not comment:
+        messages.error(request, 'Enter a reason before suspending this user.')
+        return redirect(return_url)
     user.is_active = action == 'restore'
     user.save(update_fields=['is_active'])
-    _audit(request, f'user_{action}', user, request.POST.get('comment', '').strip())
+    _audit(request, f'user_{action}', user, comment)
+    if action == 'suspend':
+        notify(user, 'Account suspended', f'Your SkillBridge account was suspended. Reason: {comment}', 'moderation')
+        if user.email:
+            send_mail(
+                subject='Your SkillBridge account was suspended',
+                message=f'Your SkillBridge account was suspended.\n\nReason: {comment}\n\nContact SkillBridge support if you believe this was a mistake.',
+                from_email='noreply@skillbridge.local', recipient_list=[user.email], fail_silently=True,
+            )
+    elif comment:
+        notify(user, 'Account restored', comment, 'moderation')
     messages.success(request, f'{user.username} was {"restored" if user.is_active else "suspended"}.')
-    return _dashboard_section('users', f'?user_q={user.username}')
+    return redirect(return_url)
 
 
 @staff_required
@@ -232,6 +257,25 @@ def review_report(request, report_id):
     if report.reporter:
         notify(report.reporter, 'Report reviewed', f'Your report about {report.subject_label} was {report.status}.', 'moderation')
     _audit(request, f'report_{decision}', report, report.resolution_note)
+    return _dashboard_section('reports')
+
+
+@staff_required
+@require_POST
+def review_feedback(request, feedback_id):
+    feedback = get_object_or_404(SiteFeedback, pk=feedback_id)
+    decision = request.POST.get('decision')
+    if decision not in {'new', 'reviewed', 'closed'}:
+        return _dashboard_section('reports')
+    feedback.status = decision
+    feedback.staff_response = request.POST.get('response', '').strip()
+    feedback.reviewed_by = request.user
+    feedback.reviewed_at = timezone.now()
+    feedback.save(update_fields=['status', 'staff_response', 'reviewed_by', 'reviewed_at'])
+    if feedback.staff_response:
+        notify(feedback.user, 'SkillBridge replied to your feedback', feedback.staff_response, 'feedback')
+    _audit(request, f'feedback_{decision}', feedback, feedback.staff_response)
+    messages.success(request, 'Feedback updated.')
     return _dashboard_section('reports')
 
 

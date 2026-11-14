@@ -1,6 +1,7 @@
 """Candidate interview calendar, notes, and reschedule requests."""
 
 from django.utils import timezone
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from accounts.notification_helpers import notify
 from accounts.calendar import build_month_calendar, calendar_download_or_reminder
@@ -18,6 +19,21 @@ def calendar(request):
         return download
     interview_id = request.POST.get("interview_id") or request.GET.get("edit")
     interview = get_object_or_404(interviews, pk=interview_id) if interview_id else None
+    if request.method == "POST" and interview is not None and request.POST.get("action") == "accept_date":
+        if interview.candidate_response == "accepted":
+            messages.info(request, "You have already accepted this interview time.")
+        else:
+            interview.candidate_response = "accepted"
+            interview.save(update_fields=["candidate_response"])
+            notify(
+                interview.application.job.created_by,
+                "Interview time accepted",
+                f"{request.user.username} accepted the interview time for {interview.application.job.title}.",
+                "interview",
+            )
+            notify(request.user, "Interview confirmed", f"You accepted the interview time for {interview.application.job.title}.", "interview")
+            messages.success(request, "Interview date accepted.")
+        return redirect("candidate_calendar")
     form = CandidateInterviewForm(request.POST or None, instance=interview)
     if request.method == "POST" and interview is not None and form.is_valid():
         candidate_notes = form.cleaned_data["candidate_notes"]
@@ -28,6 +44,7 @@ def calendar(request):
             interview.proposed_start = requested_start
             interview.proposed_end = requested_end
             interview.reschedule_status = "pending"
+            interview.candidate_response = "pending"
             interview.reschedule_requested_by = request.user
             interview.reschedule_reason = form.cleaned_data.get("reschedule_reason", "")
             interview.reschedule_message = "The candidate requested a new interview time."
@@ -48,6 +65,7 @@ def calendar(request):
             "reschedule_requested_by",
             "reschedule_message",
             "reschedule_reason",
+            "candidate_response",
         ])
         return redirect("candidate_calendar")
     calendar_data = build_month_calendar(interviews, request.GET.get("month"), request.GET.get("date"))

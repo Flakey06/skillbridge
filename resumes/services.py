@@ -374,6 +374,39 @@ def _cover_letter_evidence(data, resume_text, job_skills, focus_terms):
     return _dedupe([line for _, line in focused + relevant])[:3]
 
 
+def _cover_letter_examples(data, resume_text, job_skills, focus_terms):
+    """Return labelled, deduplicated evidence for narrative composition."""
+    labelled = []
+    for label, value in (
+        ("project work", data.get("portfolio", "")),
+        ("experience", data.get("experience", "")),
+        ("achievements", data.get("awards", "")),
+        ("resume", resume_text),
+    ):
+        for line in _clean_lines(value):
+            if any(_contains(line, term) for term in (*job_skills, *focus_terms)):
+                labelled.append((label, line))
+    result, seen = [], set()
+    for label, line in labelled:
+        key = _normalise(line)
+        if key not in seen:
+            result.append((label, line))
+            seen.add(key)
+    return result[:2]
+
+
+def _evidence_sentence(label, line, job):
+    """Turn supplied evidence into prose without changing its factual claim."""
+    text = _contextualize_line(line, job).strip().rstrip(".")
+    if not text:
+        return ""
+    if re.match(r"^(?:I|My)\b", text, re.I):
+        return f"For example, {text[0].lower() + text[1:]}."
+    if re.match(r"^(built|created|developed|designed|implemented|led|managed|analysed|analyzed|supported|worked|improved|delivered)\b", text, re.I):
+        return f"In my {label}, I {text[0].lower() + text[1:]}."
+    return f"One relevant example from my {label} is {text[0].lower() + text[1:]}."
+
+
 def build_tailored_cover_letter(candidate, job):
     """Create an editable, job-specific cover letter from truthful evidence."""
     profile = UserProfile.objects.filter(user=candidate).first()
@@ -382,10 +415,14 @@ def build_tailored_cover_letter(candidate, job):
     job_skills = _job_skills(job)
     match = get_or_update_match(candidate, job)
     focus, focus_terms = _role_focus(job)
-    evidence = _cover_letter_evidence(data, resume_text, job_skills, focus_terms)
+    evidence = _cover_letter_examples(data, resume_text, job_skills, focus_terms)
     display_name = data.get("name") or candidate.get_full_name() or candidate.username
     matched_skills = _dedupe(match.matched_skills)[:5]
-    priorities = _job_description_points(job, job_skills)[:2]
+    focus_copy = {
+        "business": "turning information into practical business decisions and working with stakeholder needs",
+        "technical": "solving technical problems and delivering practical, reliable solutions",
+        "role-relevant": f"contributing effectively as a {job.title}",
+    }[focus]
 
     paragraphs = [
         f"Dear Hiring Team,\n\nI am writing to apply for the {job.title} position at {job.company.name}."
@@ -393,25 +430,15 @@ def build_tailored_cover_letter(candidate, job):
     background = ", ".join(
         value for value in (profile_label(data, "career"), profile_label(data, "specialisation")) if value
     )
+    alignment = f"I am particularly interested in this opportunity because it focuses on {focus_copy}."
     if background:
-        paragraphs.append(f"My background in {background} gives me a relevant foundation for this role.")
-    if priorities:
-        paragraphs.append("The role particularly emphasises " + "; ".join(priorities) + ".")
-    if evidence:
-        focus_label = {
-            "business": "business-facing projects and experience",
-            "technical": "technical projects and experience",
-            "role-relevant": "role-relevant projects and experience",
-        }[focus]
-        paragraphs.append(
-            f"I would highlight my {focus_label}:\n"
-            + "\n".join(f"- {line}" for line in evidence)
-        )
+        alignment += f" My background in {background} provides a foundation I can apply in this context."
     if matched_skills:
-        paragraphs.append(
-            "The skills from my current profile that align most closely with this position include "
-            + ", ".join(matched_skills) + "."
-        )
+        alignment += " My verified profile evidence aligns with key requirements including " + ", ".join(matched_skills) + "."
+    paragraphs.append(alignment)
+    evidence_paragraph = " ".join(_evidence_sentence(label, line, job) for label, line in evidence)
+    if evidence_paragraph:
+        paragraphs.append(evidence_paragraph)
     paragraphs.append(
         "I would welcome the opportunity to discuss how my background can contribute to your team. "
         "Thank you for considering my application."

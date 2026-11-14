@@ -5,7 +5,7 @@ from django.forms import formset_factory
 class ReviewForm(forms.Form):
     transcript_file = forms.FileField(required=False, label='Transcript (.txt)', widget=forms.FileInput(attrs={'accept': '.txt'}))
     transcript = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 8}))
-    candidate_speaker = forms.ChoiceField(required=False, label='Candidate speaker')
+    candidate_speaker = forms.ChoiceField(required=False, label='Which transcript speaker is the candidate?')
     loose_notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 5}), label='Loose thoughts and question ideas')
     overall_notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 4}))
 

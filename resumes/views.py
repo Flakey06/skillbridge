@@ -8,6 +8,7 @@ from accounts.decorators import candidate_required
 from .models import TailoredResume
 from .review import review_draft, without_legacy_notes
 from .content import auto_format_resume
+from .presentation import resume_document
 
 
 @candidate_required
@@ -17,6 +18,10 @@ def detail(request, resume_id):
         pk=resume_id,
         candidate=request.user,
     )
+    is_profile_resume = not tailored_resume.job_id and tailored_resume.title == "My resume"
+    if request.method == "POST" and is_profile_resume:
+        messages.info(request, "Profile résumé versions are read-only. Update My Profile to create a new version.")
+        return redirect("resume_detail", resume_id=tailored_resume.id)
     if request.method == "POST":
         content = without_legacy_notes(request.POST.get("content", "").strip())
         if request.POST.get("action") == "auto_format":
@@ -36,6 +41,8 @@ def detail(request, resume_id):
         request,
         "resumes/detail.html",
         {"role": "candidate", "tailored_resume": tailored_resume,
+         "is_profile_resume": is_profile_resume,
+         "resume_document": resume_document(tailored_resume.clean_content, request.user.profile.display_name),
          "editor_content": without_legacy_notes(tailored_resume.content),
          "review": review_draft(tailored_resume.content, tailored_resume.job)},
     )

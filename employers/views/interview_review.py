@@ -8,19 +8,25 @@ from accounts.decorators import recruiter_required
 from applications.models import Interview, InterviewReview
 from employers.interview_review.forms import ReviewForm, QuestionFormSet
 from employers.interview_review.transcripts import parse_turns, sample_questions, suggest_answers, additional_transcript_questions
-from .common import _context
+from .common import _context, _recruiter
 
 
 @recruiter_required
 def interview_review(request, interview_id):
+    recruiter = _recruiter(request)
+    ownership = ({'application__job__company': recruiter.company} if recruiter.company_id
+                 else {'application__job__created_by': request.user})
     interview = get_object_or_404(Interview.objects.select_related('application__job', 'application__candidate'),
-        pk=interview_id, application__job__created_by=request.user)
+        pk=interview_id, **ownership)
     saved = InterviewReview.objects.filter(interview=interview).first()
     initial = {'transcript': interview.transcript,
                'candidate_speaker': saved.candidate_speaker if saved else '',
                'overall_notes': saved.overall_notes if saved else '',
                'loose_notes': saved.loose_notes if saved else ''}
-    rows = saved.questions if saved else [{'question': q} for q in sample_questions(interview.application.job, getattr(interview.application.tailored_resume, 'content', '') or '')]
+    rows = saved.questions if saved else [
+        {'question': q}
+        for q in sample_questions(interview.application.job, interview.application.tailored_resume or '')
+    ]
     stage = request.POST.get('stage', request.GET.get('stage', 'during'))
     stage = stage if stage in {'during', 'after'} else 'during'
     data = request.POST.copy() if request.method == 'POST' else None
@@ -116,15 +122,26 @@ def interview_review(request, interview_id):
     selected_speaker = form['candidate_speaker'].value()
     additional_questions = additional_transcript_questions(visible_rows, turns, selected_speaker) if selected_speaker else []
     speaker_previews = [{'name': name, 'example': next(turn['text'][:240] for turn in turns if turn['speaker'] == name)} for name in speakers]
+    candidate = interview.application.candidate
+    candidate_profile = getattr(candidate, 'profile', None)
+    candidate_name = (
+        candidate_profile.display_name if candidate_profile else candidate.get_full_name().strip() or candidate.username
+    )
+    recruiter_name = request.user.get_full_name().strip() or request.user.username
     return render(request, 'employers/interview_review.html', _context(request,
         interview=interview, form=form, question_formset=formset,
         transcript_turn_count=len(turns), speaker_previews=speaker_previews,
         stage=stage, additional_questions=additional_questions,
+        candidate_name=candidate_name, candidate_email=candidate.email,
+        recruiter_name=recruiter_name,
         matching_ready=any(row.get('answer') and row.get('source_question') for row in visible_rows)))
 
 
 @recruiter_required
 def interviews(request):
-    entries = Interview.objects.filter(application__job__created_by=request.user).select_related(
+    recruiter = _recruiter(request)
+    ownership = ({'application__job__company': recruiter.company} if recruiter.company_id
+                 else {'application__job__created_by': request.user})
+    entries = Interview.objects.filter(**ownership).select_related(
         'application__candidate', 'application__job').order_by('-scheduled_start')
     return render(request, 'employers/interviews.html', _context(request, interviews=entries))

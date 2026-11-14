@@ -60,7 +60,7 @@ def applicants(request):
     status = request.GET.get("status")
     query = request.GET.get("q", "").strip()
     candidate_history = request.GET.get("history", "")
-    minimum_ats_score = request.GET.get("min_ats_score", "")
+    minimum_skill_score = request.GET.get("min_skill_score", "")
     if job_id and not job_id.isdigit():
         applications = applications.none()
     elif job_id:
@@ -77,8 +77,8 @@ def applicants(request):
         applications = applications.filter(company_rejection_count__gte=2)
     elif candidate_history == "blacklisted":
         applications = applications.filter(is_blacklisted=True)
-    if minimum_ats_score.isdigit():
-        applications = applications.filter(match_score__gte=int(minimum_ats_score))
+    if minimum_skill_score.isdigit():
+        applications = applications.filter(match_score__gte=int(minimum_skill_score))
 
     sort = "match" if request.GET.get("sort") == "match" and request.user.profile.is_pro else "newest"
     if sort == "match":
@@ -140,19 +140,19 @@ def applicants(request):
         selection_params.pop("select", None)
     else:
         selection_params["select"] = "1"
-    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro, history_filter=candidate_history, minimum_ats_score=minimum_ats_score, selecting=request.GET.get("select") == "1", selection_query=selection_params.urlencode()))
+    return render(request, "employers/applicants.html", _context(request, applications=applications, jobs=jobs, status_form=status_form, status_choices=[(value, label) for value, label in JobApplication.STATUS_CHOICES if value != "withdrawn"], sort=sort, has_pro=has_pro, history_filter=candidate_history, minimum_skill_score=minimum_skill_score, selecting=request.GET.get("select") == "1", selection_query=selection_params.urlencode()))
 
 
 @recruiter_required
 def applicant_detail(request, application_id):
     profile = getattr(request.user, "profile", None)
     has_pro = profile.is_pro if profile else False
+    recruiter = _recruiter(request)
     application = get_object_or_404(
         JobApplication.objects.select_related("candidate", "job__company"),
         pk=application_id,
-        job__created_by=request.user,
+        **({"job__company": recruiter.company} if recruiter.company_id else {"job__created_by": request.user}),
     )
-    recruiter = _recruiter(request)
     company_applications = JobApplication.objects.filter(
         candidate=application.candidate,
         job__company=application.job.company,
@@ -199,7 +199,7 @@ def applicant_detail(request, application_id):
             evaluation.reviewed_by = request.user
             evaluation.save()
             messages.success(request, f"Recruiter evaluation saved with a fixed score of {evaluation.total_score}/100.")
-            return redirect(reverse("recruiter_applicant_detail", kwargs={"application_id": application.id}) + "#ats-evaluation")
+            return redirect(reverse("recruiter_applicant_detail", kwargs={"application_id": application.id}) + "#recruiter-evaluation")
     else:
         evaluation_form = ApplicantEvaluationForm(instance=evaluation)
     previous_status = application.status

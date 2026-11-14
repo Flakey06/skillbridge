@@ -71,7 +71,7 @@
         {% else %}
             <div class="plan-actions">
             {% if stripe_enabled %}
-                <a class="primary button" href="{% url 'pro_checkout_confirm' %}">Continue to Pro checkout →</a>
+                <a class="primary button" href="{% url 'pro_checkout_confirm' %}">Subscribe to Pro →</a>
                 {% if trial_available %}
                     <form method="post" action="{% url 'start_pro_trial' %}">
                         {% csrf_token %}
@@ -79,7 +79,7 @@
                     </form>
                 {% endif %}
             {% else %}
-                <button class="primary button" type="button" disabled>Continue to Pro checkout →</button>
+                <button class="primary button" type="button" disabled>Subscribe to Pro →</button>
                 {% if trial_available %}
                     <form method="post" action="{% url 'start_pro_trial' %}">
                         {% csrf_token %}
@@ -91,27 +91,31 @@
             {% if stripe_enabled %}
                 <p class="sub">Pro is a monthly subscription. Stripe test mode (<code>sk_test_</code>) will charge the payment method every month until you cancel. No real card is charged in test mode.</p>
             {% else %}
-                <p class="sub">Add a Stripe <code>sk_test_</code> key to enable checkout. No live payments are accepted in this development build.</p>
             {% endif %}
         {% endif %}
     </article>
 </section>
 
+{% if has_pro %}
 <section class="card account-card plan-management-card" id="manage-plan">
     <div class="plan-management-copy">
         <h2>Manage Plan And Payments</h2>
-        {% if has_pro %}
-            <p class="sub">{% if profile.pro_trial_started_at and profile.plan_expires_at %}Your trial expires automatically. You can end it early; no payment is taken.{% else %}Cancel your monthly plan to stop future renewals. Cancellation ends Pro access immediately; previous payments remain in your payment history.{% endif %}</p>
-        {% else %}<p class="sub">You are on SkillBridge Free.</p>{% endif %}
+        <p class="sub">{% if profile.pro_trial_started_at and profile.plan_expires_at %}Your trial expires automatically. You can end it early; no payment is taken.{% else %}Cancel your monthly plan to stop future renewals. Cancellation ends Pro access immediately; previous payments remain in your payment history.{% endif %}</p>
     </div>
     <div class="plan-management-actions">
-        <a class="plan-manage-button" href="{% url 'account_settings' %}#payment-method">Manage Plan</a>
-        {% if has_pro %}<a class="plan-cancel-button" href="{% url 'cancel_pro_confirm' %}">{% if profile.pro_trial_started_at and profile.plan_expires_at %}End Free Trial{% else %}Cancel Plan{% endif %}</a>{% endif %}
+        {% if stripe_enabled and not profile.plan_expires_at %}
+        <form method="post" action="{% url 'manage_payment_method' %}">
+            {% csrf_token %}
+            <button class="plan-manage-button" type="submit">Manage Payment Method</button>
+        </form>
+        {% endif %}
+        <a class="plan-cancel-button" href="{% url 'cancel_pro_confirm' %}">{% if profile.pro_trial_started_at and profile.plan_expires_at %}End Free Trial{% else %}Cancel Plan{% endif %}</a>
     </div>
 </section>
+{% endif %}
 
 {% if payments %}
-<section class="card account-card">
+<section class="card account-card payment-history-card">
     <h2>Payment history</h2>
     {% for payment in payments %}
     <p>{{ payment.provider|title }} · {{ payment.currency }} {{ payment.amount }} · {{ payment.get_status_display }} · {{ payment.created_at|date:"d M Y" }}</p>

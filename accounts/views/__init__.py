@@ -30,12 +30,14 @@ from .payments import (
 )
 from .notifications import inbox
 from .dashboard import home
+from .feedback import feedback
 
 __all__ = [
     'CANDIDATE_STEPS',
     'RECRUITER_STEPS',
     'home',
     'inbox',
+    'feedback',
     'login_view',
     'signup_view',
     'onboarding',

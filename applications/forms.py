@@ -68,14 +68,14 @@ class InterviewForm(forms.ModelForm):
         initial="video",
     )
     scheduled_start = forms.DateTimeField(
-        label="Interview start",
-        help_text="This time will sync to the timezone configured in your calendar.",
+        label="Interview start (SGT)",
+        help_text="Enter the time in Singapore Time (SGT, UTC+8).",
         input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"],
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
     )
     scheduled_end = forms.DateTimeField(
-        label="Interview end",
-        help_text="Optional. You can change the timing later.",
+        label="Interview end (SGT)",
+        help_text="Optional. Enter the time in Singapore Time (SGT, UTC+8).",
         required=False,
         input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"],
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),

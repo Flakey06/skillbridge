@@ -199,6 +199,6 @@ def account_settings(request):
         "details_form": details_form, "password_form": password_form,
         "stripe_enabled": settings.STRIPE_SECRET_KEY.startswith("sk_test_"),
         "billing_demo": bool(profile.is_pro and profile.plan_expires_at and (profile.pro_trial_started_at or profile.trial_started_at)),
-        "role": profile.role, "has_pro": profile.is_pro,
+        "role": profile.role, "has_pro": profile.is_pro, "profile": profile,
         "profile_url": "recruiter_company" if profile.role == "recruiter" else "candidate_profile",
     })

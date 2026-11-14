@@ -8,7 +8,17 @@
                     <div>Upload a UTF-8 .txt transcript, select the candidate speaker, then match answers. Matching uses local text rules and may miss paraphrases. Check suggestions against the transcript. Existing answers are preserved.</div>
                 </details>
             </div>
+            <section class="interview-participant-details" aria-labelledby="transcript-participants-title">
+                <h3 id="transcript-participants-title">Interview Details</h3>
+                <dl>
+                    <div><dt>Candidate</dt><dd>{{ candidate_name }}{% if candidate_email %} · {{ candidate_email }}{% endif %}</dd></div>
+                    <div><dt>Role</dt><dd>{{ interview.application.job.title }}</dd></div>
+                    <div><dt>Recruiter</dt><dd>{{ recruiter_name }}</dd></div>
+                    <div><dt>Interview time</dt><dd>{{ interview.scheduled_start|date:"d M Y, H:i" }} SGT</dd></div>
+                </dl>
+            </section>
             <p>Upload → Select speaker → Match answers</p>
+            <p class="muted">The transcript must identify who is speaking, for example <strong>Recruiter: Tell me about your experience</strong> and <strong>Candidate: I worked on…</strong>. If it uses labels such as “Speaker 1”, you can identify the candidate after uploading.</p>
             <label class="field">{{ form.transcript_file.label }}{{ form.transcript_file }}{{ form.transcript_file.errors }}</label>
             <button class="button" type="submit" name="action" value="load">Load Transcript</button>
             {% if transcript_turn_count %}
@@ -22,7 +32,7 @@
                 {% endfor %}
             </details>
             {% endif %}
-            <small>Select the person answering the questions.</small>
+            <small>Required before matching: select the transcript name or speaker label that belongs to {{ candidate_name }}.</small>
             <label class="field">{{ form.candidate_speaker.label }}{{ form.candidate_speaker }}{{ form.candidate_speaker.errors }}</label>
             <details>
                 <summary>View Or Edit Transcript</summary>
